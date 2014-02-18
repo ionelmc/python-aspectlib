@@ -23,14 +23,14 @@ Glossary, as it's too easy to get confused by terminology:
        * ``aspectlib.raise_(type, value=None, tb=None)`` - raise ``value`` exception instead of returning
 
    * - **Cut-point**
-     - Function that is advised                                                                                               .
+     - Function that is advised
 
 And most importantly :-)
 
 .. list-table::
 
    * - **Aspect-Oriented Programming**
-     - Fancy-pants monkey patching
+     - Fancy-pants monkey patching                                                                    \ \ \ \                           .
 
 Usecase analysis
 ================
