@@ -25,9 +25,7 @@ And most importantly :-)
 Aspect-OrientedProgramming: Fancy-pants monkey patching
 
 .. list-table::
-   :header-rows: 1
-   :stub-columns: 1
-   
+
    * - Advice
      - Change that is applied in a cut-point. Can be one of:
         
