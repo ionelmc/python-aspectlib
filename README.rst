@@ -20,6 +20,10 @@ Glossary, as it's too easy to get confused by terminology:
 
 :Cut-point: Function that is advised
 
+And most importantly :)
+
+:Aspect-Oriented Programming: Fancy-pants monkey patching :)
+
 
 Usecase analysis
 ================
