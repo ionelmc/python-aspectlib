@@ -130,13 +130,13 @@ Debugging
 
     aspectlib.weave(socket.socket, aspectlib.debugging.trace, log_stack=True, log_return_values=False)
 
-And it would work with the even more *gross* ssl sockets (I hope :-):
+And it would work with the even more *gross* ssl sockets (I hope :-)::
 
     aspectlib.weave(socket.ssl, aspectlib.debugging.trace, log_stack=True, log_return_values=False)
     # or
     aspectlib.weave(socket.wrap_ssl, aspectlib.debugging.trace, log_stack=True, log_return_values=False)
 
-Actually, why not log everything from ``socket`` ?
+Actually, why not log everything from ``socket`` ?::
 
     aspectlib.weave(socket, aspectlib.debugging.trace, log_stack=True, log_return_values=False)
 
