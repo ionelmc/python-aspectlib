@@ -8,7 +8,7 @@ Nothing is implemented yet ...
 Glossary, as it's too easy to get confused by terminology:
 
 :Concern: Cross-cutting concern, Collection of aspects
-:Aspect: Function yielding advices
+:Aspect: Function (generator) yielding advices
 :Advice:
     Change that is applied in a cut-point. Can be one of:
 
@@ -23,7 +23,6 @@ Glossary, as it's too easy to get confused by terminology:
 
 Usecase analysis
 ================
-
 
 Retries
 -------
@@ -107,3 +106,9 @@ Cross class/module concerns
 Probably not supported. Use a closure where you implement all the aspects; then weave all the cutpoints from
 said closure.
 
+Advice shortcuts
+----------------
+
+Many times you only need to give only one *advice* from an *aspect*. Why not have some sugar for the comon patterns ?
+
+    
