@@ -7,7 +7,6 @@ Nothing is implemented yet ...
 
 Glossary, as it's too easy to get confused by terminology:
 
-:Aspect-Oriented Programming: Fancy-pants monkey patching
 :Concern: Cross-cutting concern, Collection of aspects
 :Aspect: Function (generator) yielding advices
 :Advice:
@@ -20,6 +19,7 @@ Glossary, as it's too easy to get confused by terminology:
     * ``aspectlib.raise_(type, value=None, tb=None)`` - raise ``value`` exception instead of returning
 
 :Cut-point: Function that is advised
+:Aspect-Oriented Programming: Fancy-pants monkey patching
 
 Usecase analysis
 ================
