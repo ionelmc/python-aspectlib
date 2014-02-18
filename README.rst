@@ -28,6 +28,9 @@ Glossary, as it's too easy to get confused by terminology:
  
        **Aspect-Oriented Programming**
      - Fancy-pants monkey patching
+     
+Now repeat after me: *aspects* that are *concerned* with **logging** are *advising* some *cut-points* where 
+the stuff in need of logging happens. Does it make sense now ?
 
 Usecase analysis
 ================
