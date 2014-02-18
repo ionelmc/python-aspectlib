@@ -25,9 +25,9 @@ And most importantly :-)
 Aspect-OrientedProgramming: Fancy-pants monkey patching
 
 .. list-table::
-   :header-rows: 1
 
-   * - asdfasfdasdf
+   * - Cut-point
+     - Function that is advised
    * - Aspect-OrientedProgramming
      - Fancy-pants monkey patching
 
