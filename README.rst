@@ -65,9 +65,9 @@ Retries
 
     aspectlib.weave(Client, retry)
 
-or::
+or (reconnect before retry)::
 
-    aspectlib.weave(Client.action, retry, prepare=lambda self, *_: self.connect()) # reconnect before retry
+    aspectlib.weave(Client.action, retry, prepare=lambda self, *_: self.connect())
 
 Validation
 ----------
@@ -104,5 +104,6 @@ Validation
 Cross class/module concerns
 ---------------------------
 
-Probably not supported. Use a closure where you implement all the aspects; then weave all the cutpoints from said closure.
+Probably not supported. Use a closure where you implement all the aspects; then weave all the cutpoints from
+said closure.
 
