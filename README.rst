@@ -10,7 +10,7 @@ Glossary, as it's too easy to get confused by terminology:
 :Concern: Cross-cutting concern, Collection of aspects
 :Aspect: Function (generator) yielding advices
 :Advice:
-    Change that is applied in a cut-point. Can be one of:
+   Change that is applied in a cut-point. Can be one of:
 
     * ``aspectlib.proceed`` - just go forward with the cutpoint
     * ``aspectlib.proceed(*args, **kwargs)`` - go forward with different arguments
@@ -25,10 +25,21 @@ And most importantly :-)
 Aspect-OrientedProgramming: Fancy-pants monkey patching
 
 .. list-table::
+   :header-rows: 1
+   :stub-columns: 1
+   
+   * - Advice
+     - Change that is applied in a cut-point. Can be one of:
+        
+        * ``aspectlib.proceed`` - just go forward with the cutpoint
+        * ``aspectlib.proceed(*args, **kwargs)`` - go forward with different arguments
+        * ``aspectlib.return_`` - return ``None`` instead of whatever the cutpoint would return
+        * ``aspectlib.return_(value)`` - return ``value`` instead of whatever the cutpoint would return
+        * ``aspectlib.raise_(type, value=None, tb=None)`` - raise ``value`` exception instead of returning
 
-   * - Cut-point
+   * - **Cut-point**
      - Function that is advised
-   * - Aspect-OrientedProgramming
+   * - **Aspect-Oriented Programming**
      - Fancy-pants monkey patching
 
 Usecase analysis
