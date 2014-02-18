@@ -23,7 +23,7 @@ Glossary, as it's too easy to get confused by terminology:
 And most importantly :)
 
 :Aspect-Oriented Programming: Fancy-pants monkey patching :)
-
+:-:  
 
 Usecase analysis
 ================
