@@ -28,7 +28,7 @@ Aspect-OrientedProgramming: Fancy-pants monkey patching
    :widths: 15 10 30
    :header-rows: 1
 
-   * - Treat
+   * - *Treat*
      - Quantity
      - Description
    * - Albatross
