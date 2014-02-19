@@ -42,8 +42,8 @@ So AOP is just fancy pants monkey patching. Why not just monkey patch ?!
 * You would need to handle yourself all different kids of patching (patching
   a module is different than patching a class, a function or a method for that matter). 
   Why not let a library do all this gross patching ?
-* writting the actual wrappers is repetitive and boring. You can't reuse wrappers 
-  but you can reuse aspects !
+* Writting the actual wrappers is repetitive and boring. You can't reuse wrappers 
+  but *you can reuse aspects* !
 
 Usecase analysis
 ================
