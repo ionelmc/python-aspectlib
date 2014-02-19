@@ -27,7 +27,10 @@ Glossary, as it's too easy to get confused by terminology:
    * - And most importantly :-)
  
        **Aspect-Oriented Programming**
-     - Fancy-pants monkey patching
+     - | 
+       | 
+       | 
+       | Fancy-pants monkey patching
      
 Now repeat after me: *aspects* that are *concerned* with **logging** are *advising* some *cut-points*. 
 The *cut-points* don't need to care about **logging**, they just do their own business. 
