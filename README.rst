@@ -4,7 +4,6 @@ python-aspectlib
 
 Nothing is implemented yet ...
 
-
 Glossary, as it's too easy to get confused by terminology:
 
 .. list-table::
@@ -20,7 +19,6 @@ Glossary, as it's too easy to get confused by terminology:
        * ``aspectlib.proceed(*args, **kwargs)`` - go forward with different arguments
        * ``aspectlib.return_`` - return ``None`` instead of whatever the cutpoint would return
        * ``aspectlib.return_(value)`` - return ``value`` instead of whatever the cutpoint would return
-       * ``aspectlib.raise_(type, value=None, tb=None)`` - raise ``value`` exception instead of returning
 
    * - **Cut-point**
      - Function that is advised
@@ -35,6 +33,17 @@ Glossary, as it's too easy to get confused by terminology:
 Now repeat after me: *aspects* that are *concerned* with **logging** are *advising* some *cut-points*. 
 The *cut-points* don't need to care about **logging**, they just do their own business. 
 Does it make sense now ?
+
+Ok, but why ??
+==============
+
+So AOP is just fancy pants monkey patching. Why not just monkey patch ?!
+
+* You would need to handle yourself all different kids of patching (patching
+  a module is different than patching a class, a function or a method for that matter). 
+  Why not let a library do all this gross patching ?
+* writting the actual wrappers is repetitive and boring. You can't reuse wrappers 
+  but you can reuse aspects !
 
 Usecase analysis
 ================
@@ -109,7 +118,7 @@ Validation
             if is_valid_foo(data):
               yield aspectlib.proceed
             else:
-              yield aspectlib.raise_(ValidationError())
+              raise ValidationError()
 
         @aspectlib.aspect
         def process_bar(self, data):
@@ -117,7 +126,7 @@ Validation
             if is_valid_bar(data):
               yield aspectlib.proceed
             else:
-              yield aspectlib.raise_(ValidationError())
+              raise ValidationError()
               
     aspectlib.weave(BaseProcesor, ValidationConcern)
 
@@ -144,7 +153,57 @@ Advice shortcuts
 
 Many times you only need to give only one *advice* from an *aspect*. Why not have some sugar for the comon patterns ?
 
-    
+Before
+``````
+
+This::
+
+    @aspectlib.before
+    def my_aspect(*args, **kwargs):
+        # CODE
+
+is equivalent for this::
+
+    @aspectlib.aspect
+    def my_aspect(*args, **kwargs):
+        # CODE
+        yield aspectlib.proceed
+
+After
+`````
+
+This::
+
+    @aspectlib.after
+    def my_aspect(*args, **kwargs):
+        # CODE
+
+is equivalent for this::
+
+    @aspectlib.aspect
+    def my_aspect(*args, **kwargs):
+        yield aspectlib.proceed
+        # CODE
+
+Around
+``````
+
+This::
+
+    @aspectlib.around
+    def my_aspect(*args, **kwargs):
+        # BEFORE CODE
+        yield
+        # AFTER CODE
+
+is equivalent for this::
+
+    @aspectlib.aspect
+    def my_aspect(*args, **kwargs):
+        # BEFORE CODE
+        yield aspectlib.proceed
+        # AFTER CODE
+
 Debugging
 ---------
 
