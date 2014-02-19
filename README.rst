@@ -75,13 +75,20 @@ Retries
 
         return retry_aspect
 
-::
+Now patch the ``Client`` class to have the retry functionality on all its methods::
 
     aspectlib.weave(Client, retry)
 
-or (reconnect before retry)::
+or with different retry options (reconnect before retry)::
 
-    aspectlib.weave(Client.action, retry, prepare=lambda self, *_: self.connect())
+    aspectlib.weave(Client, retry, prepare=lambda self, *_: self.connect())
+
+or just for one method::
+
+    aspectlib.weave(Client.action, retry)
+    
+You can see here the advantage of having reusable retry functionality. Also, the retry handling is  
+decoupled from the ``Client`` class.
 
 Validation
 ----------
@@ -99,11 +106,19 @@ Validation
         @aspectlib.aspect
         def process_foo(self, data):
             # validate data
+            if is_valid_foo(data):
+              yield aspectlib.proceed
+            else:
+              yield aspectlib.raise_(ValidationError())
 
         @aspectlib.aspect
         def process_bar(self, data):
             # validate data
-
+            if is_valid_bar(data):
+              yield aspectlib.proceed
+            else:
+              yield aspectlib.raise_(ValidationError())
+              
     aspectlib.weave(BaseProcesor, ValidationConcern)
 
     class MyProcessor(BaseProcessor):
@@ -114,6 +129,9 @@ Validation
             # do some work
 
     # MyProcessor automatically inherits BaseProcesor's ValidationConcern
+
+Question remains here how to implement the weaving (would probably require some metaclass gymnastics to 
+make the subclass inherit the aspect)
 
 Cross class/module concerns
 ---------------------------
