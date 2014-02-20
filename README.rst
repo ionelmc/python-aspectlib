@@ -4,7 +4,7 @@ python-aspectlib
 
 Nothing is implemented yet ...
 
-Glossary, as it's too easy to get confused by terminology:
+Glossary, as it's too easy to get confused by terminology and most every AOP framework has different definitions:
 
 .. list-table::
 
@@ -15,10 +15,11 @@ Glossary, as it's too easy to get confused by terminology:
    * - **Advice**
      - Change that is applied in a cut-point. Can be one of:
         
-       * ``aspectlib.proceed`` - just go forward with the cutpoint
+       * ``aspectlib.proceed`` - just go forward with the **cut-point**
        * ``aspectlib.proceed(*args, **kwargs)`` - go forward with different arguments
-       * ``aspectlib.return_`` - return ``None`` instead of whatever the cutpoint would return
-       * ``aspectlib.return_(value)`` - return ``value`` instead of whatever the cutpoint would return
+       * ``aspectlib.return_`` - return ``None`` instead of whatever the **cut-point** would return
+       * ``aspectlib.return_(value)`` - return ``value`` instead of whatever the **cut-point** would return
+       * ``raise exception`` - make the **cut-point** raise an exception instead
 
    * - **Cut-point**
      - Function that is advised
@@ -41,7 +42,7 @@ So AOP is just fancy pants monkey patching. Why not just monkey patch ?!
 
 * You would need to handle yourself all different kids of patching (patching
   a module is different than patching a class, a function or a method for that matter). 
-  Why not let a library do all this gross patching ?
+  Why not let a library do all this gross patching mumbo-jumbo ?
 * Writting the actual wrappers is repetitive and boring. You can't reuse wrappers 
   but *you can reuse aspects* !
 
