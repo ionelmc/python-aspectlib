@@ -224,4 +224,21 @@ Actually, why not log everything from ``socket`` ?
 
     aspectlib.weave(socket, aspectlib.debugging.trace, log_stack=True, log_return_values=False)
 
+Testing
+-------
+
+Mock behavior for tests::
+
+    def test_stuff(self):
+    
+        @aspectlib.aspect
+        def mock_stuff(self, value):
+            if value == 'special':
+                yield aspectlib.return_('mocked-result')
+            else:
+                yield aspectlib.proceed
+    
+        with aspectlib.weave(foo.Bar.stuff, mock_stuff):
+            obj = foo.Bar()
+            self.assertEqual(obj.stuff('special'), 'mocked-result')
 
