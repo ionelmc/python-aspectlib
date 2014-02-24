@@ -101,9 +101,15 @@ def weave(target, aspect_inst, skip_magic_methods=True, skip_subclasses=False):
             if callable(func):
                 setattr(target, name, aspect_inst.decorate(func))
             elif isinstance(func, staticmethod):
-                setattr(target, name, staticmethod(aspect_inst.decorate(func.__func__)))
+                if hasattr(func, '__func__'):
+                    setattr(target, name, staticmethod(aspect_inst.decorate(func.__func__)))
+                else:
+                    setattr(target, name, classmethod(aspect_inst.decorate(func.__get__(object).im_func)))
             elif isinstance(func, classmethod):
-                setattr(target, name, classmethod(aspect_inst.decorate(func.__func__)))
+                if hasattr(func, '__func__'):
+                    setattr(target, name, classmethod(aspect_inst.decorate(func.__func__)))
+                else:
+                    setattr(target, name, classmethod(aspect_inst.decorate(func.__get__(object).im_func)))
             else:
                 continue
             original[name] = func
