@@ -2,7 +2,21 @@
 python-aspectlib
 ================
 
-Nothing is implemented yet ...
+.. image:: https://secure.travis-ci.org/ionelmc/python-aspectlib.png
+    :alt: Build Status
+    :target: http://travis-ci.org/ionelmc/python-aspectlib
+
+.. image:: https://coveralls.io/repos/ionelmc/python-aspectlib/badge.png?branch=master
+    :alt: Coverage Status
+    :target: https://coveralls.io/r/ionelmc/python-aspectlib
+
+.. image:: https://pypip.in/d/python-aspectlib/badge.png
+    :alt: PYPI Package
+    :target: https://pypi.python.org/pypi/python-aspectlib
+
+.. image:: https://pypip.in/v/python-aspectlib/badge.png
+    :alt: PYPI Package
+    :target: https://pypi.python.org/pypi/python-aspectlib
 
 Glossary, as it's too easy to get confused by terminology and most every AOP framework has different definitions:
 
@@ -14,7 +28,7 @@ Glossary, as it's too easy to get confused by terminology and most every AOP fra
      - Function (generator) yielding advices
    * - **Advice**
      - Change that is applied in a cut-point. Can be one of:
-        
+
        * ``aspectlib.proceed`` - just go forward with the **cut-point**
        * ``aspectlib.proceed(*args, **kwargs)`` - go forward with different arguments
        * ``aspectlib.return_`` - return ``None`` instead of whatever the **cut-point** would return
@@ -24,15 +38,15 @@ Glossary, as it's too easy to get confused by terminology and most every AOP fra
    * - **Cut-point**
      - Function that is advised
    * - And most importantly :-)
- 
+
        **Aspect-Oriented Programming**
-     - | 
-       | 
-       | 
+     - |
+       |
+       |
        | Fancy-pants monkey patching
-     
-Now repeat after me: *aspects* that are *concerned* with **logging** are *advising* some *cut-points*. 
-The *cut-points* don't need to care about **logging**, they just do their own business. 
+
+Now repeat after me: *aspects* that are *concerned* with **logging** are *advising* some *cut-points*.
+The *cut-points* don't need to care about **logging**, they just do their own business.
 Does it make sense now ?
 
 Ok, but why ??
@@ -41,10 +55,22 @@ Ok, but why ??
 So AOP is just fancy pants monkey patching. Why not just monkey patch ?!
 
 * You would need to handle yourself all different kids of patching (patching
-  a module is different than patching a class, a function or a method for that matter). 
+  a module is different than patching a class, a function or a method for that matter).
   Why not let a library do all this gross patching mumbo-jumbo ?
-* Writting the actual wrappers is repetitive and boring. You can't reuse wrappers 
+* Writting the actual wrappers is repetitive and boring. You can't reuse wrappers
   but *you can reuse aspects* !
+
+Implementation status
+=====================
+
+Weaving functions, methods, instances and classes is completed.
+
+Pending:
+
+* Aspectlib.debugging
+* Module weaving
+* Integration tests and tests for examples in *Usecase analysis*
+* *Anything else?*
 
 Usecase analysis
 ================
@@ -96,8 +122,8 @@ or with different retry options (reconnect before retry)::
 or just for one method::
 
     aspectlib.weave(Client.action, retry)
-    
-You can see here the advantage of having reusable retry functionality. Also, the retry handling is  
+
+You can see here the advantage of having reusable retry functionality. Also, the retry handling is
 decoupled from the ``Client`` class.
 
 Validation
@@ -128,7 +154,7 @@ Validation
               yield aspectlib.proceed
             else:
               raise ValidationError()
-              
+
     aspectlib.weave(BaseProcesor, ValidationConcern)
 
     class MyProcessor(BaseProcessor):
@@ -140,7 +166,7 @@ Validation
 
     # MyProcessor automatically inherits BaseProcesor's ValidationConcern
 
-Question remains here how to implement the weaving (would probably require some metaclass gymnastics to 
+Question remains here how to implement the weaving (would probably require some metaclass gymnastics to
 make the subclass inherit the aspect)
 
 Cross class/module concerns
@@ -230,15 +256,14 @@ Testing
 Mock behavior for tests::
 
     def test_stuff(self):
-    
+
         @aspectlib.aspect
         def mock_stuff(self, value):
             if value == 'special':
                 yield aspectlib.return_('mocked-result')
             else:
                 yield aspectlib.proceed
-    
+
         with aspectlib.weave(foo.Bar.stuff, mock_stuff):
             obj = foo.Bar()
             self.assertEqual(obj.stuff('special'), 'mocked-result')
-
