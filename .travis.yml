@@ -16,7 +16,6 @@ env:
   matrix:
     - WITH_COVERAGE=no
     - WITH_COVERAGE=yes
-
 before_install:
   - |
     if python --version |& grep PyPy; then
@@ -29,7 +28,8 @@ before_install:
     python --version
     uname -a
     lsb_release -a
- 
+install:
+  - pip install tox
 script:
   - |
     if [[ $WITH_COVERAGE == yes ]]; then
@@ -37,7 +37,6 @@ script:
     else
       tox -v -e $TRAVIS_PYTHON_VERSION
     fi
- 
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION-$DJANGO_VERSION/bin/coveralls
 notifications:

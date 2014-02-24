@@ -67,6 +67,7 @@ Weaving functions, methods, instances and classes is completed.
 
 Pending:
 
+* Concerns
 * Aspectlib.debugging
 * Module weaving
 * Integration tests and tests for examples in *Usecase analysis*
