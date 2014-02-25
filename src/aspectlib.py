@@ -2,10 +2,12 @@ from __future__ import print_function
 
 import sys
 from collections import deque
-from contextlib import nested
 from functools import wraps
 from logging import getLogger
-from types import ClassType
+try:
+    from types import ClassType
+except ImportError:
+    ClassType = type
 from types import FunctionType
 from types import GeneratorType
 from types import MethodType
@@ -59,18 +61,22 @@ class aspect(object):  # pylint: disable=C0103
 
 class Entanglement(object):  # pylint: disable=C0103
     def __init__(self, rollback):
-        self.rollback = rollback
+        self.rollbacks = [rollback]
+
+    def merge(self, entanglement):
+        self.rollbacks.extend(entanglement.rollbacks)
 
     def __enter__(self):
         return self
 
     def __exit__(self, *_):
-        self.rollback()
+        for rollback in self.rollbacks:
+            rollback()
 
 
 def weave(target, aspect_inst, skip_magic_methods=True, skip_subclasses=False):
     assert isinstance(aspect_inst, aspect), '%s must be an `aspect` instance.' % (aspect_inst)
-    if isinstance(target, FunctionType):
+    if isinstance(target, FunctionType):# and not hasattr(target, '__class__'):
         logger.debug("Weaving %r as plain function.", target)
         mod = __import__(target.__module__)
         name = target.__name__
@@ -114,12 +120,12 @@ def weave(target, aspect_inst, skip_magic_methods=True, skip_subclasses=False):
                 continue
             original[name] = func
 
-        entanglements = [
-            Entanglement(lambda: deque((setattr(target, name, func) for name, func in original.items()), maxlen=0))
-        ]
+        entanglement = Entanglement(lambda: deque((
+            setattr(target, name, func) for name, func in original.items()
+        ), maxlen=0))
         if not skip_subclasses and hasattr(target, '__subclasses__'):
             for sub in target.__subclasses__():
-                entanglements.append(weave(sub, aspect_inst, skip_magic_methods=skip_magic_methods))
-        return nested(*entanglements)
+                entanglement.merge(weave(sub, aspect_inst, skip_magic_methods=skip_magic_methods))
+        return entanglement
     else:
         raise RuntimeError("Can't weave object %s of type %s" % (target, type(target)))
