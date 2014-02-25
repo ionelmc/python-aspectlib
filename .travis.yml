@@ -37,7 +37,7 @@ script:
       tox -v -e $TRAVIS_PYTHON_VERSION
     fi
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION-$DJANGO_VERSION/bin/coveralls
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
 notifications:
   email:
     on_success: never
