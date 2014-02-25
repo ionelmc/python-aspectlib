@@ -73,6 +73,14 @@ Pending:
 * Integration tests and tests for examples in *Usecase analysis*
 * *Anything else?*
 
+Requirements
+============
+
+:OS: Any
+:Runtime: Python 2.6, 2.7, 3.3 or PyPy
+
+Python 3.2, 3.1 and 3.0 are *NOT* supported !
+
 Usecase analysis
 ================
 
