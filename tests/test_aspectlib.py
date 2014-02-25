@@ -118,7 +118,6 @@ class AOPTestCase(unittest.TestCase):
 
         inst = TestClass()
         with aspectlib.weave(inst.foobar, aspect):
-            print(inst.foobar)
             inst.foobar()
             self.assertEqual(inst.foo, 'bar')
 
@@ -233,9 +232,9 @@ class AOPTestCase(unittest.TestCase):
 
         inst = LegacyTestClass()
 
-        with aspectlib.weave(LegacyTestClass, aspect):
-            with aspectlib.weave(LegacyTestSubClass, aspect):
-                with aspectlib.weave(LegacyTestSubSubClass, aspect):
+        with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
+            with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
+                with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
                     inst = LegacyTestClass('stuff')
                     self.assertEqual(inst.foo, 'stuff')
                     self.assertEqual(inst.bar, ':)')
@@ -370,9 +369,9 @@ class AOPTestCase(unittest.TestCase):
 
         inst = LegacyTestClass()
 
-        with aspectlib.weave(LegacyTestClass, aspect, skip_magic_methods=False):
-            with aspectlib.weave(LegacyTestSubClass, aspect, skip_magic_methods=False):
-                with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_magic_methods=False):
+        with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
+            with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
+                with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
                     inst = LegacyTestClass('stuff')
                     self.assertEqual(history, [
                         (inst, 'stuff'),

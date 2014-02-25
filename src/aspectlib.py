@@ -4,6 +4,7 @@ import sys
 from collections import deque
 from functools import wraps
 from logging import getLogger
+from operator import setitem
 try:
     from types import ClassType
 except ImportError:
@@ -14,6 +15,8 @@ from types import MethodType
 
 logger = getLogger(__name__)
 
+PY3 = sys.version_info[0] == 3
+PY2 = sys.version_info[0] == 2
 
 class proceed(object):  # pylint: disable=C0103
     def __init__(self, *args, **kwargs):
@@ -73,17 +76,33 @@ class Entanglement(object):  # pylint: disable=C0103
         for rollback in self.rollbacks:
             rollback()
 
-
 def weave(target, aspect_inst, skip_magic_methods=True, skip_subclasses=False):
     assert isinstance(aspect_inst, aspect), '%s must be an `aspect` instance.' % (aspect_inst)
-    if isinstance(target, FunctionType):# and not hasattr(target, '__class__'):
+    if PY3 and isinstance(target, MethodType):
+        inst = target.__self__
+        name = target.__name__
+        logger.debug("Weaving %r (%s) as instance method.", target, name)
+        func = getattr(inst, name)
+        setattr(inst, name, aspect_inst.decorate(func).__get__(inst, type(inst)))
+        return Entanglement(lambda: delattr(inst, name))
+    if PY3 and isinstance(target, FunctionType):
+        owner = __import__(target.__module__)
+        path = deque(target.__qualname__.split('.')[:-1])
+        while path:
+            owner = getattr(owner, path.popleft())
+        name = target.__name__
+        logger.debug("Weaving %r (%s) as a property.", target, name)
+        func = owner.__dict__[name]
+        setattr(owner, name, aspect_inst.decorate(target))
+        return Entanglement(lambda: setattr(owner, name, target))
+    elif PY2 and isinstance(target, FunctionType):
         logger.debug("Weaving %r as plain function.", target)
         mod = __import__(target.__module__)
         name = target.__name__
         assert getattr(mod, name) is target
         setattr(mod, name, aspect_inst.decorate(target))
         return Entanglement(lambda: setattr(mod, name, target))
-    elif isinstance(target, MethodType):
+    elif PY2 and isinstance(target, MethodType):
         if target.im_self:
             inst = target.im_self
             name = target.__name__
