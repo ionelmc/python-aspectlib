@@ -32,7 +32,7 @@ install:
 script:
   - |
     if [[ $WITH_COVERAGE == yes ]]; then
-      tox -v -e $TRAVIS_PYTHON_VERSION -- nosetests test_aspectlib --with-cov --cover-branch --cover-erase
+      tox -v -e $TRAVIS_PYTHON_VERSION -- nosetests test_aspectlib --with-cov --cover-branch --cover-erase --cover-package=aspectlib  
     else
       tox -v -e $TRAVIS_PYTHON_VERSION
     fi
