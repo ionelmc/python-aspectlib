@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import unittest
-from contextlib import nested
 
 import aspectlib
 
@@ -234,61 +233,59 @@ class AOPTestCase(unittest.TestCase):
 
         inst = LegacyTestClass()
 
-        with nested(
-            aspectlib.weave(LegacyTestClass, aspect),
-            aspectlib.weave(LegacyTestSubClass, aspect),
-            aspectlib.weave(LegacyTestSubSubClass, aspect)
-        ):
-            inst = LegacyTestClass('stuff')
-            self.assertEqual(inst.foo, 'stuff')
-            self.assertEqual(inst.bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(LegacyTestClass.foo, 'stuff')
-            self.assertEqual(LegacyTestClass.bar, ':)')
-            self.assertEqual(LegacyTestClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (LegacyTestClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
+        with aspectlib.weave(LegacyTestClass, aspect):
+            with aspectlib.weave(LegacyTestSubClass, aspect):
+                with aspectlib.weave(LegacyTestSubSubClass, aspect):
+                    inst = LegacyTestClass('stuff')
+                    self.assertEqual(inst.foo, 'stuff')
+                    self.assertEqual(inst.bar, ':)')
+                    self.assertEqual(inst.inst, 'bar')
+                    self.assertEqual(inst.klass, 'bar')
+                    self.assertEqual(inst.static, 'bar')
+                    self.assertEqual(LegacyTestClass.foo, 'stuff')
+                    self.assertEqual(LegacyTestClass.bar, ':)')
+                    self.assertEqual(LegacyTestClass.static_foobar('stuff'), 'bar')
+                    self.assertEqual(history, [
+                        (inst, 'stuff'),
+                        (LegacyTestClass, 'stuff'),
+                        ('stuff',),
+                        ('stuff',),
+                    ])
+                    del history[:]
 
-            inst = LegacyTestSubClass('stuff')
-            self.assertEqual(inst.sub_foo, 'stuff')
-            self.assertEqual(inst.sub_bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(LegacyTestSubClass.sub_foo, 'stuff')
-            self.assertEqual(LegacyTestSubClass.sub_bar, ':)')
-            self.assertEqual(LegacyTestSubClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (LegacyTestSubClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
+                    inst = LegacyTestSubClass('stuff')
+                    self.assertEqual(inst.sub_foo, 'stuff')
+                    self.assertEqual(inst.sub_bar, ':)')
+                    self.assertEqual(inst.inst, 'bar')
+                    self.assertEqual(inst.klass, 'bar')
+                    self.assertEqual(inst.static, 'bar')
+                    self.assertEqual(LegacyTestSubClass.sub_foo, 'stuff')
+                    self.assertEqual(LegacyTestSubClass.sub_bar, ':)')
+                    self.assertEqual(LegacyTestSubClass.static_foobar('stuff'), 'bar')
+                    self.assertEqual(history, [
+                        (inst, 'stuff'),
+                        (LegacyTestSubClass, 'stuff'),
+                        ('stuff',),
+                        ('stuff',),
+                    ])
+                    del history[:]
 
-            inst = LegacyTestSubSubClass('stuff')
-            self.assertEqual(inst.subsub_foo, 'stuff')
-            self.assertEqual(inst.subsub_bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(LegacyTestSubSubClass.subsub_foo, 'stuff')
-            self.assertEqual(LegacyTestSubSubClass.subsub_bar, ':)')
-            self.assertEqual(LegacyTestSubSubClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (LegacyTestSubSubClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
+                    inst = LegacyTestSubSubClass('stuff')
+                    self.assertEqual(inst.subsub_foo, 'stuff')
+                    self.assertEqual(inst.subsub_bar, ':)')
+                    self.assertEqual(inst.inst, 'bar')
+                    self.assertEqual(inst.klass, 'bar')
+                    self.assertEqual(inst.static, 'bar')
+                    self.assertEqual(LegacyTestSubSubClass.subsub_foo, 'stuff')
+                    self.assertEqual(LegacyTestSubSubClass.subsub_bar, ':)')
+                    self.assertEqual(LegacyTestSubSubClass.static_foobar('stuff'), 'bar')
+                    self.assertEqual(history, [
+                        (inst, 'stuff'),
+                        (LegacyTestSubSubClass, 'stuff'),
+                        ('stuff',),
+                        ('stuff',),
+                    ])
+                    del history[:]
 
         inst = LegacyTestClass('stuff')
         self.assertEqual(inst.foo, 'stuff')
@@ -373,34 +370,32 @@ class AOPTestCase(unittest.TestCase):
 
         inst = LegacyTestClass()
 
-        with nested(
-            aspectlib.weave(LegacyTestClass, aspect, skip_magic_methods=False),
-            aspectlib.weave(LegacyTestSubClass, aspect, skip_magic_methods=False),
-            aspectlib.weave(LegacyTestSubSubClass, aspect, skip_magic_methods=False)
-        ):
-            inst = LegacyTestClass('stuff')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (LegacyTestClass, 'stuff'),
-                ('stuff',),
-            ])
-            del history[:]
+        with aspectlib.weave(LegacyTestClass, aspect, skip_magic_methods=False):
+            with aspectlib.weave(LegacyTestSubClass, aspect, skip_magic_methods=False):
+                with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_magic_methods=False):
+                    inst = LegacyTestClass('stuff')
+                    self.assertEqual(history, [
+                        (inst, 'stuff'),
+                        (LegacyTestClass, 'stuff'),
+                        ('stuff',),
+                    ])
+                    del history[:]
 
-            inst = LegacyTestSubClass('stuff')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (LegacyTestSubClass, 'stuff'),
-                ('stuff',),
-            ])
-            del history[:]
+                    inst = LegacyTestSubClass('stuff')
+                    self.assertEqual(history, [
+                        (inst, 'stuff'),
+                        (LegacyTestSubClass, 'stuff'),
+                        ('stuff',),
+                    ])
+                    del history[:]
 
-            inst = LegacyTestSubSubClass('stuff')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (LegacyTestSubSubClass, 'stuff'),
-                ('stuff',),
-            ])
-            del history[:]
+                    inst = LegacyTestSubSubClass('stuff')
+                    self.assertEqual(history, [
+                        (inst, 'stuff'),
+                        (LegacyTestSubSubClass, 'stuff'),
+                        ('stuff',),
+                    ])
+                    del history[:]
 
         inst = LegacyTestClass('stuff')
         inst = LegacyTestSubClass('stuff')
