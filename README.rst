@@ -42,7 +42,6 @@ Glossary, as it's too easy to get confused by terminology and most every AOP fra
        **Aspect-Oriented Programming**
      - |
        |
-       |
        | Fancy-pants monkey patching
 
 Now repeat after me: *aspects* that are *concerned* with **logging** are *advising* some *cut-points*.
