@@ -29,10 +29,10 @@ Glossary, as it's too easy to get confused by terminology and most every AOP fra
    * - **Advice**
      - Change that is applied in a cut-point. Can be one of:
 
-       * ``aspectlib.proceed`` - just go forward with the **cut-point**
-       * ``aspectlib.proceed(*args, **kwargs)`` - go forward with different arguments
-       * ``aspectlib.return_`` - return ``None`` instead of whatever the **cut-point** would return
-       * ``aspectlib.return_(value)`` - return ``value`` instead of whatever the **cut-point** would return
+       * ``aspectlib.Proceed`` - just go forward with the **cut-point**
+       * ``aspectlib.Proceed(*args, **kwargs)`` - go forward with different arguments
+       * ``aspectlib.Return`` - return ``None`` instead of whatever the **cut-point** would return
+       * ``aspectlib.Return(value)`` - return ``value`` instead of whatever the **cut-point** would return
        * ``raise exception`` - make the **cut-point** raise an exception instead
 
    * - **Cut-point**
@@ -101,12 +101,12 @@ Retries
     def retry(retries=(1, 5, 15, 30, 60), retry_on=(IOError, OSError), prepare=None):
         assert len(retries)
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def retry_aspect(*args, **kwargs):
             durations = retries
             while True:
                 try:
-                    yield aspectlib.proceed
+                    yield aspectlib.Proceed
                     break
                 except retry_on as exc:
                     if durations:
@@ -148,19 +148,19 @@ Validation
             # do some work
 
     class ValidationConcern(aspectlib.Concern):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def process_foo(self, data):
             # validate data
             if is_valid_foo(data):
-              yield aspectlib.proceed
+              yield aspectlib.Proceed
             else:
               raise ValidationError()
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def process_bar(self, data):
             # validate data
             if is_valid_bar(data):
-              yield aspectlib.proceed
+              yield aspectlib.Proceed
             else:
               raise ValidationError()
 
@@ -200,10 +200,10 @@ This::
 
 is equivalent for this::
 
-    @aspectlib.aspect
+    @aspectlib.Aspect
     def my_aspect(*args, **kwargs):
         # CODE
-        yield aspectlib.proceed
+        yield aspectlib.Proceed
 
 After
 `````
@@ -216,9 +216,9 @@ This::
 
 is equivalent for this::
 
-    @aspectlib.aspect
+    @aspectlib.Aspect
     def my_aspect(*args, **kwargs):
-        yield aspectlib.proceed
+        yield aspectlib.Proceed
         # CODE
 
 Around
@@ -234,10 +234,10 @@ This::
 
 is equivalent for this::
 
-    @aspectlib.aspect
+    @aspectlib.Aspect
     def my_aspect(*args, **kwargs):
         # BEFORE CODE
-        yield aspectlib.proceed
+        yield aspectlib.Proceed
         # AFTER CODE
 
 Debugging
@@ -266,12 +266,12 @@ Mock behavior for tests::
 
     def test_stuff(self):
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def mock_stuff(self, value):
             if value == 'special':
-                yield aspectlib.return_('mocked-result')
+                yield aspectlib.Return('mocked-result')
             else:
-                yield aspectlib.proceed
+                yield aspectlib.Proceed
 
         with aspectlib.weave(foo.Bar.stuff, mock_stuff):
             obj = foo.Bar()
