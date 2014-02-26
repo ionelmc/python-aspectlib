@@ -8,62 +8,62 @@ import aspectlib
 class AOPTestCase(unittest.TestCase):
 
     def test_aspect_bad(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args, **kwargs):
             return "crap"
 
-        @aspect.decorate
+        @aspect
         def func():
             pass
 
         self.assertRaises(RuntimeError, func)
 
     def test_aspect_return(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args, **kwargs):
-            yield aspectlib.return_
+            yield aspectlib.Return
 
-        @aspect.decorate
+        @aspect
         def func():
             return 'stuff'
 
         self.assertEqual(func(), None)
 
     def test_aspect_return_value(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args, **kwargs):
-            yield aspectlib.return_('stuff')
+            yield aspectlib.Return('stuff')
 
-        @aspect.decorate
+        @aspect
         def func():
             pass
 
         self.assertEqual(func(), 'stuff')
 
     def test_aspect_raise(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args, **kwargs):
             try:
-                yield aspectlib.proceed
+                yield aspectlib.Proceed
             except ZeroDivisionError:
                 pass
             else:
                 raise AssertionError("didn't raise")
 
-            yield aspectlib.return_('stuff')
+            yield aspectlib.Return('stuff')
 
-        @aspect.decorate
+        @aspect
         def func():
             1/0
 
         self.assertEqual(func(), 'stuff')
 
     def test_aspect_raise_from_aspect(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args, **kwargs):
             1/0
 
-        @aspect.decorate
+        @aspect
         def func():
             pass
 
@@ -72,13 +72,13 @@ class AOPTestCase(unittest.TestCase):
     def test_aspect_return_but_call(self):
         calls = []
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(arg):
-            assert 'first' == (yield aspectlib.proceed)
-            assert 'second' == (yield aspectlib.proceed('second'))
-            yield aspectlib.return_('stuff')
+            assert 'first' == (yield aspectlib.Proceed)
+            assert 'second' == (yield aspectlib.Proceed('second'))
+            yield aspectlib.Return('stuff')
 
-        @aspect.decorate
+        @aspect
         def func(arg):
             calls.append(arg)
             return arg
@@ -87,9 +87,9 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(calls, ['first', 'second'])
 
     def test_weave_func(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args, **kwargs):
-            yield aspectlib.return_('stuff')
+            yield aspectlib.Return('stuff')
 
         with aspectlib.weave(module_func, aspect):
             self.assertEqual(module_func(), 'stuff')
@@ -97,10 +97,10 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(module_func(), None)
 
     def test_weave_class_meth(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(self, *_):
             self.foo = 'bar'
-            yield aspectlib.return_
+            yield aspectlib.Return
 
         with aspectlib.weave(TestClass.foobar, aspect):
             inst = TestClass('stuff')
@@ -111,10 +111,10 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(inst.foo, 'stuff')
 
     def test_weave_instance_meth(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(self):
             self.foo = 'bar'
-            yield aspectlib.return_
+            yield aspectlib.Return
 
         inst = TestClass()
         with aspectlib.weave(inst.foobar, aspect):
@@ -127,12 +127,12 @@ class AOPTestCase(unittest.TestCase):
     def test_weave_class(self):
         history = []
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args):
             history.append(args)
             args += ':)',
-            yield aspectlib.proceed(*args)
-            yield aspectlib.return_('bar')
+            yield aspectlib.Proceed(*args)
+            yield aspectlib.Return('bar')
 
         inst = TestClass()
 
@@ -223,12 +223,12 @@ class AOPTestCase(unittest.TestCase):
     def test_weave_class_old_style(self):
         history = []
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args):
             history.append(args)
             args += ':)',
-            yield aspectlib.proceed(*args)
-            yield aspectlib.return_('bar')
+            yield aspectlib.Proceed(*args)
+            yield aspectlib.Return('bar')
 
         inst = LegacyTestClass()
 
@@ -321,10 +321,10 @@ class AOPTestCase(unittest.TestCase):
     def test_weave_class_all_magic(self):
         history = []
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args):
             history.append(args)
-            yield aspectlib.proceed
+            yield aspectlib.Proceed
 
         inst = TestClass()
 
@@ -362,10 +362,10 @@ class AOPTestCase(unittest.TestCase):
     def test_weave_class_old_style_all_magic(self):
         history = []
 
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect(*args):
             history.append(args)
-            yield aspectlib.proceed
+            yield aspectlib.Proceed
 
         inst = LegacyTestClass()
 
@@ -403,31 +403,31 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(history, [])
 
     def test_just_proceed(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect():
-            yield aspectlib.proceed
+            yield aspectlib.Proceed
 
-        @aspect.decorate
+        @aspect
         def func():
             return 'stuff'
 
         self.assertEqual(func(), 'stuff')
 
     def test_just_proceed_with_error(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect():
-            yield aspectlib.proceed
+            yield aspectlib.Proceed
 
-        @aspect.decorate
+        @aspect
         def func():
             1/0
 
         self.assertRaises(ZeroDivisionError, func)
 
     def test_weave_unknown(self):
-        @aspectlib.aspect
+        @aspectlib.Aspect
         def aspect():
-            yield aspectlib.proceed
+            yield aspectlib.Proceed
 
         self.assertRaises(RuntimeError, aspectlib.weave, 1, aspect)
 
