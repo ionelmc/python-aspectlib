@@ -220,6 +220,205 @@ class AOPTestCase(unittest.TestCase):
 
         self.assertEqual(history, [])
 
+    def test_weave_class_slots(self):
+        history = []
+
+        @aspectlib.Aspect
+        def aspect(*args):
+            history.append(args)
+            args += ':)',
+            yield aspectlib.Proceed(*args)
+            yield aspectlib.Return('bar')
+
+        inst = SlotsTestClass('stuff')
+        self.assertEqual(inst.foo, 'stuff')
+        self.assertEqual(inst.bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'stuff')
+        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
+        self.assertEqual(SlotsTestClass.class_bar, None)
+        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
+
+        inst = SlotsTestClass()
+        with aspectlib.weave(SlotsTestClass, aspect):
+            inst = SlotsTestClass('stuff')
+            self.assertEqual(inst.foo, 'stuff')
+            self.assertEqual(inst.bar, ':)')
+            self.assertEqual(inst.inst, 'bar')
+            self.assertEqual(inst.klass, 'bar')
+            self.assertEqual(inst.static, 'bar')
+            self.assertEqual(SlotsTestClass.class_foo, 'stuff')
+            self.assertEqual(SlotsTestClass.class_bar, ':)')
+            self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'bar')
+            self.assertEqual(history, [
+                (inst, 'stuff'),
+                (SlotsTestClass, 'stuff'),
+                ('stuff',),
+                ('stuff',),
+            ])
+            del history[:]
+
+            inst = SlotsTestSubClass('stuff')
+            self.assertEqual(inst.sub_foo, 'stuff')
+            self.assertEqual(inst.sub_bar, ':)')
+            self.assertEqual(inst.inst, 'bar')
+            self.assertEqual(inst.klass, 'bar')
+            self.assertEqual(inst.static, 'bar')
+            self.assertEqual(SlotsTestSubClass.class_sub_foo, 'stuff')
+            self.assertEqual(SlotsTestSubClass.class_sub_bar, ':)')
+            self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'bar')
+            self.assertEqual(history, [
+                (inst, 'stuff'),
+                (SlotsTestSubClass, 'stuff'),
+                ('stuff',),
+                ('stuff',),
+            ])
+            del history[:]
+
+            inst = SlotsTestSubSubClass('stuff')
+            self.assertEqual(inst.subsub_foo, 'stuff')
+            self.assertEqual(inst.subsub_bar, ':)')
+            self.assertEqual(inst.inst, 'bar')
+            self.assertEqual(inst.klass, 'bar')
+            self.assertEqual(inst.static, 'bar')
+            self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'stuff')
+            self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, ':)')
+            self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'bar')
+            self.assertEqual(history, [
+                (inst, 'stuff'),
+                (SlotsTestSubSubClass, 'stuff'),
+                ('stuff',),
+                ('stuff',),
+            ])
+            del history[:]
+
+        inst = SlotsTestClass('stuff')
+        self.assertEqual(inst.foo, 'stuff')
+        self.assertEqual(inst.bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'stuff')
+        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
+        self.assertEqual(SlotsTestClass.class_bar, None)
+        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
+
+        inst = SlotsTestSubClass('stuff')
+        self.assertEqual(inst.sub_foo, 'stuff')
+        self.assertEqual(inst.sub_bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'substuff')
+        self.assertEqual(SlotsTestSubClass.class_sub_foo, 'stuff')
+        self.assertEqual(SlotsTestSubClass.class_sub_bar, None)
+        self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'substuff')
+
+        inst = SlotsTestSubSubClass('stuff')
+        self.assertEqual(inst.subsub_foo, 'stuff')
+        self.assertEqual(inst.subsub_bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'subsubstuff')
+        self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'stuff')
+        self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, None)
+        self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'subsubstuff')
+
+        self.assertEqual(history, [])
+
+
+    def test_weave_class_on_init(self):
+        history = []
+
+        @aspectlib.Aspect
+        def aspect(*args):
+            history.append(args)
+            args += ':)',
+            yield aspectlib.Proceed(*args)
+            yield aspectlib.Return('bar')
+
+        inst = SlotsTestClass('stuff')
+        self.assertEqual(inst.foo, 'stuff')
+        self.assertEqual(inst.bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'stuff')
+        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
+        self.assertEqual(SlotsTestClass.class_bar, None)
+        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
+
+        inst = SlotsTestClass()
+        with aspectlib.weave(SlotsTestClass, aspect, patch_on_init=True):
+
+            inst = SlotsTestClass('stuff')
+            self.assertEqual(inst.foo, 'stuff')
+            self.assertEqual(inst.bar, None)
+            self.assertEqual(inst.inst, None)
+            self.assertEqual(inst.foobar('bluff'), 'bar')
+            self.assertEqual(inst.foo, 'bluff')
+            self.assertEqual(inst.bar, ':)')
+            self.assertEqual(inst.class_foobar('bluff'), 'bar')
+            self.assertEqual(SlotsTestClass.class_foo, 'bluff')
+            self.assertEqual(SlotsTestClass.class_bar, ':)')
+            self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'bar')
+
+            inst = SlotsTestSubClass('stuff')
+            self.assertEqual(inst.sub_foo, 'stuff')
+            self.assertEqual(inst.sub_bar, None)
+            self.assertEqual(inst.inst, None)
+            self.assertEqual(inst.foobar('bluff'), 'bar')
+            self.assertEqual(inst.sub_foo, 'bluff')
+            self.assertEqual(inst.sub_bar, ':)')
+            self.assertEqual(inst.class_foobar('bluff'), 'bar')
+            self.assertEqual(SlotsTestSubClass.class_sub_foo, 'bluff')
+            self.assertEqual(SlotsTestSubClass.class_sub_bar, ':)')
+            self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'bar')
+
+            inst = SlotsTestSubSubClass('stuff')
+            self.assertEqual(inst.subsub_foo, 'stuff')
+            self.assertEqual(inst.subsub_bar, None)
+            self.assertEqual(inst.inst, None)
+            self.assertEqual(inst.foobar('bluff'), 'bar')
+            self.assertEqual(inst.subsub_foo, 'bluff')
+            self.assertEqual(inst.subsub_bar, ':)')
+            self.assertEqual(inst.class_foobar('bluff'), 'bar')
+            self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'bluff')
+            self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, ':)')
+            self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'bar')
+
+        del history[:]
+
+        inst = SlotsTestClass('stuff')
+        self.assertEqual(inst.foo, 'stuff')
+        self.assertEqual(inst.bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'stuff')
+        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
+        self.assertEqual(SlotsTestClass.class_bar, None)
+        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
+
+        inst = SlotsTestSubClass('stuff')
+        self.assertEqual(inst.sub_foo, 'stuff')
+        self.assertEqual(inst.sub_bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'substuff')
+        self.assertEqual(SlotsTestSubClass.class_sub_foo, 'stuff')
+        self.assertEqual(SlotsTestSubClass.class_sub_bar, None)
+        self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'substuff')
+
+        inst = SlotsTestSubSubClass('stuff')
+        self.assertEqual(inst.subsub_foo, 'stuff')
+        self.assertEqual(inst.subsub_bar, None)
+        self.assertEqual(inst.inst, None)
+        self.assertEqual(inst.klass, None)
+        self.assertEqual(inst.static, 'subsubstuff')
+        self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'stuff')
+        self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, None)
+        self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'subsubstuff')
+
+        self.assertEqual(history, [])
+
     def test_weave_class_old_style(self):
         history = []
 
@@ -541,6 +740,63 @@ class LegacyTestSubSubClass(LegacyTestSubClass):
     def static_foobar(foo, bar=None):
         return 'subsub' + (bar or foo)
 
+
+class SlotsTestClass(object):
+    __slots__ = 'inst', 'klass', 'static', 'other', 'foo', 'bar'
+    some = 'attribute'
+
+    def __init__(self, foo=None):
+        self.inst = self.foobar(foo)
+        self.klass = self.class_foobar(foo)
+        self.static = self.static_foobar(foo)
+        self.other = 123
+
+    def foobar(self, foo, bar=None):
+        self.foo = foo
+        self.bar = bar
+
+    @classmethod
+    def class_foobar(cls, foo, bar=None):
+        cls.class_foo = foo
+        cls.class_bar = bar
+
+    @staticmethod
+    def static_foobar(foo, bar=None):
+        return bar or foo
+
+
+class SlotsTestSubClass(SlotsTestClass):
+    __slots__ = 'inst', 'klass', 'static', 'other', 'foo', 'bar', 'sub_foo', 'sub_bar'
+
+    def foobar(self, foo, bar=None):
+        self.sub_foo = foo
+        self.sub_bar = bar
+
+    @classmethod
+    def class_foobar(cls, foo, bar=None):
+        cls.class_sub_foo = foo
+        cls.class_sub_bar = bar
+
+    @staticmethod
+    def static_foobar(foo, bar=None):
+        return 'sub' + (bar or foo)
+
+
+class SlotsTestSubSubClass(SlotsTestSubClass):
+    __slots__ = 'inst', 'klass', 'static', 'other', 'foo', 'bar', 'sub_foo', 'sub_bar', 'subsub_foo', 'subsub_bar'
+
+    def foobar(self, foo, bar=None):
+        self.subsub_foo = foo
+        self.subsub_bar = bar
+
+    @classmethod
+    def class_foobar(cls, foo, bar=None):
+        cls.class_subsub_foo = foo
+        cls.class_subsub_bar = bar
+
+    @staticmethod
+    def static_foobar(foo, bar=None):
+        return 'subsub' + (bar or foo)
 
 if __name__ == '__main__':
     unittest.main()
