@@ -13,7 +13,7 @@ setup(
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
     author='Ionel Cristian Mărieș',
     author_email='contact@ionelmc.ro',
-    py_modules=['aspectlib'],
+    packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
     zip_safe=False,
@@ -33,6 +33,7 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     install_requires=[
+        'wrapt>=1.6.0',
     ],
     extras_require={
     }
