@@ -107,9 +107,9 @@ def _patch_module(mod, name, value, replacement):
         if obj is value:
             logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
             setattr(mod, alias, replacement)
-            rollbacks.append(lambda: setattr(mod, alias, obj))
-        if alias == name:
-            seen = True
+            rollbacks.append(lambda alias=alias: setattr(mod, alias, value))
+            if alias == name:
+                seen = True
     if not seen:
         warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module !')
         logger.debug(" * Saving %s on %s.%s ...", replacement, location, name)
@@ -117,12 +117,14 @@ def _patch_module(mod, name, value, replacement):
         rollbacks.append(lambda: setattr(mod, name, value))
     return rollbacks
 
+
 def _silly_bind(func):
     def bound(self, *args, **kwargs):
         return func(*args, **kwargs)
     bound.__name__ = func.__name__
     bound.__doc__ = func.__doc__
     return bound
+
 
 def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods):
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
