@@ -39,7 +39,7 @@ def log(func=None,
         result_repr=strip_non_ascii,
         use_logging='CRITICAL',
         print_to=None):
-    loglevel = use_logging and logging._checkLevel(use_logging)
+    loglevel = use_logging and logging._levelNames.get(use_logging, logging.CRITICAL)
 
     def dump(buf):
         try:

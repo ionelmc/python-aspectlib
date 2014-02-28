@@ -20,12 +20,12 @@ except ImportError:
 def some_meth(*args, **kwargs):
     return ''.join(chr(i) for i in range(255))
 
-LOG_TEST_SIMPLE = '''^some_meth\(1, 2, 3, a=4\) +<<< tests/test_aspectlib_debug.py:\d+:test_simple
+LOG_TEST_SIMPLE = '''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
 some_meth => \.\.\.\.\.\.\.\.\.\t
 \x0b\x0c\r\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
 $'''
 
-LOG_TEST_SOCKET = """^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< tests/test_aspectlib_debug.py:\d+:test_socket
+LOG_TEST_SOCKET = """^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_socket.*
 \{_?socket(object)?\}.connect \~ raised \[Errno 111\] Connection refused\n$"""
 
 class MyStuff(object):
@@ -43,7 +43,7 @@ class LoggerTestCase(unittest.TestCase):
 
     def test_simple(self):
         buf = StringIO()
-        with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, stacktrace=1)):
+        with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, stacktrace=2)):
             some_meth(1, 2, 3, a=4)
 
         self.assertRegexpMatches(buf.getvalue(), LOG_TEST_SIMPLE)
@@ -70,16 +70,16 @@ class LoggerTestCase(unittest.TestCase):
 
     def test_attributes(self):
         buf = StringIO()
-        with aspectlib.weave(MyStuff, aspectlib.debug.log(print_to=buf, stacktrace=1, show_attrs=('foo', 'bar()')), skip_methods=('bar',)):
+        with aspectlib.weave(MyStuff, aspectlib.debug.log(print_to=buf, stacktrace=2, show_attrs=('foo', 'bar()')), skip_methods=('bar',)):
             MyStuff('bar').stuff()
         print(buf.getvalue())
-        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< tests/test_aspectlib_debug.py:\d+:test_attributes\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
+        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
         MyStuff('bar').stuff()
-        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< tests/test_aspectlib_debug.py:\d+:test_attributes\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
+        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
 
     def test_socket(self):
         buf = StringIO()
-        with aspectlib.weave(socket.socket, aspectlib.debug.log(print_to=buf, stacktrace=1), patch_on_init=True):
+        with aspectlib.weave(socket.socket, aspectlib.debug.log(print_to=buf, stacktrace=2), patch_on_init=True):
             s = socket.socket()
             try:
                 s.connect(('127.0.0.1', 1))
