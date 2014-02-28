@@ -3,7 +3,6 @@ import os
 import socket
 import sys
 from itertools import islice
-import ssl
 import string
 
 import wrapt
@@ -32,7 +31,7 @@ def log(func=None, stacktrace=10, align_stacktrace=60, arguments=True, result=Tr
         instance_attributes=(), print_to=sys.stderr):
     def dump(buf):
         if strip_non_ascii:
-            buf = string.translate(buf, ASCII_ONLY)
+            buf = buf.translate(ASCII_ONLY)
         try:
             if use_logging:
                 logger.debug(buf)
