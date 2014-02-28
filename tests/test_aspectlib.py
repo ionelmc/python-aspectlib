@@ -531,6 +531,7 @@ class AOPTestCase(unittest.TestCase):
             inst = TestClass('stuff')
             self.assertEqual(history, [
                 (inst, 'stuff'),
+                (inst, 'stuff'),
                 (TestClass, 'stuff'),
                 ('stuff',),
             ])
@@ -539,6 +540,7 @@ class AOPTestCase(unittest.TestCase):
             inst = TestSubClass('stuff')
             self.assertEqual(history, [
                 (inst, 'stuff'),
+                (inst, 'stuff'),
                 (TestSubClass, 'stuff'),
                 ('stuff',),
             ])
@@ -546,6 +548,7 @@ class AOPTestCase(unittest.TestCase):
 
             inst = TestSubSubClass('stuff')
             self.assertEqual(history, [
+                (inst, 'stuff'),
                 (inst, 'stuff'),
                 (TestSubSubClass, 'stuff'),
                 ('stuff',),
