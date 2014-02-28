@@ -18,31 +18,29 @@ python-aspectlib
     :alt: PYPI Package
     :target: https://pypi.python.org/pypi/python-aspectlib
 
-Glossary, as it's too easy to get confused by terminology and most every AOP framework has different definitions:
+``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library.
+
+First, an AOP glossary, as it's too easy to get confused by terminology and most every AOP framework has different definitions:
 
 .. list-table::
 
-   * - **Concern**
-     - Cross-cutting concern, Collection of aspects
+   * - **Cut-point**
+     - Function that is advised.
    * - **Aspect**
-     - Function (generator) yielding advices
+     - Function (generator) yielding advices. ``aspectlib``'s Aspect is essentially just a function decorator.
+   * - **Weaving**
+     - Applying an *aspect* on one or more *cut-points*, in other words, decorating the *cut-point* functions 
+       in-place. This is esentially just *monkey-patching*.
    * - **Advice**
-     - Change that is applied in a cut-point. Can be one of:
+     - Change that is applied on a *cut-point* by an *aspect*. Can be one of:
 
        * ``aspectlib.Proceed`` - just go forward with the **cut-point**
        * ``aspectlib.Proceed(*args, **kwargs)`` - go forward with different arguments
        * ``aspectlib.Return`` - return ``None`` instead of whatever the **cut-point** would return
        * ``aspectlib.Return(value)`` - return ``value`` instead of whatever the **cut-point** would return
        * ``raise exception`` - make the **cut-point** raise an exception instead
-
-   * - **Cut-point**
-     - Function that is advised
-   * - And most importantly :-)
-
-       **Aspect-Oriented Programming**
-     - |
-       |
-       | Fancy-pants monkey patching
+   * - **Concern**
+     - Cross-cutting concern, Collection of aspects
 
 Now repeat after me: *aspects* that are *concerned* with **logging** are *advising* some *cut-points*.
 The *cut-points* don't need to care about **logging**, they just do their own business.
@@ -51,13 +49,28 @@ Does it make sense now ?
 Ok, but why ??
 ==============
 
-So AOP is just fancy pants monkey patching. Why not just monkey patch ?!
+An astute programmer reading this will notice that AOP is just shameless monkey-patching in disguise. Shame 
+on me for trying to trick you !
+
+So if AOP is just fancy-pants monkey-patching, why not just monkey patch ?!
 
 * You would need to handle yourself all different kids of patching (patching
   a module is different than patching a class, a function or a method for that matter).
   Why not let a library do all this gross patching mumbo-jumbo ?
 * Writting the actual wrappers is repetitive and boring. You can't reuse wrappers
   but *you can reuse aspects* !
+  
+But monkey-patching is wrong !
+------------------------------
+
+Technically, just the *weaving* is monkey-patching. It's completely optional, you can use the *aspects* from 
+``aspectlib`` as regular function decorators. 
+
+Otherwise, if you want the *wrong thing* done *right* ``aspectlib`` is exactly what you wanted. It should 
+handle the corner cases for you or give you easy knobs to tune the patching process (see the 
+``aspectlib.weave`` function). 
+
+If *weave* doesn't work for your scenatio please report a bug !
 
 Implementation status
 =====================
@@ -66,10 +79,8 @@ Weaving functions, methods, instances and classes is completed.
 
 Pending:
 
+* Whole-module weaving
 * Concerns
-* Aspectlib.debugging
-* Module weaving
-* Integration tests and tests for examples in *Usecase analysis*
 * *Anything else?*
 
 Requirements
@@ -78,10 +89,10 @@ Requirements
 :OS: Any
 :Runtime: Python 2.6, 2.7, 3.3 or PyPy
 
-Python 3.2, 3.1 and 3.0 are *NOT* supported !
+What ?! Python 3.2, 3.1 and 3.0 are *NOT* supported ? Nope, *ewwwww* !
 
-Usecase analysis
-================
+Examples
+========
 
 Retries
 -------
@@ -275,3 +286,8 @@ Mock behavior for tests::
         with aspectlib.weave(foo.Bar.stuff, mock_stuff):
             obj = foo.Bar()
             self.assertEqual(obj.stuff('special'), 'mocked-result')
+
+Reference
+=========
+
+TODO. Keep calm and read the (test) code.
