@@ -63,14 +63,14 @@ So if AOP is just fancy-pants monkey-patching, why not just monkey patch ?!
 But monkey-patching is wrong !
 ------------------------------
 
-Technically, just the *weaving* is monkey-patching. It's completely optional, you can use the *aspects* from 
-``aspectlib`` as regular function decorators. 
+Technically, only the *weaving* is monkey-patching. It's completely optional, you can use the *aspects* from 
+``aspectlib`` as regular function decorators.
 
-Otherwise, if you want the *wrong thing* done *right* ``aspectlib`` is exactly what you wanted. It should 
-handle the corner cases for you or give you easy knobs to tune the patching process (see the 
+Otherwise, if you want the *wrong thing* done *right* ``aspectlib`` is exactly that. It should 
+handle the corner cases for you and/or give you easy knobs to tune the patching process (see the 
 ``aspectlib.weave`` function). 
 
-If *weave* doesn't work for your scenatio please report a bug !
+If ``aspectlib.weave`` doesn't work for your scenario please report a bug !
 
 Implementation status
 =====================
