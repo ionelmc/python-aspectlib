@@ -20,12 +20,13 @@ except ImportError:
 def some_meth(*args, **kwargs):
     return ''.join(chr(i) for i in range(255))
 
-LOG_TEST_SIMPLE = '''^some_meth\(1, 2, 3, a=4\) +<<< aspectlib/debug\.py:\d+:logged
+LOG_TEST_SIMPLE = '''^some_meth\(1, 2, 3, a=4\) +<<< tests/test_aspectlib_debug.py:\d+:test_simple
 some_meth => \.\.\.\.\.\.\.\.\.\t
 \x0b\x0c\r\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
 $'''
-LOG_TEST_SOCKET = """^<_?socket(object)?>.connect\(\('127.0.0.1', 1\)\) +<<< aspectlib/debug.py:\d+:logged
-<_?socket(object)?>.connect\(\('127.0.0.1', 1\)\) +<<< aspectlib/debug.py:\d+:logged ~ raised \[Errno 111\] Connection refused\n$"""
+
+LOG_TEST_SOCKET = """^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< tests/test_aspectlib_debug.py:\d+:test_socket
+\{_?socket(object)?\}.connect \~ raised \[Errno 111\] Connection refused\n$"""
 
 class MyStuff(object):
     def __init__(self, foo):
@@ -61,7 +62,7 @@ class LoggerTestCase(unittest.TestCase):
         ch.setLevel(logging.DEBUG)
         aspectlib.debug.logger.addHandler(ch)
 
-        @aspectlib.debug.log(use_logging=True)
+        @aspectlib.debug.log
         def foo():
             pass
         foo()
@@ -69,14 +70,12 @@ class LoggerTestCase(unittest.TestCase):
 
     def test_attributes(self):
         buf = StringIO()
-        with aspectlib.weave(MyStuff, aspectlib.debug.log(print_to=buf, stacktrace=1, instance_attributes=('foo', 'bar()')), skip_methods=('bar',)):
+        with aspectlib.weave(MyStuff, aspectlib.debug.log(print_to=buf, stacktrace=1, show_attrs=('foo', 'bar()')), skip_methods=('bar',)):
             MyStuff('bar').stuff()
         print(buf.getvalue())
-        self.assertRegexpMatches(buf.getvalue(), "^<MyStuff foo='bar' bar='foo'>.stuff\(\) +<<< aspectlib/debug.py:\d+:logged\n<MyStuff foo='bar' bar='foo'>.stuff => bar\n$")
+        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< tests/test_aspectlib_debug.py:\d+:test_attributes\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
         MyStuff('bar').stuff()
-        self.assertRegexpMatches(buf.getvalue(), "^<MyStuff foo='bar' bar='foo'>.stuff\(\) +<<< aspectlib/debug.py:\d+:logged\n<MyStuff foo='bar' bar='foo'>.stuff => bar\n$")
-
-                                                  #"<MyStuff foo='bar'>.bar() +<<< aspectlib/debug.py:67:logged\n<MyStuff foo='bar'>.bar => foo\n<MyStuff foo='bar' bar='foo'>.stuff()                         <<< aspectlib/debug.py:67:logged\n<MyStuff foo='bar' bar='foo'>.stuff => bar\n"
+        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< tests/test_aspectlib_debug.py:\d+:test_attributes\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
 
     def test_socket(self):
         buf = StringIO()
