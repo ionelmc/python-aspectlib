@@ -3,9 +3,9 @@ from __future__ import print_function
 import sys
 import warnings
 from collections import deque
-from functools import wraps, partial
+from functools import wraps
+from itertools import chain
 from logging import getLogger
-from operator import setitem
 
 from types import FunctionType
 from types import GeneratorType
@@ -88,13 +88,16 @@ def _apply(aspect, function):
     return wrapper
 
 
-def weave(target, aspect, skip_magic_methods=True, skip_subclasses=False, patch_on_init=False, skip_methods=()):
+def weave(target, aspect, skip_magic_methods=True, skip_subclasses=False, patch_on_init=False, skip_methods=(), only_methods=None):
+    if only_methods and skip_methods:
+        raise RuntimeError("You can't use both `skip_methods` and `only_methods`.")
     return Entanglement(_weave(
         target, aspect,
         skip_magic_methods=skip_magic_methods,
         skip_subclasses=skip_subclasses,
         patch_on_init=patch_on_init,
-        skip_methods=skip_methods
+        skip_methods=skip_methods,
+        only_methods=only_methods
     ))
 
 
@@ -126,10 +129,14 @@ def _silly_bind(func):
     return bound
 
 
-def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods):
+def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods, only_methods):
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
-
-    if PY3 and isinstance(target, MethodType):
+    if isinstance(target, (list, tuple)):
+        return chain.from_iterable(
+            _weave(item, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods, only_methods)
+            for item in target
+        )
+    elif PY3 and isinstance(target, MethodType):
         inst = target.__self__
         name = target.__name__
         logger.debug("Weaving %r (%s) as instance method.", target, name)
@@ -171,7 +178,9 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, s
         rollbacks = []
         if not skip_subclasses and hasattr(target, '__subclasses__'):
             for sub_class in target.__subclasses__():
-                rollbacks.extend(_weave(sub_class, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods))
+                rollbacks.extend(_weave(
+                    sub_class, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods, only_methods
+                ))
         if patch_on_init:
             logger.debug("Weaving %r as class (on demand at __init__ time).", target)
 
@@ -179,9 +188,11 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, s
                 super(SubClass, self).__init__(*args, **kwargs)
                 for name in dir(self):
                     func = getattr(self, name, None)
-                    if func is None or skip_magic_methods and name.startswith('__') or name.endswith('__'):
+                    if only_methods and name not in only_methods:
                         continue
-                    if name not in skip_methods and name not in wrappers and callable(func):
+                    elif func is None or skip_magic_methods and name.startswith('__') or name.endswith('__'):
+                        continue
+                    elif name not in skip_methods and name not in wrappers and callable(func):
                         setattr(self, name, _apply(aspect, _silly_bind(func)).__get__(self, SubClass))
                     else:
                         continue
@@ -189,9 +200,11 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, s
                 '__init__': __init__ if skip_magic_methods else _apply(aspect, __init__)
             }
             for name, func in target.__dict__.items():
-                if skip_magic_methods and name.startswith('__') and name.endswith('__'):
+                if only_methods and name not in only_methods:
                     continue
-                if isinstance(func, staticmethod):
+                elif skip_magic_methods and name.startswith('__') and name.endswith('__'):
+                    continue
+                elif isinstance(func, staticmethod):
                     if hasattr(func, '__func__'):
                         wrappers[name] = staticmethod(_apply(aspect, func.__func__))
                     else:
@@ -213,9 +226,11 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, s
             logger.debug("Weaving %r as class.", target)
             original = {}
             for name, func in target.__dict__.items():
-                if name in skip_methods or skip_magic_methods and name.startswith('__') and name.endswith('__'):
+                if only_methods and name not in only_methods:
                     continue
-                if isinstance(func, staticmethod):
+                elif name in skip_methods or skip_magic_methods and name.startswith('__') and name.endswith('__'):
+                    continue
+                elif isinstance(func, staticmethod):
                     if hasattr(func, '__func__'):
                         setattr(target, name, staticmethod(_apply(aspect, func.__func__)))
                     else:
