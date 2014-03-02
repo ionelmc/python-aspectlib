@@ -26,7 +26,7 @@ some_meth => \.\.\.\.\.\.\.\.\.\t
 $'''
 
 LOG_TEST_SOCKET = """^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_socket.*
-\{_?socket(object)?\}.connect \~ raised \[Errno 111\] Connection refused\n$"""
+\{_?socket(object)?\}.connect \~ raised (ConnectionRefusedError|error)\(111, 'Connection refused'\)\n$"""
 
 class MyStuff(object):
     def __init__(self, foo):
@@ -43,7 +43,7 @@ class LoggerTestCase(unittest.TestCase):
 
     def test_simple(self):
         buf = StringIO()
-        with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, stacktrace=2)):
+        with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, module=False, stacktrace=2)):
             some_meth(1, 2, 3, a=4)
 
         self.assertRegexpMatches(buf.getvalue(), LOG_TEST_SIMPLE)
@@ -70,7 +70,12 @@ class LoggerTestCase(unittest.TestCase):
 
     def test_attributes(self):
         buf = StringIO()
-        with aspectlib.weave(MyStuff, aspectlib.debug.log(print_to=buf, stacktrace=2, show_attrs=('foo', 'bar()')), skip_methods=('bar',)):
+        with aspectlib.weave(MyStuff, aspectlib.debug.log(
+            print_to=buf,
+            stacktrace=2,
+            module=False,
+            attributes=('foo', 'bar()')
+        ), skip_methods=('bar',)):
             MyStuff('bar').stuff()
         print(buf.getvalue())
         self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
@@ -79,7 +84,11 @@ class LoggerTestCase(unittest.TestCase):
 
     def test_socket(self):
         buf = StringIO()
-        with aspectlib.weave(socket.socket, aspectlib.debug.log(print_to=buf, stacktrace=2), patch_on_init=True):
+        with aspectlib.weave(socket.socket, aspectlib.debug.log(
+            print_to=buf,
+            stacktrace=2,
+            module=False
+        ), patch_on_init=True):
             s = socket.socket()
             try:
                 s.connect(('127.0.0.1', 1))
