@@ -32,10 +32,13 @@ def strip_non_ascii(val):
 def log(func=None,
         stacktrace=10,
         stacktrace_align=60,
-        show_attrs=(),
+        attributes=(),
+        module=True,
         arguments=True,
         arguments_repr=repr,
         result=True,
+        exception=True,
+        exception_repr=repr,
         result_repr=strip_non_ascii,
         use_logging='CRITICAL',
         print_to=None):
@@ -57,7 +60,7 @@ def log(func=None,
         if instance:
             instance_type = type(instance)
             info = []
-            for key in show_attrs:
+            for key in attributes:
                 if key.endswith('()'):
                     call = key = key.rstrip('()')
                 else:
@@ -67,13 +70,20 @@ def log(func=None,
                     info.append(' %s=%s' % (
                         key, arguments_repr(val() if call else val)
                     ))
-            sig = buf = '{%s%s}.%s' % (instance_type.__name__, ''.join(info), name)
+            sig = buf = '{%s%s%s}.%s' % (
+                instance_type.__module__ + '.' if module else '',
+                instance_type.__name__,
+                ''.join(info),
+                name
+            )
         else:
             sig = buf = func.__name__
         if arguments:
             buf += '(%s%s)' % (
-                ', '.join(repr(i) for i in args),
-                ((', ' if args else '') + ', '.join('%s=%r' % i for i in kwargs.items())) if kwargs else '',
+                ', '.join(repr(i) for i in (args if arguments is True else args[:arguments])),
+                ((', ' if args else '') + ', '.join('%s=%r' % i for i in kwargs.items()))
+                if kwargs and arguments is True
+                else '',
             )
         if stacktrace:
             buf = ("%%-%ds  <<< %%s" % stacktrace_align) % (buf, _make_stack(skip=1, length=stacktrace))
@@ -81,7 +91,8 @@ def log(func=None,
         try:
             res = func(*args, **kwargs)
         except Exception as exc:
-            dump('%s ~ raised %s' % (sig, result_repr(exc)))
+            if exception:
+                dump('%s ~ raised %s' % (sig, exception_repr(exc)))
             raise
 
         if result:
