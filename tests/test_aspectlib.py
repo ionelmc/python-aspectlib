@@ -3,6 +3,7 @@ from __future__ import print_function
 import unittest
 
 import aspectlib
+from aspectlib.test import override_result
 
 
 class AOPTestCase(unittest.TestCase):
@@ -87,11 +88,7 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(calls, ['first', 'second'])
 
     def test_weave_func(self):
-        @aspectlib.Aspect
-        def aspect(*args, **kwargs):
-            yield aspectlib.Return('stuff')
-
-        with aspectlib.weave(module_func, aspect):
+        with aspectlib.weave(module_func, override_result('stuff')):
             self.assertEqual(module_func(), 'stuff')
 
         self.assertEqual(module_func(), None)
@@ -347,7 +344,7 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
 
         inst = SlotsTestClass()
-        with aspectlib.weave(SlotsTestClass, aspect, patch_on_init=True):
+        with aspectlib.weave(SlotsTestClass, aspect, on_init=True):
 
             inst = SlotsTestClass('stuff')
             self.assertEqual(inst.foo, 'stuff')
@@ -633,8 +630,26 @@ class AOPTestCase(unittest.TestCase):
 
         self.assertRaises(RuntimeError, aspectlib.weave, 1, aspect)
 
+    def test_weave_subclass(self):
+        with aspectlib.weave(Sub, override_result('foobar'), on_init=True):
+            self.assertEqual(Sub().meth(), 'foobar')
+
+        self.assertEqual(Sub().meth(), 'base')
+
+    def test_weave_multiple(self):
+        with aspectlib.weave((module_func, module_func2), override_result('foobar')):
+            self.assertEqual(module_func(), 'foobar')
+            self.assertEqual(module_func2(), 'foobar')
+
+        self.assertEqual(module_func(), None)
+        self.assertEqual(module_func2(), None)
+
 
 def module_func():
+    pass
+
+
+def module_func2():
     pass
 
 
@@ -800,6 +815,16 @@ class SlotsTestSubSubClass(SlotsTestSubClass):
     @staticmethod
     def static_foobar(foo, bar=None):
         return 'subsub' + (bar or foo)
+
+
+class Base(object):
+    def meth(*_):
+        return 'base'
+
+
+class Sub(Base):
+    pass
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,12 +1,18 @@
 from __future__ import print_function
-
+try:
+    import __builtin__
+except ImportError:
+    import builtins as __builtin__
+import platform
 import sys
 import warnings
 from collections import deque
 from functools import wraps
 from itertools import chain
 from logging import getLogger
+from operator import setitem
 
+from types import BuiltinFunctionType
 from types import FunctionType
 from types import GeneratorType
 from types import MethodType
@@ -20,6 +26,10 @@ logger = getLogger(__name__)
 
 PY3 = sys.version_info[0] == 3
 PY2 = sys.version_info[0] == 2
+PYPY = platform.python_implementation() == 'PyPy'
+
+if PY3:
+    unicode = str
 
 
 class Proceed(object):
@@ -88,14 +98,14 @@ def _apply(aspect, function):
     return wrapper
 
 
-def weave(target, aspect, skip_magic_methods=True, skip_subclasses=False, patch_on_init=False, skip_methods=(), only_methods=None):
+def weave(target, aspect, skip_magic_methods=True, skip_subclasses=False, on_init=False, skip_methods=(), only_methods=None):
     if only_methods and skip_methods:
         raise RuntimeError("You can't use both `skip_methods` and `only_methods`.")
     return Entanglement(_weave(
         target, aspect,
         skip_magic_methods=skip_magic_methods,
         skip_subclasses=skip_subclasses,
-        patch_on_init=patch_on_init,
+        on_init=on_init,
         skip_methods=skip_methods,
         only_methods=only_methods
     ))
@@ -129,14 +139,28 @@ def _silly_bind(func):
     return bound
 
 
-def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods, only_methods):
+def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
     if isinstance(target, (list, tuple)):
-        return chain.from_iterable(
-            _weave(item, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods, only_methods)
+        return list(chain.from_iterable(
+            _weave(item, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
             for item in target
-        )
-    elif PY3 and isinstance(target, MethodType):
+        ))
+    #elif isinstance(target, (unicode, str)):
+    #    assert '.' in target, "Need at least a module in the target specification !"
+    #    parts = target.split('.')
+    #    for pos in reversed(range(1, len(parts))):
+    #        mod, target = '.'.join(parts[:pos]), '.'.join(parts[pos:])
+    #        try:
+    #            mod = __import__(mod)
+    #        except ImportError:
+    #            continue
+    name = getattr(target, '__name__', None)
+    if name and getattr(__builtin__, name, None) is target:
+        logger.debug("Weaving %r (%s) as a builtin function.", target, name)
+        setattr(__builtin__, name, _apply(aspect, target))
+        return lambda: setattr(__builtin__, name, target),
+    if PY3 and isinstance(target, MethodType):
         inst = target.__self__
         name = target.__name__
         logger.debug("Weaving %r (%s) as instance method.", target, name)
@@ -179,9 +203,9 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, patch_on_init, s
         if not skip_subclasses and hasattr(target, '__subclasses__'):
             for sub_class in target.__subclasses__():
                 rollbacks.extend(_weave(
-                    sub_class, aspect, skip_magic_methods, skip_subclasses, patch_on_init, skip_methods, only_methods
+                    sub_class, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
                 ))
-        if patch_on_init:
+        if on_init:
             logger.debug("Weaving %r as class (on demand at __init__ time).", target)
 
             def __init__(self, *args, **kwargs):

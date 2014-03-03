@@ -88,7 +88,7 @@ class LoggerTestCase(unittest.TestCase):
             print_to=buf,
             stacktrace=2,
             module=False
-        ), patch_on_init=True):
+        ), on_init=True):
             s = socket.socket()
             try:
                 s.connect(('127.0.0.1', 1))

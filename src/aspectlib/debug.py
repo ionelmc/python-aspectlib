@@ -4,7 +4,7 @@ import sys
 from itertools import islice
 import string
 
-import wrapt
+from wrapt import decorator
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def log(func=None,
         except Exception as exc:
             logger.critical('Failed to log a message: %s', exc, exc_info=True)
 
-    @wrapt.decorator
+    @decorator
     def logged(func, instance, args, kwargs, _missing=object()):
         name = func.__name__
         if instance:
