@@ -56,7 +56,7 @@ class Aspect(object):
                 raise RuntimeError("advise_function %s did not return a generator." % self.advise_function)
             advice = advisor.send(None)
             while True:
-                if advice is Proceed or isinstance(advice, Proceed):
+                if advice is Proceed or advice is None or isinstance(advice, Proceed):
                     if advice is not Proceed:
                         args = advice.args
                         kwargs = advice.kwargs
