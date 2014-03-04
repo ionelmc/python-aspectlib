@@ -9,18 +9,18 @@ from wrapt import decorator
 logger = logging.getLogger(__name__)
 
 
-def _frames(frame):
+def frame_iterator(frame):
     while frame:
         yield frame
         frame = frame.f_back
 
 
-def _make_stack(skip=0, length=6, _sep=os.path.sep):
+def format_stack(skip=0, length=6, _sep=os.path.sep):
     return ' < '.join("%s:%s:%s" % (
         '/'.join(f.f_code.co_filename.split(_sep)[-2:]),
         f.f_lineno,
         f.f_code.co_name
-    ) for f in islice(_frames(sys._getframe(1 + skip)), length))
+    ) for f in islice(frame_iterator(sys._getframe(1 + skip)), length))
 
 ASCII_ONLY = ''.join(i if i in string.printable else '.' for i in (chr(c) for c in range(256)))
 
@@ -86,7 +86,7 @@ def log(func=None,
                 else '',
             )
         if stacktrace:
-            buf = ("%%-%ds  <<< %%s" % stacktrace_align) % (buf, _make_stack(skip=1, length=stacktrace))
+            buf = ("%%-%ds  <<< %%s" % stacktrace_align) % (buf, format_stack(skip=1, length=stacktrace))
         dump(buf)
         try:
             res = func(*args, **kwargs)
