@@ -7,13 +7,13 @@ from aspectlib.test import mock
 
 class AOPTestCase(unittest.TestCase):
     def test_mock_builtin(self):
-        with aspectlib.weave(open, mock(returns='foobar')):
+        with aspectlib.weave(open, mock('foobar')):
             self.assertEqual(open('???'), 'foobar')
 
         self.assertNotEqual(open(__file__), 'foobar')
 
     #def test_fork(self):
-    #    with aspectlib.weave('os.fork', mock(returns='foobar')):
+    #    with aspectlib.weave('os.fork', mock('foobar')):
     #        pid = os.fork()
     #        if not pid:
     #            os._exit()

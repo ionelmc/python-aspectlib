@@ -97,7 +97,7 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(calls, ['first', 'second'])
 
     def test_weave_func(self):
-        with aspectlib.weave(module_func, mock(returns='stuff')):
+        with aspectlib.weave(module_func, mock('stuff')):
             self.assertEqual(module_func(), 'stuff')
 
         self.assertEqual(module_func(), None)
@@ -640,26 +640,26 @@ class AOPTestCase(unittest.TestCase):
         self.assertRaises(RuntimeError, aspectlib.weave, 1, aspect)
 
     def test_weave_subclass(self, Bub=Sub):
-        with aspectlib.weave(Sub, mock(returns='foobar'), on_init=True):
+        with aspectlib.weave(Sub, mock('foobar'), on_init=True):
             self.assertEqual(Sub().meth(), 'foobar')
             self.assertEqual(Bub().meth(), 'base')
         self.assertEqual(Sub().meth(), 'base')
         self.assertTrue(Bub is Sub)
 
     def test_weave_subclass_meth_manual(self):
-        with aspectlib.weave(Sub, mock(returns='foobar'), on_init=True, only_methods=['meth']):
+        with aspectlib.weave(Sub, mock('foobar'), on_init=True, only_methods=['meth']):
             self.assertEqual(Sub().meth(), 'foobar')
 
         self.assertEqual(Sub().meth(), 'base')
 
     def test_weave_subclass_meth_auto(self):
-        with aspectlib.weave(Sub.meth, mock(returns='foobar'), on_init=True):
+        with aspectlib.weave(Sub.meth, mock('foobar'), on_init=True):
             self.assertEqual(Sub().meth(), 'foobar')
 
         self.assertEqual(Sub().meth(), 'base')
 
     def test_weave_multiple(self):
-        with aspectlib.weave((module_func, module_func2), mock(returns='foobar')):
+        with aspectlib.weave((module_func, module_func2), mock('foobar')):
             self.assertEqual(module_func(), 'foobar')
             self.assertEqual(module_func2(), 'foobar')
 

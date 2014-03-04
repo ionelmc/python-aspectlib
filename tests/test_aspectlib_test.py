@@ -22,6 +22,18 @@ class AOPTestCase(unittest.TestCase):
             (None, (3, ), {'b': 4}),
         ])
 
+    def test_record_with_call(self):
+        called = []
+        @record(call=True)
+        def fun():
+            called.append(True)
+
+        fun()
+        self.assertEqual(fun.calls, [
+            (None, (), {}),
+        ])
+        self.assertEqual(called, [True])
+
     def test_record_as_context(self):
         with record(module_fun) as history:
             module_fun(2, 3)
@@ -38,23 +50,23 @@ class AOPTestCase(unittest.TestCase):
         self.assertEqual(history.calls, [])
 
     def test_bad_mock(self):
-        self.assertRaises(AssertionError, mock)
-        self.assertRaises(AssertionError, mock, call=False)
+        self.assertRaises(TypeError, mock)
+        self.assertRaises(TypeError, mock, call=False)
 
     def test_simple_mock(self):
-        self.assertEqual("foobar", mock(returns="foobar")(module_fun)(1))
+        self.assertEqual("foobar", mock("foobar")(module_fun)(1))
 
     def test_mock_no_calls(self):
         with record(module_fun) as history:
-            self.assertEqual("foobar", mock(returns="foobar")(module_fun)(2))
+            self.assertEqual("foobar", mock("foobar")(module_fun)(2))
         self.assertEqual(history.calls, [])
 
     def test_mock_with_calls(self):
         with record(module_fun) as history:
-            self.assertEqual("foobar", mock(returns="foobar", call=True)(module_fun)(3))
+            self.assertEqual("foobar", mock("foobar", call=True)(module_fun)(3))
         self.assertEqual(history.calls, [(None, (3,), {})])
 
     def test_mock_with_calls_and_default_value(self):
         with record(module_fun) as history:
-            self.assertEqual(None, mock(call=True)(module_fun)(3))
+            self.assertEqual("foobar", mock("foobar", call=True)(module_fun)(3))
         self.assertEqual(history.calls, [(None, (3,), {})])

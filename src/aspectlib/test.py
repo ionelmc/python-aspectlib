@@ -1,5 +1,5 @@
 from collections import namedtuple
-from contextlib import contextmanager
+from functools import partial
 from functools import wraps
 
 from wrapt.decorators import FunctionWrapper
@@ -11,18 +11,13 @@ _DEFAULT = object()
 _DEFAULT_FALSE = object()
 
 
-def mock(returns=_DEFAULT, call=_DEFAULT_FALSE):
-    assert call and call is not _DEFAULT_FALSE or returns is not _DEFAULT, "`call` must be True if `returns` is DEFAULT !"
-
+def mock(return_value, call=_DEFAULT_FALSE):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             if call and call is not _DEFAULT_FALSE:
-                value = func(*args, **kwargs)
-            if returns is not _DEFAULT:
-                return returns
-            else:
-                return value
+                func(*args, **kwargs)
+            return return_value
         return wrapper
     return decorator
 
@@ -36,10 +31,17 @@ class _RecordWrapper(FunctionWrapper):
         self.entanglement.rollback()
 
 
-def record(wrapped):
-    def record_wrapper(wrapped, instance, args, kwargs):
-        calls.append(_Call(instance, args, kwargs))
-        return wrapped(*args, **kwargs)
-    recorded = _RecordWrapper(wrapped, record_wrapper)
-    calls = recorded.calls = []
-    return recorded
+def record(func=None, call=_DEFAULT_FALSE):
+    def record_decorator(func):
+        def record_wrapper(wrapped, instance, args, kwargs):
+            calls.append(_Call(instance, args, kwargs))
+            if call and call is not _DEFAULT_FALSE:
+                return wrapped(*args, **kwargs)
+        recorded = _RecordWrapper(func, record_wrapper)
+        calls = recorded.calls = []
+        return recorded
+
+    if func:
+        return record_decorator(func)
+    else:
+        return partial(record, call=call)
