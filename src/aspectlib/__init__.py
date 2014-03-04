@@ -139,6 +139,12 @@ def _silly_bind(func):
     return bound
 
 
+def _weave_module(mod, target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
+    logger.debug("Weaving %r as plain function.", target)
+    name = target.__name__
+    assert getattr(mod, name) is target
+    return _patch_module(mod, name, target, _apply(aspect, target))
+
 def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
     if isinstance(target, (list, tuple)):
@@ -156,11 +162,13 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
     #        except ImportError:
     #            continue
     name = getattr(target, '__name__', None)
+    #print(name, name and getattr(__builtin__, name, None), target)
     if name and getattr(__builtin__, name, None) is target:
-        logger.debug("Weaving %r (%s) as a builtin function.", target, name)
-        setattr(__builtin__, name, _apply(aspect, target))
-        return lambda: setattr(__builtin__, name, target),
-    if PY3 and isinstance(target, MethodType):
+        return _weave_module(
+            __builtin__, target, aspect,
+            skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
+        )
+    elif PY3 and isinstance(target, MethodType):
         inst = target.__self__
         name = target.__name__
         logger.debug("Weaving %r (%s) as instance method.", target, name)
@@ -178,11 +186,10 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
         setattr(owner, name, _apply(aspect, target))
         return lambda: setattr(owner, name, target),
     elif PY2 and isinstance(target, FunctionType):
-        logger.debug("Weaving %r as plain function.", target)
-        mod = __import__(target.__module__)
-        name = target.__name__
-        assert getattr(mod, name) is target
-        return _patch_module(mod, name, target, _apply(aspect, target))
+        return _weave_module(
+            __import__(target.__module__), target, aspect,
+            skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
+        )
     elif PY2 and isinstance(target, MethodType):
         if target.im_self:
             inst = target.im_self
