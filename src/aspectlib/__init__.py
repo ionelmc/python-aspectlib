@@ -80,18 +80,16 @@ class Fabric(object):
 
 class Entanglement(object):  # pylint: disable=C0103
     def __init__(self, rollbacks):
-        self.rollbacks = rollbacks
-
-    def merge(self, entanglement):
-        self.rollbacks.extend(entanglement.rollbacks)
+        self._rollbacks = rollbacks
 
     def __enter__(self):
         return self
 
     def __exit__(self, *_):
-        for rollback in self.rollbacks:
+        for rollback in self._rollbacks:
             rollback()
 
+    rollback = __exit__
 
 def _apply(aspect, function):
     logger.debug('Applying aspect %s to function %s.', aspect, function)
