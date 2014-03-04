@@ -10,9 +10,7 @@ from collections import deque
 from functools import wraps
 from itertools import chain
 from logging import getLogger
-from operator import setitem
 
-from types import BuiltinFunctionType
 from types import FunctionType
 from types import GeneratorType
 from types import MethodType
@@ -76,6 +74,10 @@ class Aspect(object):
         return advice_wrapper
 
 
+class Fabric(object):
+    pass
+
+
 class Entanglement(object):  # pylint: disable=C0103
     def __init__(self, rollbacks):
         self.rollbacks = rollbacks
@@ -116,15 +118,21 @@ def _patch_module(mod, name, value, replacement):
     seen = False
     location = replacement.__module__ = mod.__name__
     for alias in dir(mod):
-        obj = getattr(mod, alias, None)
-        if obj is value:
-            logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
-            setattr(mod, alias, replacement)
-            rollbacks.append(lambda alias=alias: setattr(mod, alias, value))
-            if alias == name:
-                seen = True
+        if hasattr(mod, alias):
+            obj = getattr(mod, alias)
+            if obj is value:
+                logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
+                setattr(mod, alias, replacement)
+                rollbacks.append(lambda alias=alias: setattr(mod, alias, value))
+                if alias == name:
+                    seen = True
+            elif alias == name:
+                raise AssertionError("%s.%s = %s is not %s !" % (location, alias, obj, value))
+
     if not seen:
-        warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module !')
+        warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module !' % (
+            location, name, replacement
+        ))
         logger.debug(" * Saving %s on %s.%s ...", replacement, location, name)
         setattr(mod, name, replacement)
         rollbacks.append(lambda: setattr(mod, name, value))
@@ -145,6 +153,7 @@ def _weave_module(mod, target, aspect, skip_magic_methods, skip_subclasses, on_i
     assert getattr(mod, name) is target
     return _patch_module(mod, name, target, _apply(aspect, target))
 
+
 def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
     if isinstance(target, (list, tuple)):
@@ -162,7 +171,6 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
     #        except ImportError:
     #            continue
     name = getattr(target, '__name__', None)
-    #print(name, name and getattr(__builtin__, name, None), target)
     if name and getattr(__builtin__, name, None) is target:
         return _weave_module(
             __builtin__, target, aspect,
@@ -201,17 +209,22 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
         else:
             klass = target.im_class
             name = target.__name__
-            logger.debug("Weaving %r (%s) as class method.", target, name)
-            func = klass.__dict__[name]
-            setattr(klass, name, _apply(aspect, func))
-            return lambda: setattr(klass, name, func),
+            if only_methods:
+                warnings.warn(
+                    "Weaving just a method and specifyin `only_methods` (%r)"
+                    " doesn't make much sense does it ?" % only_methods
+                )
+            return _weave(
+                klass, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods=(name,)
+            )
     elif isinstance(target, (type, ClassType)):
         rollbacks = []
         if not skip_subclasses and hasattr(target, '__subclasses__'):
             for sub_class in target.__subclasses__():
-                rollbacks.extend(_weave(
-                    sub_class, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
-                ))
+                if not issubclass(sub_class, Fabric):
+                    rollbacks.extend(_weave(
+                        sub_class, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
+                    ))
         if on_init:
             logger.debug("Weaving %r as class (on demand at __init__ time).", target)
 
@@ -249,7 +262,7 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
                     continue
             logger.debug(" * Creating subclass with attributes %r", wrappers)
             name = target.__name__
-            SubClass = type(name, (target,), wrappers)
+            SubClass = type(name, (target, Fabric), wrappers)
             SubClass.__module__ = target.__module__
             mod = __import__(target.__module__)
             rollbacks.extend(_patch_module(mod, name, target, SubClass))

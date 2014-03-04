@@ -1,9 +1,18 @@
 from __future__ import print_function
 
 import unittest
-
+import sys
 import aspectlib
 from aspectlib.test import override_result
+
+
+class Base(object):
+    def meth(*_):
+        return 'base'
+
+
+class Sub(Base):
+    pass
 
 
 class AOPTestCase(unittest.TestCase):
@@ -630,8 +639,21 @@ class AOPTestCase(unittest.TestCase):
 
         self.assertRaises(RuntimeError, aspectlib.weave, 1, aspect)
 
-    def test_weave_subclass(self):
+    def test_weave_subclass(self, Bub=Sub):
         with aspectlib.weave(Sub, override_result('foobar'), on_init=True):
+            self.assertEqual(Sub().meth(), 'foobar')
+            self.assertEqual(Bub().meth(), 'base')
+        self.assertEqual(Sub().meth(), 'base')
+        self.assertTrue(Bub is Sub)
+
+    def test_weave_subclass_meth_manual(self):
+        with aspectlib.weave(Sub, override_result('foobar'), on_init=True, only_methods=['meth']):
+            self.assertEqual(Sub().meth(), 'foobar')
+
+        self.assertEqual(Sub().meth(), 'base')
+
+    def test_weave_subclass_meth_auto(self):
+        with aspectlib.weave(Sub.meth, override_result('foobar'), on_init=True):
             self.assertEqual(Sub().meth(), 'foobar')
 
         self.assertEqual(Sub().meth(), 'base')
@@ -815,15 +837,6 @@ class SlotsTestSubSubClass(SlotsTestSubClass):
     @staticmethod
     def static_foobar(foo, bar=None):
         return 'subsub' + (bar or foo)
-
-
-class Base(object):
-    def meth(*_):
-        return 'base'
-
-
-class Sub(Base):
-    pass
 
 
 if __name__ == '__main__':
