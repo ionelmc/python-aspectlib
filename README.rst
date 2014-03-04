@@ -23,71 +23,74 @@ behavior in existing code is desired.
 
 It as two core tools to do AOP:
 
-:``aspectlib.Aspect``:
-    An *aspect* can be created by decorating a generator with ``aspectlib.Aspect``. The generator yields *advices* -
-    simple behavior changing instructions.
+.. list-table::
+    :widths: 5 95
 
-    The *aspect* is simple function decorator. Decorating a function with an *aspect* will change the function's
-    behavior according to the *advices* yielded by the generator.
+    * - ``aspectlib.Aspect``
+      - An *aspect* can be created by decorating a generator with ``aspectlib.Aspect``. The generator yields *advices* -
+        simple behavior changing instructions.
 
-    Example::
+        The *aspect* is simple function decorator. Decorating a function with an *aspect* will change the function's
+        behavior according to the *advices* yielded by the generator.
 
-        @aspectlib.Aspect
-        def strip_return_value():
-            result = yield aspectlib.Proceed
-            yield aspectlib.Return(result.strip())
+        Example::
 
-        @strip_return_value
-        def read(name):
-            return open(name).read()
+            @aspectlib.Aspect
+            def strip_return_value():
+                result = yield aspectlib.Proceed
+                yield aspectlib.Return(result.strip())
 
-    You can use these *advices*:
+            @strip_return_value
+            def read(name):
+                return open(name).read()
 
-    * ``aspectlib.Proceed`` or ``None`` - Calls the wrapped function with the default arguments. The *yield* returns the
-      function's return value or raises an exception. Can be used multiple times (will call the function multiple
-      times).
-    * ``aspectlib.Proceed(*args, **kwargs)`` - Same as above but with different arguments.
-    * ``aspectlib.Return`` - Makes the wrapper return ``None`` instead. If ``aspectlib.Proceed`` was never used then the
-      wrapped function is not called. After this the generator is closed.
-    * ``aspectlib.Return(value)`` - Same as above but returns the given ``value`` instead of ``None``.
-    * ``raise exception`` - Makes the wrapper raise an exception.
+        You can use these *advices*:
+
+        * ``aspectlib.Proceed`` or ``None`` - Calls the wrapped function with the default arguments. The *yield* returns
+          the function's return value or raises an exception. Can be used multiple times (will call the function
+          multiple times).
+        * ``aspectlib.Proceed(*args, **kwargs)`` - Same as above but with different arguments.
+        * ``aspectlib.Return`` - Makes the wrapper return ``None`` instead. If ``aspectlib.Proceed`` was never used then
+          the wrapped function is not called. After this the generator is closed.
+        * ``aspectlib.Return(value)`` - Same as above but returns the given ``value`` instead of ``None``.
+        * ``raise exception`` - Makes the wrapper raise an exception.
 
 
-:``aspectlib.weave``:
-    Patches classes and functions with the given *aspect*. When used with a class it will patch all the methods.
+    * - ``aspectlib.weave``
+      - Patches classes and functions with the given *aspect*. When used with a class it will patch all the methods.
 
-    Returns an ``aspectlib.Entanglement`` object that has a ``rollback`` method and can be used a context manager. It
-    will undo all the changes at the end of the context.
+        Returns an ``aspectlib.Entanglement`` object that has a ``rollback`` method and can be used a context manager.
+        It will undo all the changes at the end of the context.
 
-    ::
+        ::
 
-        @aspectlib.Aspect
-        def mock_open():
-            yield aspectlib.Return(StringIO("mystuff"))
+            @aspectlib.Aspect
+            def mock_open():
+                yield aspectlib.Return(StringIO("mystuff"))
 
-        with aspectlib.weave(open, mock_open):
-            assert open("/doesnt/exist.txt").read() == "mystuff"
+            with aspectlib.weave(open, mock_open):
+                assert open("/doesnt/exist.txt").read() == "mystuff"
 
-    You can use ``aspectlib.weave`` on: classes, instances, builtin functions, module level functions, methods,
-    classmethods, staticmethods, instance methods etc.
+        You can use ``aspectlib.weave`` on: classes, instances, builtin functions, module level functions, methods,
+        classmethods, staticmethods, instance methods etc.
 
-    Quick reference::
+        Quick reference::
 
-      weave(target, aspect,
-            skip_magic_methods=True,
-            skip_subclasses=False,
-            on_init=False,
-            skip_methods=(),
-            only_methods=None)
+          weave(target, aspect,
+                skip_magic_methods=True,
+                skip_subclasses=False,
+                on_init=False,
+                skip_methods=(),
+                only_methods=None)
 
-    * ``target`` - A target to patch.
-    * ``aspect`` - A function decorator or ``aspectlib.Aspect`` instance.
-    * ``skip_magic_methods`` - Don't patch magic methods.
-    * ``skip_subclasses`` - Do not patch subclasses of ``target``
-    * ``on_init`` - Run the patching code from ``__init__``. This is useful when patching classes that add methods in
-      ``__init__``.
-    * ``skip_methods`` - List of methods to avoid patching.
-    * ``only_methods`` - List of methods to patch. If ``None`` then all methods are patched.
+        * ``target`` - A target to patch.
+        * ``aspect`` - A function decorator or ``aspectlib.Aspect`` instance.
+        * ``skip_magic_methods`` - Don't patch magic methods.
+        * ``skip_subclasses`` - Do not patch subclasses of ``target``
+        * ``on_init`` - Run the patching code from ``__init__``. This is useful when patching classes that add methods
+          in ``__init__``.
+        * ``skip_methods`` - List of methods to avoid patching.
+        * ``only_methods`` - List of methods to patch. If ``None`` then all methods are patched.
 
 Rationale
 =========
@@ -121,7 +124,7 @@ Weaving functions, methods, instances and classes is completed.
 Pending:
 
 * Whole-module weaving
-* *Concerns* (see `docs/todo.rst`_)
+* *Concerns* (see `docs/todo.rst`)
 * *Anything else?*
 
 Requirements
