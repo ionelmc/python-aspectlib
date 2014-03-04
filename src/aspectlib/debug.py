@@ -1,8 +1,8 @@
 import logging
 import os
+import string
 import sys
 from itertools import islice
-import string
 
 from wrapt import decorator
 
