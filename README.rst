@@ -125,7 +125,7 @@ Pending:
 
 * Whole-module weaving
 * *Concerns* (see `docs/todo.rst`)
-* *Anything else?*
+* Using strings as weaving targets - so you don't have to import your targets
 
 Requirements
 ============
