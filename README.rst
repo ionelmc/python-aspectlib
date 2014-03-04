@@ -62,7 +62,7 @@ It as two core tools to do AOP:
         Returns an ``aspectlib.Entanglement`` object that has a ``rollback`` method and can be used a context manager.
         It will undo all the changes at the end of the context.
 
-        ::
+        Example::
 
             @aspectlib.Aspect
             def mock_open():
