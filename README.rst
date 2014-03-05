@@ -95,26 +95,19 @@ It as two core tools to do AOP:
 Rationale
 =========
 
-An astute programmer reading this will notice that AOP is just shameless monkey-patching in disguise. If AOP is just
-fancy-pants monkey-patching, this is why you should use ``aspectlib`` instead of making your own patching routines:
+There are perfectly sane use cases for monkey-patching (aka *weaving*):
+
+* Instrumenting existing code for debugging, profiling and other measurements.
+* Testing less flexible code. In some situations it's infeasible to use dependency injection to make your code more
+  testable.
+
+Then in those situations:
 
 * You would need to handle yourself all different kids of patching (patching
   a module is different than patching a class, a function or a method for that matter).
   ``aspectlib`` will handle all this gross patching mumbo-jumbo for you, consistently, over many Python versions.
 * Writting the actual wrappers is repetitive, boring and error-prone. You can't reuse wrappers
   but *you can reuse function decorators*.
-
-But monkey-patching is wrong !
-------------------------------
-
-Technically, only the ``aspectlib.weave`` does monkey-patching. It's completely optional, you can ``aspectlib.Aspect``
-objects as regular function decorators.
-
-Otherwise, if you want the *wrong thing* done *right* ``aspectlib`` is exactly that. It should
-handle the corner cases for you and/or give you easy knobs to tune the patching process (see the
-``aspectlib.weave`` function).
-
-If ``aspectlib.weave`` doesn't work for your scenario please report a bug !
 
 Implementation status
 =====================
@@ -126,6 +119,8 @@ Pending:
 * Whole-module weaving
 * *Concerns* (see `docs/todo.rst`)
 * Using strings as weaving targets - so you don't have to import your targets
+
+If ``aspectlib.weave`` doesn't work for your scenario please report a bug !
 
 Requirements
 ============
