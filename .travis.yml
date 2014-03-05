@@ -11,7 +11,6 @@ env:
   global:
     PYTHONPATH=src:tests
     PYTHONUNBUFFERED=yes
-    MANHOLE_TEST_TIMEOUT=30
   matrix:
     - WITH_COVERAGE=no
     - WITH_COVERAGE=yes
