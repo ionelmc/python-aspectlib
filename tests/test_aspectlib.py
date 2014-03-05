@@ -147,6 +147,24 @@ class AOPTestCase(unittest.TestCase):
         from test_pkg1.test_pkg2.test_mod import target
         self.assertEqual(target(), None)
 
+    def test_weave_str_class_target(self):
+        with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff', mock('foobar')):
+            from test_pkg1.test_pkg2.test_mod import Stuff
+            self.assertEqual(Stuff().meth(), 'foobar')
+
+        from test_pkg1.test_pkg2.test_mod import Stuff
+        self.assertEqual(Stuff().meth(), None)
+
+    @skip('fixme')
+    def test_weave_str_class_meth_target(self):
+        with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff.meth', mock('foobar')):
+            from test_pkg1.test_pkg2.test_mod import Stuff
+            self.assertEqual(Stuff().meth(), 'foobar')
+
+        from test_pkg1.test_pkg2.test_mod import Stuff
+        self.assertEqual(Stuff().meth(), None)
+
+
     def test_weave_wrong_module(self):
         calls = []
         with aspectlib.weave('warnings.warn', record(history=calls)):
