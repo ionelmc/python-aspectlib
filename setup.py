@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 import os
 
 setup(
-    name="python-aspectlib",
+    name="aspectlib",
     version="0.3.0",
     url='https://github.com/ionelmc/python-aspectlib',
     download_url='',

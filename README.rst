@@ -10,13 +10,13 @@ python-aspectlib
     :alt: Coverage Status
     :target: https://coveralls.io/r/ionelmc/python-aspectlib
 
-.. image:: https://pypip.in/d/python-aspectlib/badge.png
+.. image:: https://pypip.in/d/aspectlib/badge.png
     :alt: PYPI Package
-    :target: https://pypi.python.org/pypi/python-aspectlib
+    :target: https://pypi.python.org/pypi/aspectlib
 
-.. image:: https://pypip.in/v/python-aspectlib/badge.png
+.. image:: https://pypip.in/v/aspectlib/badge.png
     :alt: PYPI Package
-    :target: https://pypi.python.org/pypi/python-aspectlib
+    :target: https://pypi.python.org/pypi/aspectlib
 
 ``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing
 behavior in existing code is desired.
