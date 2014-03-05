@@ -181,7 +181,7 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
         assert '.' in target, "Need at least a module in the target specification !"
         parts = target.split('.')
         for pos in reversed(range(1, len(parts))):
-            mod, target = '.'.join(parts[:pos]), '.'.join(parts[pos:])
+            mod, name = '.'.join(parts[:pos]), '.'.join(parts[pos:])
             try:
                 __import__(mod)
                 mod = sys.modules[mod]
@@ -189,18 +189,20 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
                 continue
             else:
                 break
-        logger.debug("Patching %s from %s ...", target, mod)
-        obj = getattr(mod, target)
+        else:
+            raise ImportError("Could not import %r. Last try was for %s" % (target, mod))
+        logger.debug("Patching %s from %s ...", name, mod)
+        obj = getattr(mod, name)
         if isinstance(obj, (type, ClassType)):
             logger.debug(" .. as a class %r.", obj)
             return _weave_class(
                 obj, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods,
-                force_module=mod, force_name=target
+                force_module=mod, force_name=name
             )
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
             logger.debug(" .. as a callable %r.", obj)
             _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
-            return _weave_module_function(mod, obj, aspect, force_name=target)
+            return _weave_module_function(mod, obj, aspect, force_name=name)
         else:
             raise RuntimeError("Can't weave object %s of type %s" % (obj, type(obj)))
 

@@ -136,6 +136,9 @@ class AOPTestCase(unittest.TestCase):
     def test_weave_str_missing_target(self):
         self.assertRaises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
 
+    def test_weave_str_bad_target(self):
+        self.assertRaises(RuntimeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
+
     def test_weave_str_target(self):
         with aspectlib.weave('test_pkg1.test_pkg2.test_mod.target', mock('foobar')):
             from test_pkg1.test_pkg2.test_mod import target
@@ -707,6 +710,13 @@ class AOPTestCase(unittest.TestCase):
             yield aspectlib.Proceed
 
         self.assertRaises(RuntimeError, aspectlib.weave, 1, aspect)
+
+    def test_weave_unimportable(self):
+        @aspectlib.Aspect
+        def aspect():
+            yield aspectlib.Proceed
+
+        self.assertRaises(ImportError, aspectlib.weave, "1.2", aspect)
 
     def test_weave_subclass(self, Bub=Sub):
         with aspectlib.weave(Sub, mock('foobar'), on_init=True):

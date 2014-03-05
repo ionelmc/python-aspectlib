@@ -1,2 +1,4 @@
 def target():
-    return 
+    return
+
+a = 1
