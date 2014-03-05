@@ -22,26 +22,33 @@ def mock(return_value, call=_DEFAULT_FALSE):
     return decorator
 
 
-class _RecordWrapper(FunctionWrapper):
+class _RecordingWrapper(FunctionWrapper):
+    calls = None
+
+    def __init__(self, wrapped, wrapper, calls):
+        super(_RecordingWrapper, self).__init__(wrapped, wrapper)
+        self.calls = calls
+
     def __enter__(self):
-        self.entanglement = aspectlib.weave(self.__wrapped__, lambda _: self)
-        return self.__wrapped__
+        self._self_entanglement = aspectlib.weave(self.__wrapped__, lambda _: self)
+        return self
 
     def __exit__(self, *args):
-        self.entanglement.rollback()
+        self._self_entanglement.rollback()
 
 
-def record(func=None, call=_DEFAULT_FALSE):
+def record(func=None, call=_DEFAULT_FALSE, history=None):
     def record_decorator(func):
+        calls = list() if history is None else history
+
         def record_wrapper(wrapped, instance, args, kwargs):
             calls.append(_Call(instance, args, kwargs))
             if call and call is not _DEFAULT_FALSE:
                 return wrapped(*args, **kwargs)
-        recorded = _RecordWrapper(func, record_wrapper)
-        calls = recorded.calls = []
+        recorded = _RecordingWrapper(func, record_wrapper, calls)
         return recorded
 
     if func:
         return record_decorator(func)
     else:
-        return partial(record, call=call)
+        return partial(record, call=call, history=history)

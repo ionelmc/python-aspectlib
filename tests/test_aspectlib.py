@@ -2,8 +2,9 @@ from __future__ import print_function
 
 import unittest
 import aspectlib
+import warnings
 
-from aspectlib.test import mock
+from aspectlib.test import mock, record
 
 
 class Base(object):
@@ -13,6 +14,17 @@ class Base(object):
 
 class Sub(Base):
     pass
+
+
+class Global(Base):
+    pass
+
+
+class MissingGlobal(Base):
+    pass
+
+AliasedGlobal = MissingGlobal
+del MissingGlobal
 
 
 class AOPTestCase(unittest.TestCase):
@@ -101,6 +113,42 @@ class AOPTestCase(unittest.TestCase):
             self.assertEqual(module_func(), 'stuff')
 
         self.assertEqual(module_func(), None)
+
+    def test_broken_weave_func(self):
+        self.assertRaises(RuntimeError, aspectlib.weave, None, None, only_methods=['a'], skip_methods=['b'])
+
+    def test_weave_empty_target(self):
+        self.assertRaises(AssertionError, aspectlib.weave, (), None)
+
+    def test_weave_missing_global(self, cls=Global):
+        global Global
+        Global = 'crap'
+        try:
+            self.assertRaises(AssertionError, aspectlib.weave, cls, mock('stuff'), on_init=True)
+        finally:
+            Global = cls
+
+    def test_weave_string_missing_target(self):
+        self.assertRaises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
+
+    def test_weave_string_target(self):
+        with aspectlib.weave('test_pkg1.test_pkg2.test_mod.target', mock('foobar')):
+            from test_pkg1.test_pkg2.test_mod import target
+            self.assertEqual(target(), 'foobar')
+
+        from test_pkg1.test_pkg2.test_mod import target
+        self.assertEqual(target(), None)
+
+    def test_weave_wrong_module(self):
+        calls = []
+        with aspectlib.weave('warnings.warn', record(history=calls)):
+            aspectlib.weave(AliasedGlobal, mock('stuff'), on_init=True)
+        self.assertEqual(calls, [
+            (None,
+             ("Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
+              "There was no previous definition, probably patching the wrong module.",),
+             {})
+        ])
 
     def test_weave_class_meth(self):
         @aspectlib.Aspect

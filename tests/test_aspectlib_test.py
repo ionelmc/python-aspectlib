@@ -8,6 +8,9 @@ from aspectlib.test import record, mock
 def module_fun(a, b=2):
     pass
 
+def module_fun2(a, b=2):
+    pass
+
 
 class AOPTestCase(unittest.TestCase):
     def test_record(self):
@@ -70,3 +73,22 @@ class AOPTestCase(unittest.TestCase):
         with record(module_fun) as history:
             self.assertEqual("foobar", mock("foobar", call=True)(module_fun)(3))
         self.assertEqual(history.calls, [(None, (3,), {})])
+
+    def test_double_recording(self):
+        with record(module_fun) as history:
+            with record(module_fun2) as history2:
+                module_fun(2, 3)
+                module_fun2(2, 3)
+
+        self.assertEqual(history.calls, [
+            (None, (2, 3), {}),
+        ])
+        del history.calls[:]
+        self.assertEqual(history2.calls, [
+            (None, (2, 3), {}),
+        ])
+        del history2.calls[:]
+
+        module_fun(2, 3)
+        self.assertEqual(history.calls, [])
+        self.assertEqual(history2.calls, [])
