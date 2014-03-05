@@ -29,6 +29,9 @@ PYPY = platform.python_implementation() == 'PyPy'
 if PY3:
     unicode = str
 
+DEFAULT_FALSE = object()
+DEFAULT_TRUE = object()
+
 
 class Proceed(object):
     def __init__(self, *args, **kwargs):
@@ -98,7 +101,13 @@ def _apply(aspect, function):
     return wrapper
 
 
-def weave(target, aspect, skip_magic_methods=True, skip_subclasses=False, on_init=False, skip_methods=(), only_methods=None):
+def weave(target, aspect,
+          skip_magic_methods=DEFAULT_TRUE,
+          skip_subclasses=DEFAULT_FALSE,
+          on_init=DEFAULT_FALSE,
+          skip_methods=(),
+          only_methods=None):
+
     if only_methods and skip_methods:
         raise RuntimeError("You can't use both `skip_methods` and `only_methods`.")
     return Entanglement(_weave(
@@ -145,12 +154,19 @@ def _silly_bind(func):
     return bound
 
 
-def _weave_module_function(mod, target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods,
-                           only_methods, force_name=None):
+def _weave_module_function(mod, target, aspect, force_name=None):
     logger.debug("Weaving %r as plain function.", target)
     name = force_name or target.__name__
     assert getattr(mod, name) is target
     return _patch_module(mod, name, target, _apply(aspect, target))
+
+
+def _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
+    assert skip_magic_methods is DEFAULT_TRUE, "Can't use skip_methods=%r when target is not a class." % skip_magic_methods
+    assert skip_subclasses is DEFAULT_FALSE, "Can't use skip_subclasses=%r when target is not a class." % skip_subclasses
+    #assert on_init is DEFAULT_FALSE, "Can't use on_init=%r when target is not a class." % on_init
+    assert not skip_methods, "Can't use skip_methods=%r when target is not a class." % skip_methods
+    assert not only_methods, "Can't use only_methods=%r when target is not a class." % only_methods
 
 
 def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
@@ -183,24 +199,20 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
             )
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
             logger.debug(" .. as a callable %r.", obj)
-            return _weave_module_function(
-                mod, obj, aspect,
-                skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods,
-                force_name=target
-            )
+            _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
+            return _weave_module_function(mod, obj, aspect, force_name=target)
         else:
             raise RuntimeError("Can't weave object %s of type %s" % (obj, type(obj)))
 
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
-        return _weave_module_function(
-            __builtin__, target, aspect,
-            skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
-        )
+        _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
+        return _weave_module_function(__builtin__, target, aspect)
     elif PY3 and isinstance(target, MethodType):
         inst = target.__self__
         name = target.__name__
         logger.debug("Weaving %r (%s) as instance method.", target, name)
+        _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
         func = getattr(inst, name)
         setattr(inst, name, aspect(func).__get__(inst, type(inst)))
         return lambda: delattr(inst, name),
@@ -215,26 +227,20 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
         setattr(owner, name, _apply(aspect, target))
         return lambda: setattr(owner, name, target),
     elif PY2 and isinstance(target, FunctionType):
-        return _weave_module_function(
-            __import__(target.__module__), target, aspect,
-            skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
-        )
+        _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
+        return _weave_module_function(__import__(target.__module__), target, aspect)
     elif PY2 and isinstance(target, MethodType):
         if target.im_self:
             inst = target.im_self
             name = target.__name__
             logger.debug("Weaving %r (%s) as instance method.", target, name)
+            _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
             func = getattr(inst, name)
             setattr(inst, name, _apply(aspect, func).__get__(inst, type(inst)))
             return lambda: delattr(inst, name),
         else:
             klass = target.im_class
             name = target.__name__
-            if only_methods:
-                warnings.warn(
-                    "Weaving just a method and specifyin `only_methods` (%r)"
-                    " doesn't make much sense does it ?" % only_methods
-                )
             return _weave(
                 klass, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods=(name,)
             )
@@ -245,6 +251,10 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
 
 def _weave_class(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods,
                  force_module=None, force_name=None):
+    skip_magic_methods = True if skip_magic_methods is DEFAULT_TRUE else skip_magic_methods
+    skip_subclasses = False if skip_subclasses is DEFAULT_FALSE else skip_subclasses
+    on_init = False if on_init is DEFAULT_FALSE else on_init
+
     assert isinstance(target, (type, ClassType)), "Can't weave %r as a class." % target
     rollbacks = []
     if not skip_subclasses and hasattr(target, '__subclasses__'):

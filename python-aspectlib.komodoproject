@@ -5,9 +5,10 @@
   <string relative="path" id="import_dirname"></string>
   <string id="import_exclude_matches">*.*~;*.bak;*.tmp;CVS;.#*;*.pyo;*.pyc;.svn;_svn;.git;.hg;.bzr;*%25*;tmp*.html;.DS_Store;*.swp;*.kpf;*.komodoproject;.komodotools;__pycache__;.tox;.ve;build;dist;*.egg-info</string>
   <string id="lastTestPlanName_pref">New test plan #1</string>
-  <string id="python3DefaultInterpreter">/usr/bin/python3.3</string>
+  <string relative="path" id="python3DefaultInterpreter">.tox/3.3/bin/python3.3</string>
   <string relative="path" id="python3ExtraPaths">.tox/3.3/lib/python3.3:/home/ionel/osp/python-aspectlib/.tox/3.3/lib/python3.3/site-packages</string>
-  <string relative="path" id="pythonExtraPaths">.tox/2.7/lib/python2.7:/home/ionel/osp/python-aspectlib/.tox/2.7/lib/python2.7/site-packages</string>
+  <string relative="path" id="pythonDefaultInterpreter">.tox/2.7/bin/python2.7</string>
+  <string relative="path" id="pythonExtraPaths">.tox/2.7/lib/python2.7:/home/ionel/osp/python-aspectlib/.tox/2.7/lib/python2.7/site-packages:/usr/lib/python2.7</string>
 <preference-set id="testPlans">
 <preference-set id="New test plan #1">
   <string id="command_line"></string>

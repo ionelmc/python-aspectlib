@@ -1,10 +1,15 @@
 from __future__ import print_function
 
-import unittest
-import aspectlib
-import warnings
+try:
+    import unittest2 as unittest
+    from unittest2.case import skip
+except ImportError:
+    import unittest
+    from unittest.case import skip
 
-from aspectlib.test import mock, record
+import aspectlib
+from aspectlib.test import mock
+from aspectlib.test import record
 
 
 class Base(object):
@@ -31,7 +36,7 @@ class AOPTestCase(unittest.TestCase):
 
     def test_aspect_bad(self):
         @aspectlib.Aspect
-        def aspect(*args, **kwargs):
+        def aspect():
             return "crap"
 
         @aspect
@@ -42,7 +47,7 @@ class AOPTestCase(unittest.TestCase):
 
     def test_aspect_return(self):
         @aspectlib.Aspect
-        def aspect(*args, **kwargs):
+        def aspect():
             yield aspectlib.Return
 
         @aspect
@@ -53,7 +58,7 @@ class AOPTestCase(unittest.TestCase):
 
     def test_aspect_return_value(self):
         @aspectlib.Aspect
-        def aspect(*args, **kwargs):
+        def aspect():
             yield aspectlib.Return('stuff')
 
         @aspect
@@ -64,7 +69,7 @@ class AOPTestCase(unittest.TestCase):
 
     def test_aspect_raise(self):
         @aspectlib.Aspect
-        def aspect(*args, **kwargs):
+        def aspect():
             try:
                 yield aspectlib.Proceed
             except ZeroDivisionError:
@@ -82,7 +87,7 @@ class AOPTestCase(unittest.TestCase):
 
     def test_aspect_raise_from_aspect(self):
         @aspectlib.Aspect
-        def aspect(*args, **kwargs):
+        def aspect():
             1/0
 
         @aspect
@@ -95,7 +100,7 @@ class AOPTestCase(unittest.TestCase):
         calls = []
 
         @aspectlib.Aspect
-        def aspect(arg):
+        def aspect(_):
             assert 'first' == (yield aspectlib.Proceed)
             assert 'second' == (yield aspectlib.Proceed('second'))
             yield aspectlib.Return('stuff')
@@ -128,10 +133,10 @@ class AOPTestCase(unittest.TestCase):
         finally:
             Global = cls
 
-    def test_weave_string_missing_target(self):
+    def test_weave_str_missing_target(self):
         self.assertRaises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
 
-    def test_weave_string_target(self):
+    def test_weave_str_target(self):
         with aspectlib.weave('test_pkg1.test_pkg2.test_mod.target', mock('foobar')):
             from test_pkg1.test_pkg2.test_mod import target
             self.assertEqual(target(), 'foobar')
@@ -149,6 +154,22 @@ class AOPTestCase(unittest.TestCase):
               "There was no previous definition, probably patching the wrong module.",),
              {})
         ])
+
+    def test_weave_bad_args1(self):
+        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), only_methods=['asdf'])
+
+    def test_weave_bad_args2(self):
+        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_methods=['asdf'])
+
+    @skip("hmmm")
+    def test_weave_bad_args3(self):
+        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), on_init=False)
+
+    def test_weave_bad_args4(self):
+        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_subclasses=False)
+
+    def test_weave_bad_args5(self):
+        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_magic_methods=False)
 
     def test_weave_class_meth(self):
         @aspectlib.Aspect
