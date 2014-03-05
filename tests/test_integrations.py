@@ -49,9 +49,9 @@ class AOPTestCase(unittest.TestCase):
             os._exit(0)
         self.assertNotEqual(pid, 'foobar')
 
-    def test_socket(self):
+    def test_socket(self, target=socket.socket):
         buf = StringIO()
-        with aspectlib.weave(socket.socket, aspectlib.debug.log(
+        with aspectlib.weave(target, aspectlib.debug.log(
             print_to=buf,
             stacktrace=2,
             module=False
@@ -72,3 +72,7 @@ class AOPTestCase(unittest.TestCase):
             pass
 
         self.assertRegexpMatches(buf.getvalue(), LOG_TEST_SOCKET)
+
+    def test_socket_as_string_target(self):
+        self.test_socket(target='socket.socket')
+
