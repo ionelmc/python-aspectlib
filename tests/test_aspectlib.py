@@ -1,15 +1,15 @@
 from __future__ import print_function
 
+import aspectlib
+from aspectlib.test import mock
+from aspectlib.test import record
+
 try:
     import unittest2 as unittest
     from unittest2.case import skip
 except ImportError:
     import unittest
     from unittest.case import skip
-
-import aspectlib
-from aspectlib.test import mock
-from aspectlib.test import record
 
 
 class Base(object):
