@@ -5,7 +5,7 @@ import os
 
 setup(
     name="python-aspectlib",
-    version="0.2.0",
+    version="0.3.0",
     url='https://github.com/ionelmc/python-aspectlib',
     download_url='',
     license='BSD',
