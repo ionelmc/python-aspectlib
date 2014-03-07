@@ -3,17 +3,13 @@ from __future__ import print_function
 import os
 import socket
 import warnings
+import re
+
+import pytest
 
 import aspectlib
 from aspectlib.test import mock
 from aspectlib.test import record
-
-try:
-    import unittest2 as unittest
-    from unittest2.case import skipIf
-except ImportError:
-    import unittest
-    from unittest.case import skipIf
 
 try:
     from StringIO import StringIO
@@ -24,55 +20,54 @@ LOG_TEST_SOCKET = r"""^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< 
 \{_?socket(object)?\}.connect \~ raised .*(ConnectionRefusedError|error)\((10061|111), '.*refused.*'\)\n$"""
 
 
-class AOPTestCase(unittest.TestCase):
-    def test_mock_builtin(self):
-        with aspectlib.weave(open, mock('foobar')):
-            self.assertEqual(open('???'), 'foobar')
+def test_mock_builtin():
+    with aspectlib.weave(open, mock('foobar')):
+        assert open('???') == 'foobar'
 
-        self.assertNotEqual(open(__file__), 'foobar')
+    assert open(__file__) != 'foobar'
 
-    def test_record_warning(self):
-        with aspectlib.weave('warnings.warn', record):
-            warnings.warn('crap')
-            self.assertEqual(warnings.warn.calls, [(None, ('crap',), {})])
+def test_record_warning():
+    with aspectlib.weave('warnings.warn', record):
+        warnings.warn('crap')
+        assert warnings.warn.calls, [(None, ('crap',) == {})]
 
-    @skipIf(not hasattr(os, 'fork'), "os.fork not available")
-    def test_fork(self):
-        with aspectlib.weave('os.fork', mock('foobar')):
-            pid = os.fork()
-            if not pid:
-                os._exit(0)
-            self.assertEqual(pid, 'foobar')
-
+@pytest.mark.skipif(not hasattr(os, 'fork'), reason="os.fork not available")
+def test_fork():
+    with aspectlib.weave('os.fork', mock('foobar')):
         pid = os.fork()
         if not pid:
             os._exit(0)
-        self.assertNotEqual(pid, 'foobar')
+        assert pid == 'foobar'
 
-    def test_socket(self, target=socket.socket):
-        buf = StringIO()
-        with aspectlib.weave(target, aspectlib.debug.log(
-            print_to=buf,
-            stacktrace=2,
-            module=False
-        ), on_init=True):
-            s = socket.socket()
-            try:
-                s.connect(('127.0.0.1', 1))
-            except Exception:
-                pass
+    pid = os.fork()
+    if not pid:
+        os._exit(0)
+    assert pid != 'foobar'
 
-        print(buf.getvalue())
-        self.assertRegexpMatches(buf.getvalue(), LOG_TEST_SOCKET)
-
+def test_socket(target=socket.socket):
+    buf = StringIO()
+    with aspectlib.weave(target, aspectlib.debug.log(
+        print_to=buf,
+        stacktrace=2,
+        module=False
+    ), on_init=True):
         s = socket.socket()
         try:
             s.connect(('127.0.0.1', 1))
         except Exception:
             pass
 
-        self.assertRegexpMatches(buf.getvalue(), LOG_TEST_SOCKET)
+    print(buf.getvalue())
+    assert re.match(LOG_TEST_SOCKET, buf.getvalue())
 
-    def test_socket_as_string_target(self):
-        self.test_socket(target='socket.socket')
+    s = socket.socket()
+    try:
+        s.connect(('127.0.0.1', 1))
+    except Exception:
+        pass
+
+    assert re.match(LOG_TEST_SOCKET, buf.getvalue())
+
+def test_socket_as_string_target():
+    test_socket(target='socket.socket')
 

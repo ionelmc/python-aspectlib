@@ -1,15 +1,11 @@
 from __future__ import print_function
 
+import pytest
+from pytest import raises
+
 import aspectlib
 from aspectlib.test import mock
 from aspectlib.test import record
-
-try:
-    import unittest2 as unittest
-    from unittest2.case import skip
-except ImportError:
-    import unittest
-    from unittest.case import skip
 
 
 class Base(object):
@@ -32,738 +28,6 @@ AliasedGlobal = MissingGlobal
 del MissingGlobal
 
 
-class AOPTestCase(unittest.TestCase):
-
-    def test_aspect_bad(self):
-        @aspectlib.Aspect
-        def aspect():
-            return "crap"
-
-        @aspect
-        def func():
-            pass
-
-        self.assertRaises(RuntimeError, func)
-
-    def test_aspect_return(self):
-        @aspectlib.Aspect
-        def aspect():
-            yield aspectlib.Return
-
-        @aspect
-        def func():
-            return 'stuff'
-
-        self.assertEqual(func(), None)
-
-    def test_aspect_return_value(self):
-        @aspectlib.Aspect
-        def aspect():
-            yield aspectlib.Return('stuff')
-
-        @aspect
-        def func():
-            pass
-
-        self.assertEqual(func(), 'stuff')
-
-    def test_aspect_raise(self):
-        @aspectlib.Aspect
-        def aspect():
-            try:
-                yield aspectlib.Proceed
-            except ZeroDivisionError:
-                pass
-            else:
-                raise AssertionError("didn't raise")
-
-            yield aspectlib.Return('stuff')
-
-        @aspect
-        def func():
-            1/0
-
-        self.assertEqual(func(), 'stuff')
-
-    def test_aspect_raise_from_aspect(self):
-        @aspectlib.Aspect
-        def aspect():
-            1/0
-
-        @aspect
-        def func():
-            pass
-
-        self.assertRaises(ZeroDivisionError, func)
-
-    def test_aspect_return_but_call(self):
-        calls = []
-
-        @aspectlib.Aspect
-        def aspect(_):
-            assert 'first' == (yield aspectlib.Proceed)
-            assert 'second' == (yield aspectlib.Proceed('second'))
-            yield aspectlib.Return('stuff')
-
-        @aspect
-        def func(arg):
-            calls.append(arg)
-            return arg
-
-        self.assertEqual(func('first'), 'stuff')
-        self.assertEqual(calls, ['first', 'second'])
-
-    def test_weave_func(self):
-        with aspectlib.weave(module_func, mock('stuff')):
-            self.assertEqual(module_func(), 'stuff')
-
-        self.assertEqual(module_func(), None)
-
-    def test_broken_weave_func(self):
-        self.assertRaises(RuntimeError, aspectlib.weave, None, None, only_methods=['a'], skip_methods=['b'])
-
-    def test_weave_empty_target(self):
-        self.assertRaises(AssertionError, aspectlib.weave, (), None)
-
-    def test_weave_missing_global(self, cls=Global):
-        global Global
-        Global = 'crap'
-        try:
-            self.assertRaises(AssertionError, aspectlib.weave, cls, mock('stuff'), on_init=True)
-        finally:
-            Global = cls
-
-    def test_weave_str_missing_target(self):
-        self.assertRaises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
-
-    def test_weave_str_bad_target(self):
-        self.assertRaises(RuntimeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
-
-    def test_weave_str_target(self):
-        with aspectlib.weave('test_pkg1.test_pkg2.test_mod.target', mock('foobar')):
-            from test_pkg1.test_pkg2.test_mod import target
-            self.assertEqual(target(), 'foobar')
-
-        from test_pkg1.test_pkg2.test_mod import target
-        self.assertEqual(target(), None)
-
-    def test_weave_str_class_target(self):
-        with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff', mock('foobar')):
-            from test_pkg1.test_pkg2.test_mod import Stuff
-            self.assertEqual(Stuff().meth(), 'foobar')
-
-        from test_pkg1.test_pkg2.test_mod import Stuff
-        self.assertEqual(Stuff().meth(), None)
-
-    @skip('fixme')
-    def test_weave_str_class_meth_target(self):
-        with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff.meth', mock('foobar')):
-            from test_pkg1.test_pkg2.test_mod import Stuff
-            self.assertEqual(Stuff().meth(), 'foobar')
-
-        from test_pkg1.test_pkg2.test_mod import Stuff
-        self.assertEqual(Stuff().meth(), None)
-
-
-    def test_weave_wrong_module(self):
-        calls = []
-        with aspectlib.weave('warnings.warn', record(history=calls)):
-            aspectlib.weave(AliasedGlobal, mock('stuff'), on_init=True)
-        self.assertEqual(calls, [
-            (None,
-             ("Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
-              "There was no previous definition, probably patching the wrong module.",),
-             {})
-        ])
-
-    def test_weave_bad_args1(self):
-        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), only_methods=['asdf'])
-
-    def test_weave_bad_args2(self):
-        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_methods=['asdf'])
-
-    @skip("hmmm")
-    def test_weave_bad_args3(self):
-        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), on_init=False)
-
-    def test_weave_bad_args4(self):
-        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_subclasses=False)
-
-    def test_weave_bad_args5(self):
-        self.assertRaises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_magic_methods=False)
-
-    def test_weave_class_meth(self):
-        @aspectlib.Aspect
-        def aspect(self, *_):
-            self.foo = 'bar'
-            yield aspectlib.Return
-
-        with aspectlib.weave(TestClass.foobar, aspect):
-            inst = TestClass('stuff')
-            self.assertEqual(inst.foo, 'bar')
-            inst.foobar()
-
-        inst = TestClass('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-
-    def test_weave_instance_meth(self):
-        @aspectlib.Aspect
-        def aspect(self):
-            self.foo = 'bar'
-            yield aspectlib.Return
-
-        inst = TestClass()
-        with aspectlib.weave(inst.foobar, aspect):
-            inst.foobar()
-            self.assertEqual(inst.foo, 'bar')
-
-        inst.foobar('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-
-    def test_weave_class(self):
-        history = []
-
-        @aspectlib.Aspect
-        def aspect(*args):
-            history.append(args)
-            args += ':)',
-            yield aspectlib.Proceed(*args)
-            yield aspectlib.Return('bar')
-
-        inst = TestClass()
-
-        with aspectlib.weave(TestClass, aspect):
-            inst = TestClass('stuff')
-            self.assertEqual(inst.foo, 'stuff')
-            self.assertEqual(inst.bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(TestClass.foo, 'stuff')
-            self.assertEqual(TestClass.bar, ':)')
-            self.assertEqual(TestClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (TestClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
-
-            inst = TestSubClass('stuff')
-            self.assertEqual(inst.sub_foo, 'stuff')
-            self.assertEqual(inst.sub_bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(TestSubClass.sub_foo, 'stuff')
-            self.assertEqual(TestSubClass.sub_bar, ':)')
-            self.assertEqual(TestSubClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (TestSubClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
-
-            inst = TestSubSubClass('stuff')
-            self.assertEqual(inst.subsub_foo, 'stuff')
-            self.assertEqual(inst.subsub_bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(TestSubSubClass.subsub_foo, 'stuff')
-            self.assertEqual(TestSubSubClass.subsub_bar, ':)')
-            self.assertEqual(TestSubSubClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (TestSubSubClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
-
-        inst = TestClass('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-        self.assertEqual(inst.bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'stuff')
-        self.assertEqual(TestClass.foo, 'stuff')
-        self.assertEqual(TestClass.bar, None)
-        self.assertEqual(TestClass.static_foobar('stuff'), 'stuff')
-
-        inst = TestSubClass('stuff')
-        self.assertEqual(inst.sub_foo, 'stuff')
-        self.assertEqual(inst.sub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'substuff')
-        self.assertEqual(TestSubClass.sub_foo, 'stuff')
-        self.assertEqual(TestSubClass.sub_bar, None)
-        self.assertEqual(TestSubClass.static_foobar('stuff'), 'substuff')
-
-        inst = TestSubSubClass('stuff')
-        self.assertEqual(inst.subsub_foo, 'stuff')
-        self.assertEqual(inst.subsub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'subsubstuff')
-        self.assertEqual(TestSubSubClass.subsub_foo, 'stuff')
-        self.assertEqual(TestSubSubClass.subsub_bar, None)
-        self.assertEqual(TestSubSubClass.static_foobar('stuff'), 'subsubstuff')
-
-        self.assertEqual(history, [])
-
-    def test_weave_class_slots(self):
-        history = []
-
-        @aspectlib.Aspect
-        def aspect(*args):
-            history.append(args)
-            args += ':)',
-            yield aspectlib.Proceed(*args)
-            yield aspectlib.Return('bar')
-
-        inst = SlotsTestClass('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-        self.assertEqual(inst.bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'stuff')
-        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
-        self.assertEqual(SlotsTestClass.class_bar, None)
-        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
-
-        inst = SlotsTestClass()
-        with aspectlib.weave(SlotsTestClass, aspect):
-            inst = SlotsTestClass('stuff')
-            self.assertEqual(inst.foo, 'stuff')
-            self.assertEqual(inst.bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(SlotsTestClass.class_foo, 'stuff')
-            self.assertEqual(SlotsTestClass.class_bar, ':)')
-            self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (SlotsTestClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
-
-            inst = SlotsTestSubClass('stuff')
-            self.assertEqual(inst.sub_foo, 'stuff')
-            self.assertEqual(inst.sub_bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(SlotsTestSubClass.class_sub_foo, 'stuff')
-            self.assertEqual(SlotsTestSubClass.class_sub_bar, ':)')
-            self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (SlotsTestSubClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
-
-            inst = SlotsTestSubSubClass('stuff')
-            self.assertEqual(inst.subsub_foo, 'stuff')
-            self.assertEqual(inst.subsub_bar, ':)')
-            self.assertEqual(inst.inst, 'bar')
-            self.assertEqual(inst.klass, 'bar')
-            self.assertEqual(inst.static, 'bar')
-            self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'stuff')
-            self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, ':)')
-            self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'bar')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (SlotsTestSubSubClass, 'stuff'),
-                ('stuff',),
-                ('stuff',),
-            ])
-            del history[:]
-
-        inst = SlotsTestClass('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-        self.assertEqual(inst.bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'stuff')
-        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
-        self.assertEqual(SlotsTestClass.class_bar, None)
-        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
-
-        inst = SlotsTestSubClass('stuff')
-        self.assertEqual(inst.sub_foo, 'stuff')
-        self.assertEqual(inst.sub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'substuff')
-        self.assertEqual(SlotsTestSubClass.class_sub_foo, 'stuff')
-        self.assertEqual(SlotsTestSubClass.class_sub_bar, None)
-        self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'substuff')
-
-        inst = SlotsTestSubSubClass('stuff')
-        self.assertEqual(inst.subsub_foo, 'stuff')
-        self.assertEqual(inst.subsub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'subsubstuff')
-        self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'stuff')
-        self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, None)
-        self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'subsubstuff')
-
-        self.assertEqual(history, [])
-
-
-    def test_weave_class_on_init(self):
-        history = []
-
-        @aspectlib.Aspect
-        def aspect(*args):
-            history.append(args)
-            args += ':)',
-            yield aspectlib.Proceed(*args)
-            yield aspectlib.Return('bar')
-
-        inst = SlotsTestClass('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-        self.assertEqual(inst.bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'stuff')
-        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
-        self.assertEqual(SlotsTestClass.class_bar, None)
-        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
-
-        inst = SlotsTestClass()
-        with aspectlib.weave(SlotsTestClass, aspect, on_init=True):
-
-            inst = SlotsTestClass('stuff')
-            self.assertEqual(inst.foo, 'stuff')
-            self.assertEqual(inst.bar, None)
-            self.assertEqual(inst.inst, None)
-            self.assertEqual(inst.foobar('bluff'), 'bar')
-            self.assertEqual(inst.foo, 'bluff')
-            self.assertEqual(inst.bar, ':)')
-            self.assertEqual(inst.class_foobar('bluff'), 'bar')
-            self.assertEqual(SlotsTestClass.class_foo, 'bluff')
-            self.assertEqual(SlotsTestClass.class_bar, ':)')
-            self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'bar')
-
-            inst = SlotsTestSubClass('stuff')
-            self.assertEqual(inst.sub_foo, 'stuff')
-            self.assertEqual(inst.sub_bar, None)
-            self.assertEqual(inst.inst, None)
-            self.assertEqual(inst.foobar('bluff'), 'bar')
-            self.assertEqual(inst.sub_foo, 'bluff')
-            self.assertEqual(inst.sub_bar, ':)')
-            self.assertEqual(inst.class_foobar('bluff'), 'bar')
-            self.assertEqual(SlotsTestSubClass.class_sub_foo, 'bluff')
-            self.assertEqual(SlotsTestSubClass.class_sub_bar, ':)')
-            self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'bar')
-
-            inst = SlotsTestSubSubClass('stuff')
-            self.assertEqual(inst.subsub_foo, 'stuff')
-            self.assertEqual(inst.subsub_bar, None)
-            self.assertEqual(inst.inst, None)
-            self.assertEqual(inst.foobar('bluff'), 'bar')
-            self.assertEqual(inst.subsub_foo, 'bluff')
-            self.assertEqual(inst.subsub_bar, ':)')
-            self.assertEqual(inst.class_foobar('bluff'), 'bar')
-            self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'bluff')
-            self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, ':)')
-            self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'bar')
-
-        del history[:]
-
-        inst = SlotsTestClass('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-        self.assertEqual(inst.bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'stuff')
-        self.assertEqual(SlotsTestClass.class_foo, 'stuff')
-        self.assertEqual(SlotsTestClass.class_bar, None)
-        self.assertEqual(SlotsTestClass.static_foobar('stuff'), 'stuff')
-
-        inst = SlotsTestSubClass('stuff')
-        self.assertEqual(inst.sub_foo, 'stuff')
-        self.assertEqual(inst.sub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'substuff')
-        self.assertEqual(SlotsTestSubClass.class_sub_foo, 'stuff')
-        self.assertEqual(SlotsTestSubClass.class_sub_bar, None)
-        self.assertEqual(SlotsTestSubClass.static_foobar('stuff'), 'substuff')
-
-        inst = SlotsTestSubSubClass('stuff')
-        self.assertEqual(inst.subsub_foo, 'stuff')
-        self.assertEqual(inst.subsub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'subsubstuff')
-        self.assertEqual(SlotsTestSubSubClass.class_subsub_foo, 'stuff')
-        self.assertEqual(SlotsTestSubSubClass.class_subsub_bar, None)
-        self.assertEqual(SlotsTestSubSubClass.static_foobar('stuff'), 'subsubstuff')
-
-        self.assertEqual(history, [])
-
-    def test_weave_class_old_style(self):
-        history = []
-
-        @aspectlib.Aspect
-        def aspect(*args):
-            history.append(args)
-            args += ':)',
-            yield aspectlib.Proceed(*args)
-            yield aspectlib.Return('bar')
-
-        inst = LegacyTestClass()
-
-        with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
-            with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
-                with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
-                    inst = LegacyTestClass('stuff')
-                    self.assertEqual(inst.foo, 'stuff')
-                    self.assertEqual(inst.bar, ':)')
-                    self.assertEqual(inst.inst, 'bar')
-                    self.assertEqual(inst.klass, 'bar')
-                    self.assertEqual(inst.static, 'bar')
-                    self.assertEqual(LegacyTestClass.foo, 'stuff')
-                    self.assertEqual(LegacyTestClass.bar, ':)')
-                    self.assertEqual(LegacyTestClass.static_foobar('stuff'), 'bar')
-                    self.assertEqual(history, [
-                        (inst, 'stuff'),
-                        (LegacyTestClass, 'stuff'),
-                        ('stuff',),
-                        ('stuff',),
-                    ])
-                    del history[:]
-
-                    inst = LegacyTestSubClass('stuff')
-                    self.assertEqual(inst.sub_foo, 'stuff')
-                    self.assertEqual(inst.sub_bar, ':)')
-                    self.assertEqual(inst.inst, 'bar')
-                    self.assertEqual(inst.klass, 'bar')
-                    self.assertEqual(inst.static, 'bar')
-                    self.assertEqual(LegacyTestSubClass.sub_foo, 'stuff')
-                    self.assertEqual(LegacyTestSubClass.sub_bar, ':)')
-                    self.assertEqual(LegacyTestSubClass.static_foobar('stuff'), 'bar')
-                    self.assertEqual(history, [
-                        (inst, 'stuff'),
-                        (LegacyTestSubClass, 'stuff'),
-                        ('stuff',),
-                        ('stuff',),
-                    ])
-                    del history[:]
-
-                    inst = LegacyTestSubSubClass('stuff')
-                    self.assertEqual(inst.subsub_foo, 'stuff')
-                    self.assertEqual(inst.subsub_bar, ':)')
-                    self.assertEqual(inst.inst, 'bar')
-                    self.assertEqual(inst.klass, 'bar')
-                    self.assertEqual(inst.static, 'bar')
-                    self.assertEqual(LegacyTestSubSubClass.subsub_foo, 'stuff')
-                    self.assertEqual(LegacyTestSubSubClass.subsub_bar, ':)')
-                    self.assertEqual(LegacyTestSubSubClass.static_foobar('stuff'), 'bar')
-                    self.assertEqual(history, [
-                        (inst, 'stuff'),
-                        (LegacyTestSubSubClass, 'stuff'),
-                        ('stuff',),
-                        ('stuff',),
-                    ])
-                    del history[:]
-
-        inst = LegacyTestClass('stuff')
-        self.assertEqual(inst.foo, 'stuff')
-        self.assertEqual(inst.bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'stuff')
-        self.assertEqual(LegacyTestClass.foo, 'stuff')
-        self.assertEqual(LegacyTestClass.bar, None)
-        self.assertEqual(LegacyTestClass.static_foobar('stuff'), 'stuff')
-
-        inst = LegacyTestSubClass('stuff')
-        self.assertEqual(inst.sub_foo, 'stuff')
-        self.assertEqual(inst.sub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'substuff')
-        self.assertEqual(LegacyTestSubClass.sub_foo, 'stuff')
-        self.assertEqual(LegacyTestSubClass.sub_bar, None)
-        self.assertEqual(LegacyTestSubClass.static_foobar('stuff'), 'substuff')
-
-        inst = LegacyTestSubSubClass('stuff')
-        self.assertEqual(inst.subsub_foo, 'stuff')
-        self.assertEqual(inst.subsub_bar, None)
-        self.assertEqual(inst.inst, None)
-        self.assertEqual(inst.klass, None)
-        self.assertEqual(inst.static, 'subsubstuff')
-        self.assertEqual(LegacyTestSubSubClass.subsub_foo, 'stuff')
-        self.assertEqual(LegacyTestSubSubClass.subsub_bar, None)
-        self.assertEqual(LegacyTestSubSubClass.static_foobar('stuff'), 'subsubstuff')
-
-        self.assertEqual(history, [])
-
-    def test_weave_class_all_magic(self):
-        history = []
-
-        @aspectlib.Aspect
-        def aspect(*args):
-            history.append(args)
-            yield aspectlib.Proceed
-
-        inst = TestClass()
-
-        with aspectlib.weave(TestClass, aspect, skip_magic_methods=False):
-            inst = TestClass('stuff')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (inst, 'stuff'),
-                (TestClass, 'stuff'),
-                ('stuff',),
-            ])
-            del history[:]
-
-            inst = TestSubClass('stuff')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (inst, 'stuff'),
-                (TestSubClass, 'stuff'),
-                ('stuff',),
-            ])
-            del history[:]
-
-            inst = TestSubSubClass('stuff')
-            self.assertEqual(history, [
-                (inst, 'stuff'),
-                (inst, 'stuff'),
-                (TestSubSubClass, 'stuff'),
-                ('stuff',),
-            ])
-            del history[:]
-
-        inst = TestClass('stuff')
-        inst = TestSubClass('stuff')
-        inst = TestSubSubClass('stuff')
-
-        self.assertEqual(history, [])
-
-    def test_weave_class_old_style_all_magic(self):
-        history = []
-
-        @aspectlib.Aspect
-        def aspect(*args):
-            history.append(args)
-            yield aspectlib.Proceed
-
-        inst = LegacyTestClass()
-
-        with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
-            with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
-                with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
-                    inst = LegacyTestClass('stuff')
-                    self.assertEqual(history, [
-                        (inst, 'stuff'),
-                        (LegacyTestClass, 'stuff'),
-                        ('stuff',),
-                    ])
-                    del history[:]
-
-                    inst = LegacyTestSubClass('stuff')
-                    self.assertEqual(history, [
-                        (inst, 'stuff'),
-                        (LegacyTestSubClass, 'stuff'),
-                        ('stuff',),
-                    ])
-                    del history[:]
-
-                    inst = LegacyTestSubSubClass('stuff')
-                    self.assertEqual(history, [
-                        (inst, 'stuff'),
-                        (LegacyTestSubSubClass, 'stuff'),
-                        ('stuff',),
-                    ])
-                    del history[:]
-
-        inst = LegacyTestClass('stuff')
-        inst = LegacyTestSubClass('stuff')
-        inst = LegacyTestSubSubClass('stuff')
-
-        self.assertEqual(history, [])
-
-    def test_just_proceed(self):
-        @aspectlib.Aspect
-        def aspect():
-            yield aspectlib.Proceed
-
-        @aspect
-        def func():
-            return 'stuff'
-
-        self.assertEqual(func(), 'stuff')
-
-    def test_just_proceed_with_error(self):
-        @aspectlib.Aspect
-        def aspect():
-            yield aspectlib.Proceed
-
-        @aspect
-        def func():
-            1/0
-
-        self.assertRaises(ZeroDivisionError, func)
-
-    def test_weave_unknown(self):
-        @aspectlib.Aspect
-        def aspect():
-            yield aspectlib.Proceed
-
-        self.assertRaises(RuntimeError, aspectlib.weave, 1, aspect)
-
-    def test_weave_unimportable(self):
-        @aspectlib.Aspect
-        def aspect():
-            yield aspectlib.Proceed
-
-        self.assertRaises(ImportError, aspectlib.weave, "1.2", aspect)
-
-    def test_weave_subclass(self, Bub=Sub):
-        with aspectlib.weave(Sub, mock('foobar'), on_init=True):
-            self.assertEqual(Sub().meth(), 'foobar')
-            self.assertEqual(Bub().meth(), 'base')
-        self.assertEqual(Sub().meth(), 'base')
-        self.assertTrue(Bub is Sub)
-
-    def test_weave_subclass_meth_manual(self):
-        with aspectlib.weave(Sub, mock('foobar'), on_init=True, only_methods=['meth']):
-            self.assertEqual(Sub().meth(), 'foobar')
-
-        self.assertEqual(Sub().meth(), 'base')
-
-    def test_weave_subclass_meth_auto(self):
-        with aspectlib.weave(Sub.meth, mock('foobar'), on_init=True):
-            self.assertEqual(Sub().meth(), 'foobar')
-
-        self.assertEqual(Sub().meth(), 'base')
-
-    def test_weave_multiple(self):
-        with aspectlib.weave((module_func, module_func2), mock('foobar')):
-            self.assertEqual(module_func(), 'foobar')
-            self.assertEqual(module_func2(), 'foobar')
-
-        self.assertEqual(module_func(), None)
-        self.assertEqual(module_func2(), None)
-
-
 def module_func():
     pass
 
@@ -772,7 +36,7 @@ def module_func2():
     pass
 
 
-class TestClass(object):
+class NormalTestClass(object):
     some = 'attribute'
 
     def __init__(self, foo=None):
@@ -795,7 +59,7 @@ class TestClass(object):
         return bar or foo
 
 
-class TestSubClass(TestClass):
+class NormalTestSubClass(NormalTestClass):
     def foobar(self, foo, bar=None):
         self.sub_foo = foo
         self.sub_bar = bar
@@ -810,7 +74,7 @@ class TestSubClass(TestClass):
         return 'sub' + (bar or foo)
 
 
-class TestSubSubClass(TestSubClass):
+class NormalTestSubSubClass(NormalTestSubClass):
     def foobar(self, foo, bar=None):
         self.subsub_foo = foo
         self.subsub_bar = bar
@@ -936,5 +200,732 @@ class SlotsTestSubSubClass(SlotsTestSubClass):
         return 'subsub' + (bar or foo)
 
 
-if __name__ == '__main__':
-    unittest.main()
+
+def test_aspect_bad():
+    @aspectlib.Aspect
+    def aspect():
+        return "crap"
+
+    @aspect
+    def func():
+        pass
+
+    raises(RuntimeError, func)
+
+def test_aspect_return():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Return
+
+    @aspect
+    def func():
+        return 'stuff'
+
+    assert func() == None
+
+def test_aspect_return_value():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Return('stuff')
+
+    @aspect
+    def func():
+        pass
+
+    assert func() == 'stuff'
+
+def test_aspect_raise():
+    @aspectlib.Aspect
+    def aspect():
+        try:
+            yield aspectlib.Proceed
+        except ZeroDivisionError:
+            pass
+        else:
+            raise AssertionError("didn't raise")
+
+        yield aspectlib.Return('stuff')
+
+    @aspect
+    def func():
+        1/0
+
+    assert func() == 'stuff'
+
+def test_aspect_raise_from_aspect():
+    @aspectlib.Aspect
+    def aspect():
+        1/0
+
+    @aspect
+    def func():
+        pass
+
+    raises(ZeroDivisionError, func)
+
+def test_aspect_return_but_call():
+    calls = []
+
+    @aspectlib.Aspect
+    def aspect(_):
+        assert 'first' == (yield aspectlib.Proceed)
+        assert 'second' == (yield aspectlib.Proceed('second'))
+        yield aspectlib.Return('stuff')
+
+    @aspect
+    def func(arg):
+        calls.append(arg)
+        return arg
+
+    assert func('first') == 'stuff'
+    assert calls, ['first' == 'second']
+
+def test_weave_func():
+    with aspectlib.weave(module_func, mock('stuff')):
+        assert module_func() == 'stuff'
+
+    assert module_func() == None
+
+def test_broken_weave_func():
+    raises(RuntimeError, aspectlib.weave, None, None, only_methods=['a'], skip_methods=['b'])
+
+def test_weave_empty_target():
+    raises(AssertionError, aspectlib.weave, (), None)
+
+def test_weave_missing_global(cls=Global):
+    global Global
+    Global = 'crap'
+    try:
+        raises(AssertionError, aspectlib.weave, cls, mock('stuff'), on_init=True)
+    finally:
+        Global = cls
+
+def test_weave_str_missing_target():
+    raises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
+
+def test_weave_str_bad_target():
+    raises(RuntimeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
+
+def test_weave_str_target():
+    with aspectlib.weave('test_pkg1.test_pkg2.test_mod.target', mock('foobar')):
+        from test_pkg1.test_pkg2.test_mod import target
+        assert target() == 'foobar'
+
+    from test_pkg1.test_pkg2.test_mod import target
+    assert target() == None
+
+def test_weave_str_class_target():
+    with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff', mock('foobar')):
+        from test_pkg1.test_pkg2.test_mod import Stuff
+        assert Stuff().meth() == 'foobar'
+
+    from test_pkg1.test_pkg2.test_mod import Stuff
+    assert Stuff().meth() == None
+
+@pytest.mark.xfail(reason='fixme')
+def test_weave_str_class_meth_target():
+    with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff.meth', mock('foobar')):
+        from test_pkg1.test_pkg2.test_mod import Stuff
+        assert Stuff().meth() == 'foobar'
+
+    from test_pkg1.test_pkg2.test_mod import Stuff
+    assert Stuff().meth() == None
+
+
+def test_weave_wrong_module():
+    calls = []
+    with aspectlib.weave('warnings.warn', record(history=calls)):
+        aspectlib.weave(AliasedGlobal, mock('stuff'), on_init=True)
+    assert calls == [
+        (None,
+         ("Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
+          "There was no previous definition, probably patching the wrong module.",),
+         {})
+    ]
+
+def test_weave_bad_args1():
+    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), only_methods=['asdf'])
+
+def test_weave_bad_args2():
+    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_methods=['asdf'])
+
+@pytest.mark.xfail(reason="hmmm")
+def test_weave_bad_args3():
+    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), on_init=False)
+
+def test_weave_bad_args4():
+    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_subclasses=False)
+
+def test_weave_bad_args5():
+    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_magic_methods=False)
+
+def test_weave_class_meth():
+    @aspectlib.Aspect
+    def aspect(self, *_):
+        self.foo = 'bar'
+        yield aspectlib.Return
+
+    with aspectlib.weave(NormalTestClass.foobar, aspect):
+        inst = NormalTestClass('stuff')
+        assert inst.foo == 'bar'
+        inst.foobar()
+
+    inst = NormalTestClass('stuff')
+    assert inst.foo == 'stuff'
+
+def test_weave_instance_meth():
+    @aspectlib.Aspect
+    def aspect(self):
+        self.foo = 'bar'
+        yield aspectlib.Return
+
+    inst = NormalTestClass()
+    with aspectlib.weave(inst.foobar, aspect):
+        inst.foobar()
+        assert inst.foo == 'bar'
+
+    inst.foobar('stuff')
+    assert inst.foo == 'stuff'
+
+def test_weave_class():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        history.append(args)
+        args += ':)',
+        yield aspectlib.Proceed(*args)
+        yield aspectlib.Return('bar')
+
+    inst = NormalTestClass()
+
+    with aspectlib.weave(NormalTestClass, aspect):
+        inst = NormalTestClass('stuff')
+        assert inst.foo == 'stuff'
+        assert inst.bar == ':)'
+        assert inst.inst == 'bar'
+        assert inst.klass == 'bar'
+        assert inst.static == 'bar'
+        assert NormalTestClass.foo == 'stuff'
+        assert NormalTestClass.bar == ':)'
+        assert NormalTestClass.static_foobar('stuff') == 'bar'
+        assert history == [
+            (inst, 'stuff'),
+            (NormalTestClass, 'stuff'),
+            ('stuff',),
+            ('stuff',),
+        ]
+        del history[:]
+
+        inst = NormalTestSubClass('stuff')
+        assert inst.sub_foo == 'stuff'
+        assert inst.sub_bar == ':)'
+        assert inst.inst == 'bar'
+        assert inst.klass == 'bar'
+        assert inst.static == 'bar'
+        assert NormalTestSubClass.sub_foo == 'stuff'
+        assert NormalTestSubClass.sub_bar == ':)'
+        assert NormalTestSubClass.static_foobar('stuff') == 'bar'
+        assert history == [
+            (inst, 'stuff'),
+            (NormalTestSubClass, 'stuff'),
+            ('stuff',),
+            ('stuff',),
+        ]
+        del history[:]
+
+        inst = NormalTestSubSubClass('stuff')
+        assert inst.subsub_foo == 'stuff'
+        assert inst.subsub_bar == ':)'
+        assert inst.inst == 'bar'
+        assert inst.klass == 'bar'
+        assert inst.static == 'bar'
+        assert NormalTestSubSubClass.subsub_foo == 'stuff'
+        assert NormalTestSubSubClass.subsub_bar == ':)'
+        assert NormalTestSubSubClass.static_foobar('stuff') == 'bar'
+        assert history == [
+            (inst, 'stuff'),
+            (NormalTestSubSubClass, 'stuff'),
+            ('stuff',),
+            ('stuff',),
+        ]
+        del history[:]
+
+    inst = NormalTestClass('stuff')
+    assert inst.foo == 'stuff'
+    assert inst.bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'stuff'
+    assert NormalTestClass.foo == 'stuff'
+    assert NormalTestClass.bar == None
+    assert NormalTestClass.static_foobar('stuff') == 'stuff'
+
+    inst = NormalTestSubClass('stuff')
+    assert inst.sub_foo == 'stuff'
+    assert inst.sub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'substuff'
+    assert NormalTestSubClass.sub_foo == 'stuff'
+    assert NormalTestSubClass.sub_bar == None
+    assert NormalTestSubClass.static_foobar('stuff') == 'substuff'
+
+    inst = NormalTestSubSubClass('stuff')
+    assert inst.subsub_foo == 'stuff'
+    assert inst.subsub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'subsubstuff'
+    assert NormalTestSubSubClass.subsub_foo == 'stuff'
+    assert NormalTestSubSubClass.subsub_bar == None
+    assert NormalTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
+
+    assert history == []
+
+def test_weave_class_slots():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        history.append(args)
+        args += ':)',
+        yield aspectlib.Proceed(*args)
+        yield aspectlib.Return('bar')
+
+    inst = SlotsTestClass('stuff')
+    assert inst.foo == 'stuff'
+    assert inst.bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'stuff'
+    assert SlotsTestClass.class_foo == 'stuff'
+    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.static_foobar('stuff') == 'stuff'
+
+    inst = SlotsTestClass()
+    with aspectlib.weave(SlotsTestClass, aspect):
+        inst = SlotsTestClass('stuff')
+        assert inst.foo == 'stuff'
+        assert inst.bar == ':)'
+        assert inst.inst == 'bar'
+        assert inst.klass == 'bar'
+        assert inst.static == 'bar'
+        assert SlotsTestClass.class_foo == 'stuff'
+        assert SlotsTestClass.class_bar == ':)'
+        assert SlotsTestClass.static_foobar('stuff') == 'bar'
+        assert history == [
+            (inst, 'stuff'),
+            (SlotsTestClass, 'stuff'),
+            ('stuff',),
+            ('stuff',),
+        ]
+        del history[:]
+
+        inst = SlotsTestSubClass('stuff')
+        assert inst.sub_foo == 'stuff'
+        assert inst.sub_bar == ':)'
+        assert inst.inst == 'bar'
+        assert inst.klass == 'bar'
+        assert inst.static == 'bar'
+        assert SlotsTestSubClass.class_sub_foo == 'stuff'
+        assert SlotsTestSubClass.class_sub_bar == ':)'
+        assert SlotsTestSubClass.static_foobar('stuff') == 'bar'
+        assert history == [
+            (inst, 'stuff'),
+            (SlotsTestSubClass, 'stuff'),
+            ('stuff',),
+            ('stuff',),
+        ]
+        del history[:]
+
+        inst = SlotsTestSubSubClass('stuff')
+        assert inst.subsub_foo == 'stuff'
+        assert inst.subsub_bar == ':)'
+        assert inst.inst == 'bar'
+        assert inst.klass == 'bar'
+        assert inst.static == 'bar'
+        assert SlotsTestSubSubClass.class_subsub_foo == 'stuff'
+        assert SlotsTestSubSubClass.class_subsub_bar == ':)'
+        assert SlotsTestSubSubClass.static_foobar('stuff') == 'bar'
+        assert history == [
+            (inst, 'stuff'),
+            (SlotsTestSubSubClass, 'stuff'),
+            ('stuff',),
+            ('stuff',),
+        ]
+        del history[:]
+
+    inst = SlotsTestClass('stuff')
+    assert inst.foo == 'stuff'
+    assert inst.bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'stuff'
+    assert SlotsTestClass.class_foo == 'stuff'
+    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.static_foobar('stuff') == 'stuff'
+
+    inst = SlotsTestSubClass('stuff')
+    assert inst.sub_foo == 'stuff'
+    assert inst.sub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'substuff'
+    assert SlotsTestSubClass.class_sub_foo == 'stuff'
+    assert SlotsTestSubClass.class_sub_bar == None
+    assert SlotsTestSubClass.static_foobar('stuff') == 'substuff'
+
+    inst = SlotsTestSubSubClass('stuff')
+    assert inst.subsub_foo == 'stuff'
+    assert inst.subsub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'subsubstuff'
+    assert SlotsTestSubSubClass.class_subsub_foo == 'stuff'
+    assert SlotsTestSubSubClass.class_subsub_bar == None
+    assert SlotsTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
+
+    assert history == []
+
+
+def test_weave_class_on_init():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        history.append(args)
+        args += ':)',
+        yield aspectlib.Proceed(*args)
+        yield aspectlib.Return('bar')
+
+    inst = SlotsTestClass('stuff')
+    assert inst.foo == 'stuff'
+    assert inst.bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'stuff'
+    assert SlotsTestClass.class_foo == 'stuff'
+    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.static_foobar('stuff') == 'stuff'
+
+    inst = SlotsTestClass()
+    with aspectlib.weave(SlotsTestClass, aspect, on_init=True):
+
+        inst = SlotsTestClass('stuff')
+        assert inst.foo == 'stuff'
+        assert inst.bar == None
+        assert inst.inst == None
+        assert inst.foobar('bluff') == 'bar'
+        assert inst.foo == 'bluff'
+        assert inst.bar == ':)'
+        assert inst.class_foobar('bluff') == 'bar'
+        assert SlotsTestClass.class_foo == 'bluff'
+        assert SlotsTestClass.class_bar == ':)'
+        assert SlotsTestClass.static_foobar('stuff') == 'bar'
+
+        inst = SlotsTestSubClass('stuff')
+        assert inst.sub_foo == 'stuff'
+        assert inst.sub_bar == None
+        assert inst.inst == None
+        assert inst.foobar('bluff') == 'bar'
+        assert inst.sub_foo == 'bluff'
+        assert inst.sub_bar == ':)'
+        assert inst.class_foobar('bluff') == 'bar'
+        assert SlotsTestSubClass.class_sub_foo == 'bluff'
+        assert SlotsTestSubClass.class_sub_bar == ':)'
+        assert SlotsTestSubClass.static_foobar('stuff') == 'bar'
+
+        inst = SlotsTestSubSubClass('stuff')
+        assert inst.subsub_foo == 'stuff'
+        assert inst.subsub_bar == None
+        assert inst.inst == None
+        assert inst.foobar('bluff') == 'bar'
+        assert inst.subsub_foo == 'bluff'
+        assert inst.subsub_bar == ':)'
+        assert inst.class_foobar('bluff') == 'bar'
+        assert SlotsTestSubSubClass.class_subsub_foo == 'bluff'
+        assert SlotsTestSubSubClass.class_subsub_bar == ':)'
+        assert SlotsTestSubSubClass.static_foobar('stuff') == 'bar'
+
+    del history[:]
+
+    inst = SlotsTestClass('stuff')
+    assert inst.foo == 'stuff'
+    assert inst.bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'stuff'
+    assert SlotsTestClass.class_foo == 'stuff'
+    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.static_foobar('stuff') == 'stuff'
+
+    inst = SlotsTestSubClass('stuff')
+    assert inst.sub_foo == 'stuff'
+    assert inst.sub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'substuff'
+    assert SlotsTestSubClass.class_sub_foo == 'stuff'
+    assert SlotsTestSubClass.class_sub_bar == None
+    assert SlotsTestSubClass.static_foobar('stuff') == 'substuff'
+
+    inst = SlotsTestSubSubClass('stuff')
+    assert inst.subsub_foo == 'stuff'
+    assert inst.subsub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'subsubstuff'
+    assert SlotsTestSubSubClass.class_subsub_foo == 'stuff'
+    assert SlotsTestSubSubClass.class_subsub_bar == None
+    assert SlotsTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
+
+    assert history == []
+
+def test_weave_class_old_style():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        history.append(args)
+        args += ':)',
+        yield aspectlib.Proceed(*args)
+        yield aspectlib.Return('bar')
+
+    inst = LegacyTestClass()
+
+    with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
+        with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
+            with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
+                inst = LegacyTestClass('stuff')
+                assert inst.foo == 'stuff'
+                assert inst.bar == ':)'
+                assert inst.inst == 'bar'
+                assert inst.klass == 'bar'
+                assert inst.static == 'bar'
+                assert LegacyTestClass.foo == 'stuff'
+                assert LegacyTestClass.bar == ':)'
+                assert LegacyTestClass.static_foobar('stuff') == 'bar'
+                assert history == [
+                    (inst, 'stuff'),
+                    (LegacyTestClass, 'stuff'),
+                    ('stuff',),
+                    ('stuff',),
+                ]
+                del history[:]
+
+                inst = LegacyTestSubClass('stuff')
+                assert inst.sub_foo == 'stuff'
+                assert inst.sub_bar == ':)'
+                assert inst.inst == 'bar'
+                assert inst.klass == 'bar'
+                assert inst.static == 'bar'
+                assert LegacyTestSubClass.sub_foo == 'stuff'
+                assert LegacyTestSubClass.sub_bar == ':)'
+                assert LegacyTestSubClass.static_foobar('stuff') == 'bar'
+                assert history == [
+                    (inst, 'stuff'),
+                    (LegacyTestSubClass, 'stuff'),
+                    ('stuff',),
+                    ('stuff',),
+                ]
+                del history[:]
+
+                inst = LegacyTestSubSubClass('stuff')
+                assert inst.subsub_foo == 'stuff'
+                assert inst.subsub_bar == ':)'
+                assert inst.inst == 'bar'
+                assert inst.klass == 'bar'
+                assert inst.static == 'bar'
+                assert LegacyTestSubSubClass.subsub_foo == 'stuff'
+                assert LegacyTestSubSubClass.subsub_bar == ':)'
+                assert LegacyTestSubSubClass.static_foobar('stuff') == 'bar'
+                assert history == [
+                    (inst, 'stuff'),
+                    (LegacyTestSubSubClass, 'stuff'),
+                    ('stuff',),
+                    ('stuff',),
+                ]
+                del history[:]
+
+    inst = LegacyTestClass('stuff')
+    assert inst.foo == 'stuff'
+    assert inst.bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'stuff'
+    assert LegacyTestClass.foo == 'stuff'
+    assert LegacyTestClass.bar == None
+    assert LegacyTestClass.static_foobar('stuff') == 'stuff'
+
+    inst = LegacyTestSubClass('stuff')
+    assert inst.sub_foo == 'stuff'
+    assert inst.sub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'substuff'
+    assert LegacyTestSubClass.sub_foo == 'stuff'
+    assert LegacyTestSubClass.sub_bar == None
+    assert LegacyTestSubClass.static_foobar('stuff') == 'substuff'
+
+    inst = LegacyTestSubSubClass('stuff')
+    assert inst.subsub_foo == 'stuff'
+    assert inst.subsub_bar == None
+    assert inst.inst == None
+    assert inst.klass == None
+    assert inst.static == 'subsubstuff'
+    assert LegacyTestSubSubClass.subsub_foo == 'stuff'
+    assert LegacyTestSubSubClass.subsub_bar == None
+    assert LegacyTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
+
+    assert history == []
+
+def test_weave_class_all_magic():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        history.append(args)
+        yield aspectlib.Proceed
+
+    inst = NormalTestClass()
+
+    with aspectlib.weave(NormalTestClass, aspect, skip_magic_methods=False):
+        inst = NormalTestClass('stuff')
+        assert history == [
+            (inst, 'stuff'),
+            (inst, 'stuff'),
+            (NormalTestClass, 'stuff'),
+            ('stuff',),
+        ]
+        del history[:]
+
+        inst = NormalTestSubClass('stuff')
+        assert history == [
+            (inst, 'stuff'),
+            (inst, 'stuff'),
+            (NormalTestSubClass, 'stuff'),
+            ('stuff',),
+        ]
+        del history[:]
+
+        inst = NormalTestSubSubClass('stuff')
+        assert history == [
+            (inst, 'stuff'),
+            (inst, 'stuff'),
+            (NormalTestSubSubClass, 'stuff'),
+            ('stuff',),
+        ]
+        del history[:]
+
+    inst = NormalTestClass('stuff')
+    inst = NormalTestSubClass('stuff')
+    inst = NormalTestSubSubClass('stuff')
+
+    assert history == []
+
+def test_weave_class_old_style_all_magic():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        history.append(args)
+        yield aspectlib.Proceed
+
+    inst = LegacyTestClass()
+
+    with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
+        with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
+            with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
+                inst = LegacyTestClass('stuff')
+                assert history == [
+                    (inst, 'stuff'),
+                    (LegacyTestClass, 'stuff'),
+                    ('stuff',),
+                ]
+                del history[:]
+
+                inst = LegacyTestSubClass('stuff')
+                assert history == [
+                    (inst, 'stuff'),
+                    (LegacyTestSubClass, 'stuff'),
+                    ('stuff',),
+                ]
+                del history[:]
+
+                inst = LegacyTestSubSubClass('stuff')
+                assert history == [
+                    (inst, 'stuff'),
+                    (LegacyTestSubSubClass, 'stuff'),
+                    ('stuff',),
+                ]
+                del history[:]
+
+    inst = LegacyTestClass('stuff')
+    inst = LegacyTestSubClass('stuff')
+    inst = LegacyTestSubSubClass('stuff')
+
+    assert history == []
+
+def test_just_proceed():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+
+    @aspect
+    def func():
+        return 'stuff'
+
+    assert func() == 'stuff'
+
+def test_just_proceed_with_error():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+
+    @aspect
+    def func():
+        1/0
+
+    raises(ZeroDivisionError, func)
+
+def test_weave_unknown():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+
+    raises(RuntimeError, aspectlib.weave, 1, aspect)
+
+def test_weave_unimportable():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+
+    raises(ImportError, aspectlib.weave, "1.2", aspect)
+
+def test_weave_subclass(Bub=Sub):
+    with aspectlib.weave(Sub, mock('foobar'), on_init=True):
+        assert Sub().meth() == 'foobar'
+        assert Bub().meth() == 'base'
+    assert Sub().meth() == 'base'
+    assert Bub is Sub
+
+def test_weave_subclass_meth_manual():
+    with aspectlib.weave(Sub, mock('foobar'), on_init=True, only_methods=['meth']):
+        assert Sub().meth() == 'foobar'
+
+    assert Sub().meth() == 'base'
+
+def test_weave_subclass_meth_auto():
+    with aspectlib.weave(Sub.meth, mock('foobar'), on_init=True):
+        assert Sub().meth() == 'foobar'
+
+    assert Sub().meth() == 'base'
+
+def test_weave_multiple():
+    with aspectlib.weave((module_func, module_func2), mock('foobar')):
+        assert module_func() == 'foobar'
+        assert module_func2() == 'foobar'
+
+    assert module_func() == None
+    assert module_func2() == None

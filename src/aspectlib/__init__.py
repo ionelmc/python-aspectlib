@@ -263,8 +263,7 @@ def _weave_class(target, aspect, skip_magic_methods, skip_subclasses, on_init, s
         for sub_class in target.__subclasses__():
             if not issubclass(sub_class, Fabric):
                 rollbacks.extend(_weave_class(
-                    sub_class, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods,
-                    force_module=force_module
+                    sub_class, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
                 ))
     if on_init:
         logger.debug("Weaving %r as class (on demand at __init__ time).", target)

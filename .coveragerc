@@ -1,5 +1,11 @@
+[paths]
+source =
+    src/aspectlib
+    */aspectlib
+
 [run]
 source = src
+parallel = true
 [report]
 show_missing = true
-omit = */python?.?/*,*/site-packages/*,*/pypy/*
+precision = 2

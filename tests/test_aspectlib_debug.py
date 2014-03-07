@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import logging
+import re
 
 import aspectlib
 import aspectlib.debug
@@ -35,47 +36,43 @@ class MyStuff(object):
         return self.foo
 
 
-class LoggerTestCase(unittest.TestCase):
-    maxDiff = None
-
-    def test_simple(self):
-        buf = StringIO()
-        with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, module=False, stacktrace=2)):
-            some_meth(1, 2, 3, a=4)
-
-        self.assertRegexpMatches(buf.getvalue(), LOG_TEST_SIMPLE)
+def test_simple():
+    buf = StringIO()
+    with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, module=False, stacktrace=2)):
         some_meth(1, 2, 3, a=4)
-        self.assertRegexpMatches(buf.getvalue(), LOG_TEST_SIMPLE)
 
-    def test_fail_to_log(self):
-        @aspectlib.debug.log(print_to="crap")
-        def foo():
-            pass
-        foo()
+    assert re.match(LOG_TEST_SIMPLE, buf.getvalue())
+    some_meth(1, 2, 3, a=4)
+    assert re.match(LOG_TEST_SIMPLE, buf.getvalue())
 
-    def test_logging_works(self):
-        buf = StringIO()
-        ch = logging.StreamHandler(buf)
-        ch.setLevel(logging.DEBUG)
-        aspectlib.debug.logger.addHandler(ch)
+def test_fail_to_log():
+    @aspectlib.debug.log(print_to="crap")
+    def foo():
+        pass
+    foo()
 
-        @aspectlib.debug.log
-        def foo():
-            pass
-        foo()
-        self.assertRegexpMatches(buf.getvalue(), 'foo\(\) +<<<.*\nfoo => None\n')
+def test_logging_works():
+    buf = StringIO()
+    ch = logging.StreamHandler(buf)
+    ch.setLevel(logging.DEBUG)
+    aspectlib.debug.logger.addHandler(ch)
 
-    def test_attributes(self):
-        buf = StringIO()
-        with aspectlib.weave(MyStuff, aspectlib.debug.log(
-            print_to=buf,
-            stacktrace=2,
-            module=False,
-            attributes=('foo', 'bar()')
-        ), skip_methods=('bar',)):
-            MyStuff('bar').stuff()
-        print(buf.getvalue())
-        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
+    @aspectlib.debug.log
+    def foo():
+        pass
+    foo()
+    assert re.match('foo\(\) +<<<.*\nfoo => None\n', buf.getvalue())
+
+def test_attributes():
+    buf = StringIO()
+    with aspectlib.weave(MyStuff, aspectlib.debug.log(
+        print_to=buf,
+        stacktrace=2,
+        module=False,
+        attributes=('foo', 'bar()')
+    ), skip_methods=('bar',)):
         MyStuff('bar').stuff()
-        self.assertRegexpMatches(buf.getvalue(), "^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$")
-
+    print(buf.getvalue())
+    assert re.match("^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    MyStuff('bar').stuff()
+    assert re.match("^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
