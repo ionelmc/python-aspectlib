@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.4.1
+-------------
+
+* Remove junk from 0.4.0's source distribution.
+
 Version 0.4.0
 -------------
 
