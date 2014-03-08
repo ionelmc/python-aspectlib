@@ -7,6 +7,7 @@ import re
 from collections import deque
 from functools import wraps
 from itertools import chain
+from inspect import ismethod, isclass, isbuiltin, isfunction, isroutine
 from logging import getLogger
 
 from types import FunctionType
@@ -143,34 +144,41 @@ def weave(target, aspect, **options):
         assert '.' in target, "Need at least a module in the target specification !"
         parts = target.split('.')
         for pos in reversed(range(1, len(parts))):
-            mod, name = '.'.join(parts[:pos]), '.'.join(parts[pos:])
+            owner, name = '.'.join(parts[:pos]), '.'.join(parts[pos:])
             try:
-                __import__(mod)
-                mod = sys.modules[mod]
+                __import__(owner)
+                owner = sys.modules[owner]
             except ImportError:
                 continue
             else:
                 break
         else:
-            raise ImportError("Could not import %r. Last try was for %s" % (target, mod))
-        logger.debug("Patching %s from %s ...", name, mod)
-        obj = getattr(mod, name)
+            raise ImportError("Could not import %r. Last try was for %s" % (target, owner))
+
+        if '.' in name:
+            path, name = name.rsplit('.', 1)
+            path = deque(path.split('.'))
+            while path:
+                owner = getattr(owner, path.popleft())
+
+        logger.debug("Patching %s from %s ...", name, owner)
+        obj = getattr(owner, name)
         if isinstance(obj, (type, ClassType)):
             logger.debug(" .. as a class %r.", obj)
             return weave_class(
                 obj, aspect,
-                owner=mod, name=name, **options
+                owner=owner, name=name, **options
             )
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
             logger.debug(" .. as a callable %r.", obj)
-            return weave_module_function(mod, obj, aspect, force_name=name, **options)
+            return weave_module_function(owner, obj, aspect, force_name=name, **options)
         else:
             raise RuntimeError("Can't weave object %s of type %s" % (obj, type(obj)))
 
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
         return weave_module_function(__builtin__, target, aspect, **options)
-    elif PY3 and isinstance(target, MethodType):
+    elif PY3 and ismethod(target):
         inst = target.__self__
         name = target.__name__
         logger.debug("Weaving %r (%s) as instance method.", target, name)
@@ -303,7 +311,12 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
                 if alias == name:
                     seen = True
             elif alias == name:
-                raise AssertionError("%s.%s = %s is not %s." % (location, alias, obj, original))
+                if ismethod(obj):
+                    logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
+                    setattr(module, alias, replacement)
+                    rollback.merge(lambda alias=alias: setattr(module, alias, original))
+                else:
+                    raise AssertionError("%s.%s = %s is not %s." % (location, alias, obj, original))
 
     if not seen:
         warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module.' % (
@@ -326,5 +339,4 @@ def force_bind(func):
 def weave_module_function(mod, target, aspect, force_name=None):
     logger.debug("Weaving %r as plain function.", target)
     name = force_name or target.__name__
-    assert getattr(mod, name) is target
     return patch_module(mod, name, checked_apply(aspect, target), original=target)

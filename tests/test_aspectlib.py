@@ -336,7 +336,6 @@ def test_weave_str_class_target():
     assert Stuff().meth() is None
 
 
-@pytest.mark.xfail(reason='fixme')
 def test_weave_str_class_meth_target():
     with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff.meth', mock('foobar')):
         from test_pkg1.test_pkg2.test_mod import Stuff
