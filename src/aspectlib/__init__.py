@@ -1,18 +1,19 @@
 from __future__ import print_function
 
 import platform
+import re
 import sys
 import warnings
-import re
 from collections import deque
 from functools import wraps
-from itertools import chain
-from inspect import ismethod, isclass, isbuiltin, isfunction, isroutine
+from inspect import isclass
+from inspect import isfunction
+from inspect import ismethod
+from inspect import ismethoddescriptor
+from inspect import isroutine
 from logging import getLogger
 
-from types import FunctionType
 from types import GeneratorType
-from types import MethodType
 
 try:
     import __builtin__
@@ -38,18 +39,13 @@ class _Sentinel(object):
         self.name = name
         self.__doc__ = doc
 
-    def __str__(self):
-        return self.name
-
     def __repr__(self):
         if not self.__doc__:
-            return "<%s>" % self.name
+            return "%s" % self.name
         else:
-            return "<%s: %s>" % (self.name, self.__doc__)
+            return "%s: %s" % (self.name, self.__doc__)
+    __str__ = __repr__
 
-
-DEFAULT_FALSE = _Sentinel('FALSE')
-DEFAULT_TRUE = _Sentinel('TRUE')
 UNSPECIFIED = _Sentinel('UNSPECIFIED')
 ALL_METHODS = re.compile('.*')
 NORMAL_METHODS = re.compile('(?!__.*__$)')
@@ -174,7 +170,6 @@ def weave(target, aspect, **options):
             return weave_module_function(owner, obj, aspect, force_name=name, **options)
         else:
             raise RuntimeError("Can't weave object %s of type %s" % (obj, type(obj)))
-
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
         return weave_module_function(__builtin__, target, aspect, **options)
@@ -186,7 +181,7 @@ def weave(target, aspect, **options):
         func = getattr(inst, name)
         setattr(inst, name, aspect(func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
-    elif PY3 and isinstance(target, FunctionType):
+    elif PY3 and isfunction(target):
         owner = __import__(target.__module__)
         path = deque(target.__qualname__.split('.')[:-1])
         while path:
@@ -197,9 +192,9 @@ def weave(target, aspect, **options):
         func = owner.__dict__[name]
         setattr(owner, name, checked_apply(aspect, target))
         return Rollback(lambda: setattr(owner, name, target))
-    elif PY2 and isinstance(target, FunctionType):
+    elif PY2 and isfunction(target):
         return weave_module_function(__import__(target.__module__), target, aspect, **options)
-    elif PY2 and isinstance(target, MethodType):
+    elif PY2 and ismethod(target):
         if target.im_self:
             inst = target.im_self
             name = target.__name__
@@ -212,16 +207,30 @@ def weave(target, aspect, **options):
             klass = target.im_class
             name = target.__name__
             return weave(klass, aspect, methods='%s$' % name, **options)
-    elif isinstance(target, (type, ClassType)):
+    elif isclass(target):
         return weave_class(target, aspect, **options)
     else:
         raise RuntimeError("Can't weave object %s of type %s" % (target, type(target)))
+
+def rewrap_method(func, klass, aspect):
+    if isinstance(func, staticmethod):
+        if hasattr(func, '__func__'):
+            return staticmethod(checked_apply(aspect, func.__func__))
+        else:
+            return staticmethod(checked_apply(aspect, func.__get__(None, klass)))
+    elif isinstance(func, classmethod):
+        if hasattr(func, '__func__'):
+            return classmethod(checked_apply(aspect, func.__func__))
+        else:
+            return classmethod(checked_apply(aspect, func.__get__(None, klass).im_func))
+    else:
+        return checked_apply(aspect, func)
 
 
 def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=False,
                 owner=None, name=None, aliases=True):
 
-    assert isinstance(klass, (type, ClassType)), "Can't weave %r. Must be a class." % klass
+    assert isclass(klass), "Can't weave %r. Must be a class." % klass
     entanglement = Rollback()
     if isinstance(methods, (str, unicode)):
         method_matches = re.compile(methods).match
@@ -230,7 +239,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
     elif isinstance(methods, REGEX_TYPE):
         method_matches = methods.match
     else:
-        raise RuntimeError("Unacceptable methods spec %r." % methods)
+        raise TypeError("Unacceptable methods spec %r." % methods)
 
     if subclasses and hasattr(klass, '__subclasses__'):
         for sub_class in klass.__subclasses__():
@@ -251,16 +260,9 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         }
         for attr, func in klass.__dict__.items():
             if method_matches(attr):
-                if isinstance(func, staticmethod):
-                    if hasattr(func, '__func__'):
-                        wrappers[attr] = staticmethod(checked_apply(aspect, func.__func__))
-                    else:
-                        wrappers[attr] = staticmethod(checked_apply(aspect, func.__get__(None, klass)))
-                elif isinstance(func, classmethod):
-                    if hasattr(func, '__func__'):
-                        wrappers[attr] = classmethod(checked_apply(aspect, func.__func__))
-                    else:
-                        wrappers[attr] = classmethod(checked_apply(aspect, func.__get__(None, klass).im_func))
+                if ismethoddescriptor(func):
+                    wrappers[attr] = rewrap_method(func, klass, aspect)
+
         logger.debug(" * Creating subclass with attributes %r", wrappers)
         name = name or klass.__name__
         SubClass = type(name, (klass, Fabric), wrappers)
@@ -272,18 +274,8 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         original = {}
         for attr, func in klass.__dict__.items():
             if method_matches(attr):
-                if isinstance(func, staticmethod):
-                    if hasattr(func, '__func__'):
-                        setattr(klass, attr, staticmethod(checked_apply(aspect, func.__func__)))
-                    else:
-                        setattr(klass, attr, staticmethod(checked_apply(aspect, func.__get__(None, klass))))
-                elif isinstance(func, classmethod):
-                    if hasattr(func, '__func__'):
-                        setattr(klass, attr, classmethod(checked_apply(aspect, func.__func__)))
-                    else:
-                        setattr(klass, attr, classmethod(checked_apply(aspect, func.__get__(None, klass).im_func)))
-                elif callable(func):
-                    setattr(klass, attr, checked_apply(aspect, func))
+                if isroutine(func):
+                    setattr(klass, attr, rewrap_method(func, klass, aspect))
                 else:
                     continue
                 original[attr] = func
