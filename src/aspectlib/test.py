@@ -35,8 +35,6 @@ class RecordingWrapper(FunctionWrapper):
     :param function wrapped: Wrapper function
     :param list calls: Instance to put in the `.calls` attribute.
     """
-    __slots__ = '__wrapped__', 'calls'
-
     calls = None
 
     def __init__(self, wrapped, wrapper, calls):
