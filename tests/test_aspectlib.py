@@ -374,6 +374,10 @@ def test_weave_bad_args4():
     raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), subclasses=False)
 
 
+def test_weave_bad_args5():
+    raises(TypeError, aspectlib.weave, Sub, mock('stuff'), methods=False)
+
+
 def test_weave_class_meth():
     @aspectlib.Aspect
     def aspect(self, *_):
@@ -965,3 +969,9 @@ def test_weave_multiple():
 
     assert module_func() is None
     assert module_func2() is None
+
+def test_unspecified_str():
+    assert repr(aspectlib.UNSPECIFIED) == 'UNSPECIFIED'
+
+def test_sentinel():
+    assert repr(aspectlib._Sentinel('STUFF', "Means it's some stuff")) == "STUFF: Means it's some stuff"
