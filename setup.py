@@ -32,6 +32,10 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
+    keywords=[
+        'python', 'aop', 'aspects', 'aspect oriented programming', 'decorators', 'patch', 'monkeypatch', 'weave',
+        'debug', 'log', 'tests', 'mock'
+    ],
     install_requires=[
         'wrapt>=1.6.0',
     ],
