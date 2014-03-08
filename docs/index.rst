@@ -9,10 +9,11 @@ behavior in existing code is desired.
 
     introduction
     installation
-    development
     rationale
-    todo
+    examples
     reference/index
+    development
+    todo
     changelog
 
 Indices and tables

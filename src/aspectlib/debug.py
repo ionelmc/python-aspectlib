@@ -28,7 +28,8 @@ def format_stack(skip=0, length=6, _sep=os.path.sep):
         f.f_code.co_name
     ) for f in islice(frame_iterator(sys._getframe(1 + skip)), length))
 
-ASCII_ONLY = ''.join(i if i in string.printable else '.' for i in (chr(c) for c in range(256)))
+PRINTABLE = string.digits + string.ascii_letters + string.punctuation + ' '
+ASCII_ONLY = ''.join(i if i in PRINTABLE else '.' for i in (chr(c) for c in range(256)))
 
 
 def strip_non_ascii(val):

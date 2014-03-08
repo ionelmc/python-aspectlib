@@ -20,8 +20,7 @@ def some_meth(*args, **kwargs):
     return ''.join(chr(i) for i in range(255))
 
 LOG_TEST_SIMPLE = '''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
-some_meth => \.\.\.\.\.\.\.\.\.\t
-\x0b\x0c\r\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
+some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
 $'''
 
 
@@ -76,3 +75,15 @@ def test_attributes():
     assert re.match("^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
     MyStuff('bar').stuff()
     assert re.match("^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+
+def test_no_stack():
+    buf = StringIO()
+    with aspectlib.weave(MyStuff, aspectlib.debug.log(
+        print_to=buf,
+        stacktrace=None,
+        module=False,
+        attributes=('foo', 'bar()')
+    ), methods='(?!bar)(?!__.*__$)'):
+        MyStuff('bar').stuff()
+    print(buf.getvalue())
+    assert "{MyStuff foo='bar' bar='foo'}.stuff()\n{MyStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
