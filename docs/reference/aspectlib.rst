@@ -1,5 +1,5 @@
-API: aspectlib
-==============
+aspectlib
+=========
 
 .. autosummary::
     :nosignatures:

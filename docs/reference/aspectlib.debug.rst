@@ -1,5 +1,5 @@
-API: aspectlib.debug
-====================
+aspectlib.debug
+===============
 
 .. autosummary::
     :nosignatures:

@@ -12,14 +12,7 @@ behavior in existing code is desired.
     development
     rationale
     todo
-
-Reference
-=========
-
-.. toctree::
-    :glob:
-
-    aspectlib*
+    reference/index 
 
 Indices and tables
 ==================
