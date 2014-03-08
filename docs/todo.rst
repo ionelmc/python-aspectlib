@@ -1,10 +1,11 @@
+Todo & Ideas
+============
 
 Validation
 ----------
 
-NOTE: Not supported yet !
-
-::
+.. code-block:: python
+    :emphasize-lines: 24
 
     class BaseProcessor(object):
         def process_foo(self, data):

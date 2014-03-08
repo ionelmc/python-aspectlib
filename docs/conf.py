@@ -36,7 +36,7 @@ version = release = re.findall(
 # unit titles (such as .. function::).
 #add_module_names = True
 
-pygments_style = 'monokai'
+pygments_style = 'trac'
 html_theme = 'traditional'
 
 # Theme options are theme-specific and customize the look and feel of a theme

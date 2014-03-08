@@ -21,93 +21,10 @@ python-aspectlib
 ``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing
 behavior in existing code is desired.
 
-It as two core tools to do AOP:
+Documentation
+=============
 
-.. list-table::
-    :widths: 5 95
-
-    * - ``aspectlib.Aspect``
-      - An *aspect* can be created by decorating a generator with ``aspectlib.Aspect``. The generator yields *advices* -
-        simple behavior changing instructions.
-
-        The *aspect* is simple function decorator. Decorating a function with an *aspect* will change the function's
-        behavior according to the *advices* yielded by the generator.
-
-        Example::
-
-            @aspectlib.Aspect
-            def strip_return_value():
-                result = yield aspectlib.Proceed
-                yield aspectlib.Return(result.strip())
-
-            @strip_return_value
-            def read(name):
-                return open(name).read()
-
-        You can use these *advices*:
-
-        * ``aspectlib.Proceed`` or ``None`` - Calls the wrapped function with the default arguments. The *yield* returns
-          the function's return value or raises an exception. Can be used multiple times (will call the function
-          multiple times).
-        * ``aspectlib.Proceed(*args, **kwargs)`` - Same as above but with different arguments.
-        * ``aspectlib.Return`` - Makes the wrapper return ``None`` instead. If ``aspectlib.Proceed`` was never used then
-          the wrapped function is not called. After this the generator is closed.
-        * ``aspectlib.Return(value)`` - Same as above but returns the given ``value`` instead of ``None``.
-        * ``raise exception`` - Makes the wrapper raise an exception.
-
-
-    * - ``aspectlib.weave``
-      - Patches classes and functions with the given *aspect*. When used with a class it will patch all the methods.
-
-        Returns an ``aspectlib.Entanglement`` object that has a ``rollback`` method and can be used a context manager.
-        It will undo all the changes at the end of the context.
-
-        Example::
-
-            @aspectlib.Aspect
-            def mock_open():
-                yield aspectlib.Return(StringIO("mystuff"))
-
-            with aspectlib.weave(open, mock_open):
-                assert open("/doesnt/exist.txt").read() == "mystuff"
-
-        You can use ``aspectlib.weave`` on: classes, instances, builtin functions, module level functions, methods,
-        classmethods, staticmethods, instance methods etc.
-
-        Quick reference::
-
-          weave(target, aspect,
-                skip_magic_methods=True,
-                subclasses=False,
-                lazy=False,
-                skip_methods=(),
-                only_methods=None)
-
-        * ``target`` - A target to patch.
-        * ``aspect`` - A function decorator or ``aspectlib.Aspect`` instance.
-        * ``skip_magic_methods`` - Don't patch magic methods.
-        * ``subclasses`` - Do not patch subclasses of ``target``
-        * ``lazy`` - Run the patching code from ``__init__``. This is useful when patching classes that add methods
-          in ``__init__``.
-        * ``skip_methods`` - List of methods to avoid patching.
-        * ``only_methods`` - List of methods to patch. If ``None`` then all methods are patched.
-
-Rationale
-=========
-
-There are perfectly sane use cases for monkey-patching (aka *weaving*):
-
-* Instrumenting existing code for debugging, profiling and other measurements.
-* Testing less flexible code. In some situations it's infeasible to use dependency injection to make your code more
-  testable.
-
-Then in those situations:
-
-* You would need to handle yourself all different kids of patching (patching
-  a module is different than patching a class, a function or a method for that matter).
-  ``aspectlib`` will handle all this gross patching mumbo-jumbo for you, consistently, over many Python versions.
-* Writting the actual wrappers is repetitive, boring and error-prone. You can't reuse wrappers
-  but *you can reuse function decorators*.
+Docs are hosted on ReadTheDocs: `python-aspectlib docs <http://python-aspectlib.readthedocs.org/en/latest/>`_.
 
 Implementation status
 =====================

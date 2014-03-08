@@ -1,6 +1,3 @@
-.. highlight:: python
-    :linenothreshold: 5
-
 ============
 Introduction
 ============
@@ -16,7 +13,9 @@ simple behavior changing instructions.
 The *aspect* is simple function decorator. Decorating a function with an *aspect* will change the function's
 behavior according to the *advices* yielded by the generator.
 
-Example::
+Example:
+
+.. code-block:: python
 
     @aspectlib.Aspect
     def strip_return_value():
@@ -46,7 +45,10 @@ Patches classes and functions with the given *aspect*. When used with a class it
 Returns a :class:`~aspectlib.Rollback` object that can be used a context manager.
 It will undo all the changes at the end of the context.
 
-Example::
+Example:
+
+.. code-block:: python
+    :emphasize-lines: 5
 
     @aspectlib.Aspect
     def mock_open():
