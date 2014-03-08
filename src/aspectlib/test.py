@@ -17,14 +17,14 @@ def mock(return_value, call=False):
     :param bool call: If ``True``, call the decorated function.
     :returns: A decorator.
     """
-    def decorator(func):
+    def mock_decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def mock_wrapper(*args, **kwargs):
             if call:
                 func(*args, **kwargs)
             return return_value
-        return wrapper
-    return decorator
+        return mock_wrapper
+    return mock_decorator
 
 
 class RecordingWrapper(FunctionWrapper):
