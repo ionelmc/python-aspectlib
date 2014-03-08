@@ -1,5 +1,5 @@
-aspectlib
-=========
+API: aspectlib
+==============
 
 .. autosummary::
     :nosignatures:
@@ -41,4 +41,3 @@ aspectlib
     :annotation: Only weave non-magic methods. Can be used as the value for methods argument in weave.
 
 .. autofunction:: weave(target, aspect[, subclasses=True, methods=NORMAL_METHODS, lazy=False, aliases=True])
-

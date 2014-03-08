@@ -1,5 +1,5 @@
-aspectlib.test
-==============
+API: aspectlib.test
+===================
 
 .. autosummary::
     :nosignatures:

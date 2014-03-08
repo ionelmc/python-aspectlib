@@ -24,7 +24,7 @@ behavior in existing code is desired.
 Documentation
 =============
 
-Docs are hosted on ReadTheDocs: `python-aspectlib docs <http://python-aspectlib.readthedocs.org/en/latest/>`_.
+Docs are hosted at readthedocs.org: `python-aspectlib docs <http://python-aspectlib.readthedocs.org/en/latest/>`_.
 
 Implementation status
 =====================
@@ -35,7 +35,6 @@ Pending:
 
 * Whole-module weaving
 * *Concerns* (see `docs/todo.rst`)
-* Using strings as weaving targets - so you don't have to import your targets
 
 If ``aspectlib.weave`` doesn't work for your scenario please report a bug !
 
