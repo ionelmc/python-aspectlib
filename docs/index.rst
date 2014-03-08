@@ -7,12 +7,17 @@ Welcome to python-aspectlib's documentation!
 ============================================
 
 .. toctree::
+    :maxdepth: 1
 
     introduction
 
-.. toctree::
+Reference
+=========
 
-    reference/index
+.. toctree::
+    :glob:
+
+    aspectlib*
 
 Indices and tables
 ==================
