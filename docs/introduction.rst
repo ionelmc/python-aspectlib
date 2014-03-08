@@ -60,8 +60,8 @@ Example:
 You can use :func:`aspectlib.weave` on: classes, instances, builtin functions, module level functions, methods,
 classmethods, staticmethods, instance methods etc.
 
-Why is not called weave and not patch ?
----------------------------------------
+Why is it called weave and not patch ?
+--------------------------------------
 
 Because it does more things that just patching. Depending on the *target* object it will patch and/or create one or more
 subclasses and objects.
