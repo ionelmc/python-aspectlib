@@ -155,32 +155,32 @@ def checked_apply(aspect, function):
 def weave(target, aspect, **options):
     """
 
-        Send a message to a recipient
+    Send a message to a recipient
 
-        :param target: The object to weave
-        :type target: string, class, instance, function or builtin
+    :param target: The object to weave
+    :type target: string, class, instance, function or builtin
 
-        :param aspect: The aspect to apply to the object
-        :type target: :py:obj:`aspectlib.Aspect` or function decorator
+    :param aspect: The aspect to apply to the object
+    :type target: :py:obj:`aspectlib.Aspect` or function decorator
 
-        :param bool subclasses:
-            If ``True``, subclasses of target are weaved. *Only available for classes*
+    :param bool subclasses:
+        If ``True``, subclasses of target are weaved. *Only available for classes*
 
-        :param bool aliases:
-            If ``True``, aliases of target are replaced.
+    :param bool aliases:
+        If ``True``, aliases of target are replaced.
 
-        :param bool lazy:
-            If ``True`` only patch target's ``__init__``, the rest of the metods are patched after ``__init__`` is
-            called. *Only available for classes*
+    :param bool lazy:
+        If ``True`` only patch target's ``__init__``, the rest of the metods are patched after ``__init__`` is
+        called. *Only available for classes*
 
-        :param methods: Methods from target to patch. *Only available for classes*
-        :type methods: list or regex or string
+    :param methods: Methods from target to patch. *Only available for classes*
+    :type methods: list or regex or string
 
-        :returns:
-            :class:`aspectlib.Rollback` instance
+    :returns:
+        :class:`aspectlib.Rollback` instance
 
-        :raises TypeError:
-            If target is a unacceptable object, or the specified options are not available for that type of object.
+    :raises TypeError:
+        If target is a unacceptable object, or the specified options are not available for that type of object.
 
     """
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)

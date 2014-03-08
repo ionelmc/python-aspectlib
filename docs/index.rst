@@ -12,7 +12,8 @@ behavior in existing code is desired.
     development
     rationale
     todo
-    reference/index 
+    reference/index
+    changelog
 
 Indices and tables
 ==================
