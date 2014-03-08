@@ -53,17 +53,35 @@ REGEX_TYPE = type(NORMAL_METHODS)
 
 
 class Proceed(object):
+    """
+    Instructs the Aspect Calls to call the decorated function. Can be used multiple times.
+
+    If not used as an instance then the default args and kwargs are used.
+    """
+    __slots__ = 'args', 'kwargs'
+
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
 
 class Return(object):
+    """
+    Instructs the Aspect to return a value.
+    """
+    __slots__ = 'value',
+
     def __init__(self, value):
         self.value = value
 
 
 class Aspect(object):
+    """
+    Container for the advice yielding generator. Can be used as a decorator on other function to change behavior
+    according to the advices yielded from the generator.
+    """
+    __slots__ = 'advise_function'
+
     def __init__(self, advise_function):
         assert callable(advise_function)
         self.advise_function = advise_function
@@ -101,6 +119,11 @@ class Fabric(object):
 
 
 class Rollback(object):
+    """
+    When called, rollbacks all the patches and changes the :func:`weave` has done.
+    """
+    __slots__ = '_rollbacks'
+
     def __init__(self, rollback=None):
         if rollback is None:
             self._rollbacks = []
@@ -130,6 +153,36 @@ def checked_apply(aspect, function):
 
 
 def weave(target, aspect, **options):
+    """
+
+        Send a message to a recipient
+
+        :param target: The object to weave
+        :type target: string, class, instance, function or builtin
+
+        :param aspect: The aspect to apply to the object
+        :type target: :py:obj:`aspectlib.Aspect` or function decorator
+
+        :param bool subclasses:
+            If ``True``, subclasses of target are weaved. *Only available for classes*
+
+        :param bool aliases:
+            If ``True``, aliases of target are replaced.
+
+        :param bool lazy:
+            If ``True`` only patch target's ``__init__``, the rest of the metods are patched after ``__init__`` is
+            called. *Only available for classes*
+
+        :param methods: Methods from target to patch. *Only available for classes*
+        :type methods: list or regex or string
+
+        :returns:
+            :class:`aspectlib.Rollback` instance
+
+        :raises TypeError:
+            If target is a unacceptable object, or the specified options are not available for that type of object.
+
+    """
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
     assert target, "Can't weave falsy value %r." % target
     if isinstance(target, (list, tuple)):
@@ -169,7 +222,7 @@ def weave(target, aspect, **options):
             logger.debug(" .. as a callable %r.", obj)
             return weave_module_function(owner, obj, aspect, force_name=name, **options)
         else:
-            raise RuntimeError("Can't weave object %s of type %s" % (obj, type(obj)))
+            raise TypeError("Can't weave object %s of type %s" % (obj, type(obj)))
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
         return weave_module_function(__builtin__, target, aspect, **options)

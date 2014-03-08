@@ -4,7 +4,7 @@ python-aspectlib
 
 .. image:: https://secure.travis-ci.org/ionelmc/python-aspectlib.png
     :alt: Build Status
-    :target: http://travis-ci.org/ionelmc/python-aspectlib
+    :target: https://travis-ci.org/ionelmc/python-aspectlib
 
 .. image:: https://coveralls.io/repos/ionelmc/python-aspectlib/badge.png?branch=master
     :alt: Coverage Status
