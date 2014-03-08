@@ -349,7 +349,7 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
         if hasattr(module, alias):
             obj = getattr(module, alias)
             if obj is original:
-                if aliases:
+                if aliases or alias == name:
                     logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))

@@ -8,11 +8,10 @@ from aspectlib.test import mock
 from aspectlib.test import record
 
 
-
 class Base(object):
     def meth(*_):
         return 'base'
-
+Base2 = Base
 
 class Sub(Base):
     pass
@@ -20,11 +19,11 @@ class Sub(Base):
 
 class Global(Base):
     pass
+Global2 = Global
 
 
 class MissingGlobal(Base):
     pass
-
 AliasedGlobal = MissingGlobal
 del MissingGlobal
 
@@ -35,6 +34,7 @@ def module_func():
 
 def module_func2():
     pass
+module_func3 = module_func2
 
 
 class NormalTestClass(object):
@@ -356,6 +356,25 @@ def test_weave_wrong_module():
          {})
     ]
 
+def test_weave_no_aliases():
+    with aspectlib.weave(module_func2, mock('stuff'), aliases=False):
+        assert module_func2() == 'stuff'
+        assert module_func2 is not module_func3
+        assert module_func3() is None
+
+    assert module_func2() is None
+    assert module_func3() is None
+    assert module_func2 is module_func3
+
+
+def test_weave_class_no_aliases():
+    with aspectlib.weave(Global.meth, mock('stuff'), aliases=False, lazy=True):
+        assert Global().meth() == 'stuff'
+        assert Global2 is not Global
+
+    assert Global().meth() == 'base'
+    assert Global2 is Global
+
 
 def test_weave_bad_args1():
     raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), methods=['asdf'])
@@ -365,7 +384,6 @@ def test_weave_bad_args2():
     raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), methods='(?!asdf)')
 
 
-@pytest.mark.xfail(reason="hmmm")
 def test_weave_bad_args3():
     raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), lazy=False)
 
@@ -970,8 +988,10 @@ def test_weave_multiple():
     assert module_func() is None
     assert module_func2() is None
 
+
 def test_unspecified_str():
     assert repr(aspectlib.UNSPECIFIED) == 'UNSPECIFIED'
+
 
 def test_sentinel():
     assert repr(aspectlib._Sentinel('STUFF', "Means it's some stuff")) == "STUFF: Means it's some stuff"
