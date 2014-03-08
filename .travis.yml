@@ -36,7 +36,12 @@ script:
       tox -v -e $TRAVIS_PYTHON_VERSION -- py.test
     fi
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
+  - |
+    if [[ $WITH_COVERAGE == yes ]]; then
+      .tox/$TRAVIS_PYTHON_VERSION/bin/coverage combine
+      .tox/$TRAVIS_PYTHON_VERSION/bin/coverage report
+      .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
+    fi
 notifications:
   email:
     on_success: never
