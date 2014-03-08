@@ -232,7 +232,7 @@ def weave(target, aspect, **options):
         logger.debug("Weaving %r (%s) as instance method.", target, name)
         assert not options, "keyword arguments are not supported when weaving instance methods."
         func = getattr(inst, name)
-        setattr(inst, name, aspect(func).__get__(inst, type(inst)))
+        setattr(inst, name, checked_apply(aspect, func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
     elif PY3 and isfunction(target):
         owner = __import__(target.__module__)
@@ -241,10 +241,8 @@ def weave(target, aspect, **options):
             owner = getattr(owner, path.popleft())
         name = target.__name__
         logger.debug("Weaving %r (%s) as a property.", target, name)
-        assert not options, "keyword arguments are not supported when weaving properties."
         func = owner.__dict__[name]
-        setattr(owner, name, checked_apply(aspect, target))
-        return Rollback(lambda: setattr(owner, name, target))
+        return patch_module(owner, name, checked_apply(aspect, func), func, **options)
     elif PY2 and isfunction(target):
         return weave_module_function(__import__(target.__module__), target, aspect, **options)
     elif PY2 and ismethod(target):
@@ -264,6 +262,7 @@ def weave(target, aspect, **options):
         return weave_class(target, aspect, **options)
     else:
         raise RuntimeError("Can't weave object %s of type %s" % (target, type(target)))
+
 
 def rewrap_method(func, klass, aspect):
     if isinstance(func, staticmethod):

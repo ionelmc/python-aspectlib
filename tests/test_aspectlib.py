@@ -368,7 +368,7 @@ def test_weave_no_aliases():
 
 
 @pytest.mark.skipif('aspectlib.PY3')
-def test_weave_class_no_aliases():
+def test_weave_class_meth_no_aliases():
     with aspectlib.weave(Global.meth, mock('stuff'), aliases=False, lazy=True):
         assert Global().meth() == 'stuff'
         assert Global2 is not Global
@@ -380,12 +380,23 @@ def test_weave_class_no_aliases():
 
 
 @pytest.mark.skipif('aspectlib.PY2')
-def test_weave_class_no_aliases2():
-    with aspectlib.weave(Global.meth, mock('stuff'), aliases=False):
+def test_weave_class_meth_no_aliases_unsupported_on_py3():
+    with aspectlib.weave(Global.meth, mock('stuff')):
         assert Global().meth() == 'stuff'
         assert Global2().meth() == 'stuff'
 
     assert Global().meth() == 'base'
+    assert Global2().meth() == 'base'
+
+
+def test_weave_class_no_aliases():
+    with aspectlib.weave(Global, mock('stuff'), aliases=False, lazy=True):
+        assert Global().meth() == 'stuff'
+        assert Global2 is not Global
+        assert Global2().meth() == 'base'
+
+    assert Global().meth() == 'base'
+    assert Global2 is Global
     assert Global2().meth() == 'base'
 
 
