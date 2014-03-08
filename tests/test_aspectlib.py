@@ -315,7 +315,7 @@ def test_weave_str_missing_target():
 
 
 def test_weave_str_bad_target():
-    raises(RuntimeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
+    raises(TypeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
 
 
 def test_weave_str_target():
