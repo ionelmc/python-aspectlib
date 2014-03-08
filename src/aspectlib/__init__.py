@@ -1,11 +1,9 @@
 from __future__ import print_function
-try:
-    import __builtin__
-except ImportError:
-    import builtins as __builtin__
+
 import platform
 import sys
 import warnings
+import re
 from collections import deque
 from functools import wraps
 from itertools import chain
@@ -14,6 +12,11 @@ from logging import getLogger
 from types import FunctionType
 from types import GeneratorType
 from types import MethodType
+
+try:
+    import __builtin__
+except ImportError:
+    import builtins as __builtin__
 
 try:
     from types import ClassType
@@ -29,8 +32,27 @@ PYPY = platform.python_implementation() == 'PyPy'
 if PY3:
     unicode = str
 
-DEFAULT_FALSE = object()
-DEFAULT_TRUE = object()
+class _Sentinel(object):
+    def __init__(self, name, doc=''):
+        self.name = name
+        self.__doc__ = doc
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        if not self.__doc__:
+            return "<%s>" % self.name
+        else:
+            return "<%s: %s>" % (self.name, self.__doc__)
+
+
+DEFAULT_FALSE = _Sentinel('FALSE')
+DEFAULT_TRUE = _Sentinel('TRUE')
+UNSPECIFIED = _Sentinel('UNSPECIFIED')
+ALL_METHODS = re.compile('.*')
+NORMAL_METHODS = re.compile('(?!__.*__$)')
+REGEX_TYPE = type(NORMAL_METHODS)
 
 
 class Proceed(object):
@@ -81,9 +103,17 @@ class Fabric(object):
     pass
 
 
-class Entanglement(object):  # pylint: disable=C0103
-    def __init__(self, rollbacks):
-        self._rollbacks = rollbacks
+class Rollback(object):
+    def __init__(self, rollback=None):
+        if rollback is None:
+            self._rollbacks = []
+        elif isinstance(rollback, (list, tuple)):
+            self._rollbacks = rollback
+        else:
+            self._rollbacks = [rollback]
+
+    def merge(self, other):
+        self._rollbacks.append(other)
 
     def __enter__(self):
         return self
@@ -92,91 +122,23 @@ class Entanglement(object):  # pylint: disable=C0103
         for rollback in self._rollbacks:
             rollback()
 
-    rollback = __exit__
+    rollback = __call__ = __exit__
 
-def _apply(aspect, function):
+
+def checked_apply(aspect, function):
     logger.debug('Applying aspect %s to function %s.', aspect, function)
     wrapper = aspect(function)
     assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspect, wrapper)
     return wrapper
 
 
-def weave(target, aspect,
-          skip_magic_methods=DEFAULT_TRUE,
-          skip_subclasses=DEFAULT_FALSE,
-          on_init=DEFAULT_FALSE,
-          skip_methods=(),
-          only_methods=None):
-
-    if only_methods and skip_methods:
-        raise RuntimeError("You can't use both `skip_methods` and `only_methods`.")
-    return Entanglement(_weave(
-        target, aspect,
-        skip_magic_methods=skip_magic_methods,
-        skip_subclasses=skip_subclasses,
-        on_init=on_init,
-        skip_methods=skip_methods,
-        only_methods=only_methods
-    ))
-
-
-def _patch_module(mod, name, value, replacement):
-    rollbacks = []
-    seen = False
-    location = replacement.__module__ = mod.__name__
-    for alias in dir(mod):
-        if hasattr(mod, alias):
-            obj = getattr(mod, alias)
-            if obj is value:
-                logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
-                setattr(mod, alias, replacement)
-                rollbacks.append(lambda alias=alias: setattr(mod, alias, value))
-                if alias == name:
-                    seen = True
-            elif alias == name:
-                raise AssertionError("%s.%s = %s is not %s." % (location, alias, obj, value))
-
-    if not seen:
-        warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module.' % (
-            location, name, replacement
-        ))
-        logger.debug(" * Saving %s on %s.%s ...", replacement, location, name)
-        setattr(mod, name, replacement)
-        rollbacks.append(lambda: setattr(mod, name, value))
-    return rollbacks
-
-
-def _silly_bind(func):
-    def bound(self, *args, **kwargs):
-        return func(*args, **kwargs)
-    bound.__name__ = func.__name__
-    bound.__doc__ = func.__doc__
-    return bound
-
-
-def _weave_module_function(mod, target, aspect, force_name=None):
-    logger.debug("Weaving %r as plain function.", target)
-    name = force_name or target.__name__
-    assert getattr(mod, name) is target
-    return _patch_module(mod, name, target, _apply(aspect, target))
-
-
-def _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
-    assert skip_magic_methods is DEFAULT_TRUE, "Can't use skip_methods=%r when target is not a class." % skip_magic_methods
-    assert skip_subclasses is DEFAULT_FALSE, "Can't use skip_subclasses=%r when target is not a class." % skip_subclasses
-    #assert on_init is DEFAULT_FALSE, "Can't use on_init=%r when target is not a class." % on_init
-    assert not skip_methods, "Can't use skip_methods=%r when target is not a class." % skip_methods
-    assert not only_methods, "Can't use only_methods=%r when target is not a class." % only_methods
-
-
-def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods):
+def weave(target, aspect, **options):
     assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
     assert target, "Can't weave falsy value %r." % target
     if isinstance(target, (list, tuple)):
-        return list(chain.from_iterable(
-            _weave(item, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
-            for item in target
-        ))
+        return Rollback([
+            weave(item, aspect, **options) for item in target
+        ])
     elif isinstance(target, (unicode, str)):
         assert '.' in target, "Need at least a module in the target specification !"
         parts = target.split('.')
@@ -195,29 +157,27 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
         obj = getattr(mod, name)
         if isinstance(obj, (type, ClassType)):
             logger.debug(" .. as a class %r.", obj)
-            return _weave_class(
-                obj, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods,
-                force_module=mod, force_name=name
+            return weave_class(
+                obj, aspect,
+                owner=mod, name=name, **options
             )
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
             logger.debug(" .. as a callable %r.", obj)
-            _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
-            return _weave_module_function(mod, obj, aspect, force_name=name)
+            return weave_module_function(mod, obj, aspect, force_name=name, **options)
         else:
             raise RuntimeError("Can't weave object %s of type %s" % (obj, type(obj)))
 
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
-        _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
-        return _weave_module_function(__builtin__, target, aspect)
+        return weave_module_function(__builtin__, target, aspect, **options)
     elif PY3 and isinstance(target, MethodType):
         inst = target.__self__
         name = target.__name__
         logger.debug("Weaving %r (%s) as instance method.", target, name)
-        _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
+        assert not options, "keyword arguments are not supported when weaving instance methods."
         func = getattr(inst, name)
         setattr(inst, name, aspect(func).__get__(inst, type(inst)))
-        return lambda: delattr(inst, name),
+        return Rollback(lambda: delattr(inst, name))
     elif PY3 and isinstance(target, FunctionType):
         owner = __import__(target.__module__)
         path = deque(target.__qualname__.split('.')[:-1])
@@ -225,113 +185,146 @@ def _weave(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_me
             owner = getattr(owner, path.popleft())
         name = target.__name__
         logger.debug("Weaving %r (%s) as a property.", target, name)
+        assert not options, "keyword arguments are not supported when weaving properties."
         func = owner.__dict__[name]
-        setattr(owner, name, _apply(aspect, target))
-        return lambda: setattr(owner, name, target),
+        setattr(owner, name, checked_apply(aspect, target))
+        return Rollback(lambda: setattr(owner, name, target))
     elif PY2 and isinstance(target, FunctionType):
-        _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
-        return _weave_module_function(__import__(target.__module__), target, aspect)
+        return weave_module_function(__import__(target.__module__), target, aspect, **options)
     elif PY2 and isinstance(target, MethodType):
         if target.im_self:
             inst = target.im_self
             name = target.__name__
             logger.debug("Weaving %r (%s) as instance method.", target, name)
-            _assert_no_class_options(skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
+            assert not options, "keyword arguments are not supported when weaving instance methods."
             func = getattr(inst, name)
-            setattr(inst, name, _apply(aspect, func).__get__(inst, type(inst)))
-            return lambda: delattr(inst, name),
+            setattr(inst, name, checked_apply(aspect, func).__get__(inst, type(inst)))
+            return Rollback(lambda: delattr(inst, name))
         else:
             klass = target.im_class
             name = target.__name__
-            return _weave(
-                klass, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods=(name,)
-            )
+            return weave(klass, aspect, methods='%s$' % name, **options)
     elif isinstance(target, (type, ClassType)):
-        return _weave_class(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods)
+        return weave_class(target, aspect, **options)
     else:
         raise RuntimeError("Can't weave object %s of type %s" % (target, type(target)))
 
-def _weave_class(target, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods,
-                 force_module=None, force_name=None):
-    skip_magic_methods = True if skip_magic_methods is DEFAULT_TRUE else skip_magic_methods
-    skip_subclasses = False if skip_subclasses is DEFAULT_FALSE else skip_subclasses
-    on_init = False if on_init is DEFAULT_FALSE else on_init
 
-    assert isinstance(target, (type, ClassType)), "Can't weave %r as a class." % target
-    rollbacks = []
-    if not skip_subclasses and hasattr(target, '__subclasses__'):
-        for sub_class in target.__subclasses__():
+def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=False,
+                owner=None, name=None, aliases=True):
+
+    assert isinstance(klass, (type, ClassType)), "Can't weave %r. Must be a class." % klass
+    entanglement = Rollback()
+    if isinstance(methods, (str, unicode)):
+        method_matches = re.compile(methods).match
+    elif isinstance(methods, (list, tuple)):
+        method_matches = methods.__contains__
+    elif isinstance(methods, REGEX_TYPE):
+        method_matches = methods.match
+    else:
+        raise RuntimeError("Unacceptable methods spec %r." % methods)
+
+    if subclasses and hasattr(klass, '__subclasses__'):
+        for sub_class in klass.__subclasses__():
             if not issubclass(sub_class, Fabric):
-                rollbacks.extend(_weave_class(
-                    sub_class, aspect, skip_magic_methods, skip_subclasses, on_init, skip_methods, only_methods
-                ))
-    if on_init:
-        logger.debug("Weaving %r as class (on demand at __init__ time).", target)
+                entanglement.merge(weave_class(sub_class, aspect, methods=methods, subclasses=subclasses, lazy=lazy))
+    if lazy:
+        logger.debug("Weaving %r as class (on demand at __init__ time).", klass)
 
         def __init__(self, *args, **kwargs):
             super(SubClass, self).__init__(*args, **kwargs)
-            for name in dir(self):
-                func = getattr(self, name, None)
-                if only_methods and name not in only_methods:
-                    continue
-                elif func is None or skip_magic_methods and name.startswith('__') or name.endswith('__'):
-                    continue
-                elif name not in skip_methods and name not in wrappers and callable(func):
-                    setattr(self, name, _apply(aspect, _silly_bind(func)).__get__(self, SubClass))
-                else:
-                    continue
-        wrappers = {
-            '__init__': __init__ if skip_magic_methods else _apply(aspect, __init__)
-        }
-        for name, func in target.__dict__.items():
-            if only_methods and name not in only_methods:
-                continue
-            elif skip_magic_methods and name.startswith('__') and name.endswith('__'):
-                continue
-            elif isinstance(func, staticmethod):
-                if hasattr(func, '__func__'):
-                    wrappers[name] = staticmethod(_apply(aspect, func.__func__))
-                else:
-                    wrappers[name] = staticmethod(_apply(aspect, func.__get__(None, target)))
-            elif isinstance(func, classmethod):
-                if hasattr(func, '__func__'):
-                    wrappers[name] = classmethod(_apply(aspect, func.__func__))
-                else:
-                    wrappers[name] = classmethod(_apply(aspect, func.__get__(None, target).im_func))
-            else:
-                continue
-        logger.debug(" * Creating subclass with attributes %r", wrappers)
-        name = force_name or target.__name__
-        SubClass = type(name, (target, Fabric), wrappers)
-        SubClass.__module__ = target.__module__
-        mod = force_module or __import__(target.__module__)
-        rollbacks.extend(_patch_module(mod, name, target, SubClass))
-    else:
-        logger.debug("Weaving %r as class.", target)
-        original = {}
-        for name, func in target.__dict__.items():
-            if only_methods and name not in only_methods:
-                continue
-            elif name in skip_methods or skip_magic_methods and name.startswith('__') and name.endswith('__'):
-                continue
-            elif isinstance(func, staticmethod):
-                if hasattr(func, '__func__'):
-                    setattr(target, name, staticmethod(_apply(aspect, func.__func__)))
-                else:
-                    setattr(target, name, staticmethod(_apply(aspect, func.__get__(None, target))))
-            elif isinstance(func, classmethod):
-                if hasattr(func, '__func__'):
-                    setattr(target, name, classmethod(_apply(aspect, func.__func__)))
-                else:
-                    setattr(target, name, classmethod(_apply(aspect, func.__get__(None, target).im_func)))
-            elif callable(func):
-                setattr(target, name, _apply(aspect, func))
-            else:
-                continue
-            original[name] = func
+            for attr in dir(self):
+                func = getattr(self, attr, None)
+                if method_matches(attr) and attr not in wrappers and callable(func):
+                    setattr(self, attr, checked_apply(aspect, force_bind(func)).__get__(self, SubClass))
 
-        rollbacks.append(lambda: deque((
-            setattr(target, name, func) for name, func in original.items()
+        wrappers = {
+            '__init__': checked_apply(aspect, __init__) if method_matches('__init__') else __init__
+        }
+        for attr, func in klass.__dict__.items():
+            if method_matches(attr):
+                if isinstance(func, staticmethod):
+                    if hasattr(func, '__func__'):
+                        wrappers[attr] = staticmethod(checked_apply(aspect, func.__func__))
+                    else:
+                        wrappers[attr] = staticmethod(checked_apply(aspect, func.__get__(None, klass)))
+                elif isinstance(func, classmethod):
+                    if hasattr(func, '__func__'):
+                        wrappers[attr] = classmethod(checked_apply(aspect, func.__func__))
+                    else:
+                        wrappers[attr] = classmethod(checked_apply(aspect, func.__get__(None, klass).im_func))
+        logger.debug(" * Creating subclass with attributes %r", wrappers)
+        name = name or klass.__name__
+        SubClass = type(name, (klass, Fabric), wrappers)
+        SubClass.__module__ = klass.__module__
+        module = owner or __import__(klass.__module__)
+        entanglement.merge(patch_module(module, name, SubClass, original=klass, aliases=aliases))
+    else:
+        logger.debug("Weaving %r as class.", klass)
+        original = {}
+        for attr, func in klass.__dict__.items():
+            if method_matches(attr):
+                if isinstance(func, staticmethod):
+                    if hasattr(func, '__func__'):
+                        setattr(klass, attr, staticmethod(checked_apply(aspect, func.__func__)))
+                    else:
+                        setattr(klass, attr, staticmethod(checked_apply(aspect, func.__get__(None, klass))))
+                elif isinstance(func, classmethod):
+                    if hasattr(func, '__func__'):
+                        setattr(klass, attr, classmethod(checked_apply(aspect, func.__func__)))
+                    else:
+                        setattr(klass, attr, classmethod(checked_apply(aspect, func.__get__(None, klass).im_func)))
+                elif callable(func):
+                    setattr(klass, attr, checked_apply(aspect, func))
+                else:
+                    continue
+                original[attr] = func
+
+        entanglement.merge(lambda: deque((
+            setattr(klass, attr, func) for attr, func in original.items()
         ), maxlen=0))
 
-    return rollbacks
+    return entanglement
+
+
+def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
+    rollback = Rollback()
+    seen = False
+    original = getattr(module, name) if original is UNSPECIFIED else original
+    location = replacement.__module__ = module.__name__
+    for alias in dir(module):
+        if hasattr(module, alias):
+            obj = getattr(module, alias)
+            if obj is original:
+                if aliases:
+                    logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
+                    setattr(module, alias, replacement)
+                    rollback.merge(lambda alias=alias: setattr(module, alias, original))
+                if alias == name:
+                    seen = True
+            elif alias == name:
+                raise AssertionError("%s.%s = %s is not %s." % (location, alias, obj, original))
+
+    if not seen:
+        warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module.' % (
+            location, name, replacement
+        ))
+        logger.debug(" * Saving %s on %s.%s ...", replacement, location, name)
+        setattr(module, name, replacement)
+        rollback.merge(lambda: setattr(module, name, original))
+    return rollback
+
+
+def force_bind(func):
+    def bound(self, *args, **kwargs):  # pylint: disable=W0613
+        return func(*args, **kwargs)
+    bound.__name__ = func.__name__
+    bound.__doc__ = func.__doc__
+    return bound
+
+
+def weave_module_function(mod, target, aspect, force_name=None):
+    logger.debug("Weaving %r as plain function.", target)
+    name = force_name or target.__name__
+    assert getattr(mod, name) is target
+    return patch_module(mod, name, checked_apply(aspect, target), original=target)

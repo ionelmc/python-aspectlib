@@ -78,16 +78,16 @@ It as two core tools to do AOP:
 
           weave(target, aspect,
                 skip_magic_methods=True,
-                skip_subclasses=False,
-                on_init=False,
+                subclasses=False,
+                lazy=False,
                 skip_methods=(),
                 only_methods=None)
 
         * ``target`` - A target to patch.
         * ``aspect`` - A function decorator or ``aspectlib.Aspect`` instance.
         * ``skip_magic_methods`` - Don't patch magic methods.
-        * ``skip_subclasses`` - Do not patch subclasses of ``target``
-        * ``on_init`` - Run the patching code from ``__init__``. This is useful when patching classes that add methods
+        * ``subclasses`` - Do not patch subclasses of ``target``
+        * ``lazy`` - Run the patching code from ``__init__``. This is useful when patching classes that add methods
           in ``__init__``.
         * ``skip_methods`` - List of methods to avoid patching.
         * ``only_methods`` - List of methods to patch. If ``None`` then all methods are patched.

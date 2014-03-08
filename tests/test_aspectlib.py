@@ -8,6 +8,7 @@ from aspectlib.test import mock
 from aspectlib.test import record
 
 
+
 class Base(object):
     def meth(*_):
         return 'base'
@@ -200,7 +201,6 @@ class SlotsTestSubSubClass(SlotsTestSubClass):
         return 'subsub' + (bar or foo)
 
 
-
 def test_aspect_bad():
     @aspectlib.Aspect
     def aspect():
@@ -212,6 +212,7 @@ def test_aspect_bad():
 
     raises(RuntimeError, func)
 
+
 def test_aspect_return():
     @aspectlib.Aspect
     def aspect():
@@ -221,7 +222,8 @@ def test_aspect_return():
     def func():
         return 'stuff'
 
-    assert func() == None
+    assert func() is None
+
 
 def test_aspect_return_value():
     @aspectlib.Aspect
@@ -233,6 +235,7 @@ def test_aspect_return_value():
         pass
 
     assert func() == 'stuff'
+
 
 def test_aspect_raise():
     @aspectlib.Aspect
@@ -252,6 +255,7 @@ def test_aspect_raise():
 
     assert func() == 'stuff'
 
+
 def test_aspect_raise_from_aspect():
     @aspectlib.Aspect
     def aspect():
@@ -262,6 +266,7 @@ def test_aspect_raise_from_aspect():
         pass
 
     raises(ZeroDivisionError, func)
+
 
 def test_aspect_return_but_call():
     calls = []
@@ -280,31 +285,38 @@ def test_aspect_return_but_call():
     assert func('first') == 'stuff'
     assert calls, ['first' == 'second']
 
+
 def test_weave_func():
     with aspectlib.weave(module_func, mock('stuff')):
         assert module_func() == 'stuff'
 
-    assert module_func() == None
+    assert module_func() is None
 
-def test_broken_weave_func():
-    raises(RuntimeError, aspectlib.weave, None, None, only_methods=['a'], skip_methods=['b'])
+
+def test_broken_aspect():
+    raises(AssertionError, aspectlib.weave, None, None)
+
 
 def test_weave_empty_target():
     raises(AssertionError, aspectlib.weave, (), None)
+
 
 def test_weave_missing_global(cls=Global):
     global Global
     Global = 'crap'
     try:
-        raises(AssertionError, aspectlib.weave, cls, mock('stuff'), on_init=True)
+        raises(AssertionError, aspectlib.weave, cls, mock('stuff'), lazy=True)
     finally:
         Global = cls
+
 
 def test_weave_str_missing_target():
     raises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
 
+
 def test_weave_str_bad_target():
     raises(RuntimeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
+
 
 def test_weave_str_target():
     with aspectlib.weave('test_pkg1.test_pkg2.test_mod.target', mock('foobar')):
@@ -312,7 +324,8 @@ def test_weave_str_target():
         assert target() == 'foobar'
 
     from test_pkg1.test_pkg2.test_mod import target
-    assert target() == None
+    assert target() is None
+
 
 def test_weave_str_class_target():
     with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff', mock('foobar')):
@@ -320,7 +333,8 @@ def test_weave_str_class_target():
         assert Stuff().meth() == 'foobar'
 
     from test_pkg1.test_pkg2.test_mod import Stuff
-    assert Stuff().meth() == None
+    assert Stuff().meth() is None
+
 
 @pytest.mark.xfail(reason='fixme')
 def test_weave_str_class_meth_target():
@@ -329,13 +343,13 @@ def test_weave_str_class_meth_target():
         assert Stuff().meth() == 'foobar'
 
     from test_pkg1.test_pkg2.test_mod import Stuff
-    assert Stuff().meth() == None
+    assert Stuff().meth() is None
 
 
 def test_weave_wrong_module():
     calls = []
     with aspectlib.weave('warnings.warn', record(history=calls)):
-        aspectlib.weave(AliasedGlobal, mock('stuff'), on_init=True)
+        aspectlib.weave(AliasedGlobal, mock('stuff'), lazy=True)
     assert calls == [
         (None,
          ("Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
@@ -343,21 +357,23 @@ def test_weave_wrong_module():
          {})
     ]
 
+
 def test_weave_bad_args1():
-    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), only_methods=['asdf'])
+    raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), methods=['asdf'])
+
 
 def test_weave_bad_args2():
-    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_methods=['asdf'])
+    raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), methods='(?!asdf)')
+
 
 @pytest.mark.xfail(reason="hmmm")
 def test_weave_bad_args3():
-    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), on_init=False)
+    raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), lazy=False)
+
 
 def test_weave_bad_args4():
-    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_subclasses=False)
+    raises(TypeError, aspectlib.weave, 'warnings.warn', mock('stuff'), subclasses=False)
 
-def test_weave_bad_args5():
-    raises(AssertionError, aspectlib.weave, 'warnings.warn', mock('stuff'), skip_magic_methods=False)
 
 def test_weave_class_meth():
     @aspectlib.Aspect
@@ -373,6 +389,7 @@ def test_weave_class_meth():
     inst = NormalTestClass('stuff')
     assert inst.foo == 'stuff'
 
+
 def test_weave_instance_meth():
     @aspectlib.Aspect
     def aspect(self):
@@ -386,6 +403,7 @@ def test_weave_instance_meth():
 
     inst.foobar('stuff')
     assert inst.foo == 'stuff'
+
 
 def test_weave_class():
     history = []
@@ -453,35 +471,36 @@ def test_weave_class():
 
     inst = NormalTestClass('stuff')
     assert inst.foo == 'stuff'
-    assert inst.bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'stuff'
     assert NormalTestClass.foo == 'stuff'
-    assert NormalTestClass.bar == None
+    assert NormalTestClass.bar is None
     assert NormalTestClass.static_foobar('stuff') == 'stuff'
 
     inst = NormalTestSubClass('stuff')
     assert inst.sub_foo == 'stuff'
-    assert inst.sub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.sub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'substuff'
     assert NormalTestSubClass.sub_foo == 'stuff'
-    assert NormalTestSubClass.sub_bar == None
+    assert NormalTestSubClass.sub_bar is None
     assert NormalTestSubClass.static_foobar('stuff') == 'substuff'
 
     inst = NormalTestSubSubClass('stuff')
     assert inst.subsub_foo == 'stuff'
-    assert inst.subsub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.subsub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'subsubstuff'
     assert NormalTestSubSubClass.subsub_foo == 'stuff'
-    assert NormalTestSubSubClass.subsub_bar == None
+    assert NormalTestSubSubClass.subsub_bar is None
     assert NormalTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
 
     assert history == []
+
 
 def test_weave_class_slots():
     history = []
@@ -495,12 +514,12 @@ def test_weave_class_slots():
 
     inst = SlotsTestClass('stuff')
     assert inst.foo == 'stuff'
-    assert inst.bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'stuff'
     assert SlotsTestClass.class_foo == 'stuff'
-    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.class_bar is None
     assert SlotsTestClass.static_foobar('stuff') == 'stuff'
 
     inst = SlotsTestClass()
@@ -558,32 +577,32 @@ def test_weave_class_slots():
 
     inst = SlotsTestClass('stuff')
     assert inst.foo == 'stuff'
-    assert inst.bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'stuff'
     assert SlotsTestClass.class_foo == 'stuff'
-    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.class_bar is None
     assert SlotsTestClass.static_foobar('stuff') == 'stuff'
 
     inst = SlotsTestSubClass('stuff')
     assert inst.sub_foo == 'stuff'
-    assert inst.sub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.sub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'substuff'
     assert SlotsTestSubClass.class_sub_foo == 'stuff'
-    assert SlotsTestSubClass.class_sub_bar == None
+    assert SlotsTestSubClass.class_sub_bar is None
     assert SlotsTestSubClass.static_foobar('stuff') == 'substuff'
 
     inst = SlotsTestSubSubClass('stuff')
     assert inst.subsub_foo == 'stuff'
-    assert inst.subsub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.subsub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'subsubstuff'
     assert SlotsTestSubSubClass.class_subsub_foo == 'stuff'
-    assert SlotsTestSubSubClass.class_subsub_bar == None
+    assert SlotsTestSubSubClass.class_subsub_bar is None
     assert SlotsTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
 
     assert history == []
@@ -601,21 +620,21 @@ def test_weave_class_on_init():
 
     inst = SlotsTestClass('stuff')
     assert inst.foo == 'stuff'
-    assert inst.bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'stuff'
     assert SlotsTestClass.class_foo == 'stuff'
-    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.class_bar is None
     assert SlotsTestClass.static_foobar('stuff') == 'stuff'
 
     inst = SlotsTestClass()
-    with aspectlib.weave(SlotsTestClass, aspect, on_init=True):
+    with aspectlib.weave(SlotsTestClass, aspect, lazy=True):
 
         inst = SlotsTestClass('stuff')
         assert inst.foo == 'stuff'
-        assert inst.bar == None
-        assert inst.inst == None
+        assert inst.bar is None
+        assert inst.inst is None
         assert inst.foobar('bluff') == 'bar'
         assert inst.foo == 'bluff'
         assert inst.bar == ':)'
@@ -626,8 +645,8 @@ def test_weave_class_on_init():
 
         inst = SlotsTestSubClass('stuff')
         assert inst.sub_foo == 'stuff'
-        assert inst.sub_bar == None
-        assert inst.inst == None
+        assert inst.sub_bar is None
+        assert inst.inst is None
         assert inst.foobar('bluff') == 'bar'
         assert inst.sub_foo == 'bluff'
         assert inst.sub_bar == ':)'
@@ -638,8 +657,8 @@ def test_weave_class_on_init():
 
         inst = SlotsTestSubSubClass('stuff')
         assert inst.subsub_foo == 'stuff'
-        assert inst.subsub_bar == None
-        assert inst.inst == None
+        assert inst.subsub_bar is None
+        assert inst.inst is None
         assert inst.foobar('bluff') == 'bar'
         assert inst.subsub_foo == 'bluff'
         assert inst.subsub_bar == ':)'
@@ -652,35 +671,36 @@ def test_weave_class_on_init():
 
     inst = SlotsTestClass('stuff')
     assert inst.foo == 'stuff'
-    assert inst.bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'stuff'
     assert SlotsTestClass.class_foo == 'stuff'
-    assert SlotsTestClass.class_bar == None
+    assert SlotsTestClass.class_bar is None
     assert SlotsTestClass.static_foobar('stuff') == 'stuff'
 
     inst = SlotsTestSubClass('stuff')
     assert inst.sub_foo == 'stuff'
-    assert inst.sub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.sub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'substuff'
     assert SlotsTestSubClass.class_sub_foo == 'stuff'
-    assert SlotsTestSubClass.class_sub_bar == None
+    assert SlotsTestSubClass.class_sub_bar is None
     assert SlotsTestSubClass.static_foobar('stuff') == 'substuff'
 
     inst = SlotsTestSubSubClass('stuff')
     assert inst.subsub_foo == 'stuff'
-    assert inst.subsub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.subsub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'subsubstuff'
     assert SlotsTestSubSubClass.class_subsub_foo == 'stuff'
-    assert SlotsTestSubSubClass.class_subsub_bar == None
+    assert SlotsTestSubSubClass.class_subsub_bar is None
     assert SlotsTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
 
     assert history == []
+
 
 def test_weave_class_old_style():
     history = []
@@ -694,9 +714,9 @@ def test_weave_class_old_style():
 
     inst = LegacyTestClass()
 
-    with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
-        with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
-            with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
+    with aspectlib.weave(LegacyTestClass, aspect, subclasses=False):
+        with aspectlib.weave(LegacyTestSubClass, aspect, subclasses=False):
+            with aspectlib.weave(LegacyTestSubSubClass, aspect, subclasses=False):
                 inst = LegacyTestClass('stuff')
                 assert inst.foo == 'stuff'
                 assert inst.bar == ':)'
@@ -750,35 +770,36 @@ def test_weave_class_old_style():
 
     inst = LegacyTestClass('stuff')
     assert inst.foo == 'stuff'
-    assert inst.bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'stuff'
     assert LegacyTestClass.foo == 'stuff'
-    assert LegacyTestClass.bar == None
+    assert LegacyTestClass.bar is None
     assert LegacyTestClass.static_foobar('stuff') == 'stuff'
 
     inst = LegacyTestSubClass('stuff')
     assert inst.sub_foo == 'stuff'
-    assert inst.sub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.sub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'substuff'
     assert LegacyTestSubClass.sub_foo == 'stuff'
-    assert LegacyTestSubClass.sub_bar == None
+    assert LegacyTestSubClass.sub_bar is None
     assert LegacyTestSubClass.static_foobar('stuff') == 'substuff'
 
     inst = LegacyTestSubSubClass('stuff')
     assert inst.subsub_foo == 'stuff'
-    assert inst.subsub_bar == None
-    assert inst.inst == None
-    assert inst.klass == None
+    assert inst.subsub_bar is None
+    assert inst.inst is None
+    assert inst.klass is None
     assert inst.static == 'subsubstuff'
     assert LegacyTestSubSubClass.subsub_foo == 'stuff'
-    assert LegacyTestSubSubClass.subsub_bar == None
+    assert LegacyTestSubSubClass.subsub_bar is None
     assert LegacyTestSubSubClass.static_foobar('stuff') == 'subsubstuff'
 
     assert history == []
+
 
 def test_weave_class_all_magic():
     history = []
@@ -790,7 +811,7 @@ def test_weave_class_all_magic():
 
     inst = NormalTestClass()
 
-    with aspectlib.weave(NormalTestClass, aspect, skip_magic_methods=False):
+    with aspectlib.weave(NormalTestClass, aspect, methods=aspectlib.ALL_METHODS):
         inst = NormalTestClass('stuff')
         assert history == [
             (inst, 'stuff'),
@@ -824,6 +845,7 @@ def test_weave_class_all_magic():
 
     assert history == []
 
+
 def test_weave_class_old_style_all_magic():
     history = []
 
@@ -834,9 +856,9 @@ def test_weave_class_old_style_all_magic():
 
     inst = LegacyTestClass()
 
-    with aspectlib.weave(LegacyTestClass, aspect, skip_subclasses=True):
-        with aspectlib.weave(LegacyTestSubClass, aspect, skip_subclasses=True):
-            with aspectlib.weave(LegacyTestSubSubClass, aspect, skip_subclasses=True):
+    with aspectlib.weave(LegacyTestClass, aspect, subclasses=False):
+        with aspectlib.weave(LegacyTestSubClass, aspect, subclasses=False):
+            with aspectlib.weave(LegacyTestSubSubClass, aspect, subclasses=False):
                 inst = LegacyTestClass('stuff')
                 assert history == [
                     (inst, 'stuff'),
@@ -867,6 +889,7 @@ def test_weave_class_old_style_all_magic():
 
     assert history == []
 
+
 def test_just_proceed():
     @aspectlib.Aspect
     def aspect():
@@ -877,6 +900,7 @@ def test_just_proceed():
         return 'stuff'
 
     assert func() == 'stuff'
+
 
 def test_just_proceed_with_error():
     @aspectlib.Aspect
@@ -889,12 +913,14 @@ def test_just_proceed_with_error():
 
     raises(ZeroDivisionError, func)
 
+
 def test_weave_unknown():
     @aspectlib.Aspect
     def aspect():
         yield aspectlib.Proceed
 
     raises(RuntimeError, aspectlib.weave, 1, aspect)
+
 
 def test_weave_unimportable():
     @aspectlib.Aspect
@@ -903,29 +929,40 @@ def test_weave_unimportable():
 
     raises(ImportError, aspectlib.weave, "1.2", aspect)
 
+
 def test_weave_subclass(Bub=Sub):
-    with aspectlib.weave(Sub, mock('foobar'), on_init=True):
+    with aspectlib.weave(Sub, mock('foobar'), lazy=True):
         assert Sub().meth() == 'foobar'
         assert Bub().meth() == 'base'
     assert Sub().meth() == 'base'
     assert Bub is Sub
 
+
 def test_weave_subclass_meth_manual():
-    with aspectlib.weave(Sub, mock('foobar'), on_init=True, only_methods=['meth']):
+    with aspectlib.weave(Sub, mock('foobar'), lazy=True, methods=['meth']):
         assert Sub().meth() == 'foobar'
 
     assert Sub().meth() == 'base'
 
+@pytest.mark.skipif('aspectlib.PY3')
 def test_weave_subclass_meth_auto():
-    with aspectlib.weave(Sub.meth, mock('foobar'), on_init=True):
+    with aspectlib.weave(Sub.meth, mock('foobar'), lazy=True):
         assert Sub().meth() == 'foobar'
 
     assert Sub().meth() == 'base'
+
+@pytest.mark.skipif('aspectlib.PY2')
+def test_weave_subclass_meth_auto2():
+    with aspectlib.weave(Sub.meth, mock('foobar')):
+        assert Sub().meth() == 'foobar'
+
+    assert Sub().meth() == 'base'
+
 
 def test_weave_multiple():
     with aspectlib.weave((module_func, module_func2), mock('foobar')):
         assert module_func() == 'foobar'
         assert module_func2() == 'foobar'
 
-    assert module_func() == None
-    assert module_func2() == None
+    assert module_func() is None
+    assert module_func2() is None

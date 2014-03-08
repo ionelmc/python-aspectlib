@@ -4,7 +4,7 @@ source =
     */aspectlib
 
 [run]
-source = src
+source = */aspectlib
 parallel = true
 [report]
 show_missing = true

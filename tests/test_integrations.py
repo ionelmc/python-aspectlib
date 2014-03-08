@@ -50,7 +50,7 @@ def test_socket(target=socket.socket):
         print_to=buf,
         stacktrace=2,
         module=False
-    ), on_init=True):
+    ), lazy=True):
         s = socket.socket()
         try:
             s.connect(('127.0.0.1', 1))

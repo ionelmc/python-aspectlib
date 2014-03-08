@@ -3,7 +3,7 @@
 <project id="10497603-2c99-4b52-bcbb-eaf66a375edc" kpf_version="5" name="python-aspectlib.komodoproject">
 <preference-set idref="10497603-2c99-4b52-bcbb-eaf66a375edc" id="project" preftype="project">
   <string relative="path" id="import_dirname"></string>
-  <string id="import_exclude_matches">*.*~;*.bak;*.tmp;CVS;.#*;*.pyo;*.pyc;.svn;_svn;.git;.hg;.bzr;*%25*;tmp*.html;.DS_Store;*.swp;*.kpf;*.komodoproject;.komodotools;__pycache__;.tox;.ve;build;dist;*.egg-info</string>
+  <string id="import_exclude_matches">*.*~;*.bak;*.tmp;CVS;.#*;*.pyo;*.pyc;.svn;_svn;.git;.hg;.bzr;*%25*;tmp*.html;.DS_Store;*.swp;*.kpf;*.komodoproject;.komodotools;__pycache__;.tox;.ve;build;dist;*.egg-info;htmlcov;</string>
   <string id="lastTestPlanName_pref">New test plan #1</string>
   <string relative="path" id="python3DefaultInterpreter">.tox/3.3/bin/python3.3</string>
   <string relative="path" id="python3ExtraPaths">.tox/3.3/lib/python3.3:/home/ionel/osp/python-aspectlib/.tox/3.3/lib/python3.3/site-packages</string>

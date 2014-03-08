@@ -70,7 +70,7 @@ def test_attributes():
         stacktrace=2,
         module=False,
         attributes=('foo', 'bar()')
-    ), skip_methods=('bar',)):
+    ), methods='(?!bar)(?!__.*__$)'):
         MyStuff('bar').stuff()
     print(buf.getvalue())
     assert re.match("^\{MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
