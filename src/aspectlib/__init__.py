@@ -381,7 +381,7 @@ def force_bind(func):
     return bound
 
 
-def weave_module_function(mod, target, aspect, force_name=None):
+def weave_module_function(mod, target, aspect, force_name=None, **options):
     logger.debug("Weaving %r as plain function.", target)
     name = force_name or target.__name__
-    return patch_module(mod, name, checked_apply(aspect, target), original=target)
+    return patch_module(mod, name, checked_apply(aspect, target), original=target, **options)
