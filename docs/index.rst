@@ -10,6 +10,7 @@ behavior in existing code is desired.
     introduction
     installation
     rationale
+    faq
     examples
     reference/index
     development

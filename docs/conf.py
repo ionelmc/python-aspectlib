@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import os
-extensions = [
+extensions = (
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
@@ -9,7 +9,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-]
+)
+if os.getenv('DOCS'):
+    extensions += 'sphinxcontrib.spelling',
+    spelling_show_suggestions = True
+    spelling_lang = 'en_US'
 
 source_suffix = '.rst'
 master_doc = 'index'
@@ -38,9 +42,12 @@ version = release = re.findall(
 
 pygments_style = 'trac'
 if os.environ.get('READTHEDOCS') != 'True':
-    import sphinx_rtd_theme
-    html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    try:
+        import sphinx_rtd_theme
+        html_theme = "sphinx_rtd_theme"
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    except ImportError as exc:
+        print("ERROR %s" % exc)
 #html_theme = 'traditional'
 #html_theme = 'nature'
 

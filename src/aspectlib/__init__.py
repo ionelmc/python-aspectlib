@@ -170,7 +170,7 @@ def weave(target, aspect, **options):
         If ``True``, aliases of target are replaced.
 
     :param bool lazy:
-        If ``True`` only patch target's ``__init__``, the rest of the metods are patched after ``__init__`` is
+        If ``True`` only patch target's ``__init__``, the rest of the methods are patched after ``__init__`` is
         called. *Only available for classes*
 
     :param methods: Methods from target to patch. *Only available for classes*

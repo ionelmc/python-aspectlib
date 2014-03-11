@@ -12,5 +12,5 @@ Then in those situations:
 * You would need to handle yourself all different kids of patching (patching
   a module is different than patching a class, a function or a method for that matter).
   ``aspectlib`` will handle all this gross patching mumbo-jumbo for you, consistently, over many Python versions.
-* Writting the actual wrappers is repetitive, boring and error-prone. You can't reuse wrappers
+* Writing the actual wrappers is repetitive, boring and error-prone. You can't reuse wrappers
   but *you can reuse function decorators*.

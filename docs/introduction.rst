@@ -2,7 +2,8 @@
 Introduction
 ============
 
-`aspectlib` has two core tools to do AOP:
+`aspectlib` provides two core tools to do `AOP <http://en.wikipedia.org/wiki/Aspect-oriented_programming>`_: Aspects and
+a weaver.
 
 The aspect
 ==========
@@ -40,7 +41,8 @@ You can use these *advices*:
 The weaver
 ==========
 
-Patches classes and functions with the given *aspect*. When used with a class it will patch all the methods.
+Patches classes and functions with the given *aspect*. When used with a class it will patch all the methods. In AOP
+parlance these patched functions and methods are referred to as *cut-points*.
 
 Returns a :class:`~aspectlib.Rollback` object that can be used a context manager.
 It will undo all the changes at the end of the context.
@@ -59,9 +61,3 @@ Example:
 
 You can use :func:`aspectlib.weave` on: classes, instances, builtin functions, module level functions, methods,
 classmethods, staticmethods, instance methods etc.
-
-Why is it called weave and not patch ?
---------------------------------------
-
-Because it does more things that just patching. Depending on the *target* object it will patch and/or create one or more
-subclasses and objects.

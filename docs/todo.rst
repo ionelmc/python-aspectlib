@@ -1,4 +1,4 @@
-Todo & Ideas
+TODO & Ideas
 ============
 
 Validation
