@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import os
-extensions = (
+extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
@@ -9,7 +9,7 @@ extensions = (
     'sphinx.ext.coverage',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-)
+]
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',
     spelling_show_suggestions = True
