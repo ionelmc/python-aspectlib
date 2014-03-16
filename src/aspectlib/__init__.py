@@ -54,7 +54,8 @@ UNSPECIFIED = _Sentinel('UNSPECIFIED')
 ALL_METHODS = re.compile('.*')
 NORMAL_METHODS = re.compile('(?!__.*__$)')
 REGEX_TYPE = type(NORMAL_METHODS)
-VALID_IDENTIFIER = re.compile('^[^\W\d]\w*$', re.UNICODE if PY3 else 0)
+VALID_IDENTIFIER = re.compile(r'^[^\W\d]\w*$', re.UNICODE if PY3 else 0)
+
 
 class Proceed(object):
     """
