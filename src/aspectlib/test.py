@@ -6,6 +6,8 @@ from wrapt.decorators import FunctionWrapper
 
 import aspectlib
 
+__all__ = 'mock', 'record'
+
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 
 

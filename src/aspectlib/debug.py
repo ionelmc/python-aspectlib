@@ -88,7 +88,7 @@ def log(func=None,
     def logged(func, instance, args, kwargs, _missing=object()):
         name = func.__name__
         if instance:
-            instance_type = type(instance)
+            instance_type = instance.__class__ if hasattr(instance, '__class__') else type(instance)
             info = []
             for key in attributes:
                 if key.endswith('()'):
