@@ -31,8 +31,6 @@ With ``mock``::
     >>> real.method(3, 4, 5, key='value')
     3
     >>> real.method.assert_called_with(3, 4, 5, key='value')
-
-
 """
 from collections import namedtuple
 from functools import partial
@@ -52,7 +50,7 @@ def mock(return_value, call=False):
     Factory for a decorator that makes the function return a given `return_value`.
 
     :param return_value: Value to return from the wrapper.
-    :param bool call: If ``True``, call the decorated function.
+    :param bool call: If ``True``, call the decorated function. (default: ``False``)
     :returns: A decorator.
     """
     def mock_decorator(func):
@@ -98,16 +96,40 @@ def record(func=None, call=False, history=None):
     """
     Factory or decorator (depending if `func` is initially given).
 
-    The decorator returns a wrapper that records all calls made to `func`.
-
     :param list history:
         An object where the `Call` objects are appended. If not given a new list object will be created.
 
     :param bool call:
-        If ``True`` the `func` will be called.
+        If ``True`` the `func` will be called. (default: ``False``)
 
     :returns:
         A wrapper that has a `calls` property.
+
+    The decorator returns a wrapper that records all calls made to `func`. The history is available as a ``call``
+    property. If access to the function is too hard then you need to specify the history manually.
+
+    Example::
+
+        >>> @record
+        ... def a():
+        ...     pass
+        >>> a(1, 2, 3, b='c')
+        >>> a.calls
+        [Call(self=None, args=(1, 2, 3), kwargs={'b': 'c'})]
+
+
+    Or, with your own history list::
+
+        >>> calls = []
+        >>> @record(history=calls)
+        ... def a():
+        ...     pass
+        >>> a(1, 2, 3, b='c')
+        >>> a.calls
+        [Call(self=None, args=(1, 2, 3), kwargs={'b': 'c'})]
+        >>> calls is a.calls
+        True
+
     """
     def record_decorator(func):
         calls = list() if history is None else history
