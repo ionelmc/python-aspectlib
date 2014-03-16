@@ -67,7 +67,8 @@ def log(func=None,
     :param bool module:
         Show the module.
     :param bool call:
-        If ``True``, then logs calls. (default: ``True``)
+        If ``True``, then show calls. If ``False`` only show the call details on exceptions (if ``exception`` is
+        enabled) (default: ``True``)
     :param bool call_args:
         If ``True``, then show call arguments. (default: ``True``)
     :param bool call_args_repr:
