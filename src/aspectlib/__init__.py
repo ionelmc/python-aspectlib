@@ -359,7 +359,11 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
     rollback = Rollback()
     seen = False
     original = getattr(module, name) if original is UNSPECIFIED else original
-    location = replacement.__module__ = module.__name__
+    location = module.__name__
+    try:
+        replacement.__module__ = location
+    except AttributeError:
+        pass
     for alias in dir(module):
         if hasattr(module, alias):
             obj = getattr(module, alias)

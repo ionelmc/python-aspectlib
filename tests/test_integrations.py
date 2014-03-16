@@ -68,6 +68,23 @@ def test_socket(target=socket.socket):
 
     assert re.match(LOG_TEST_SOCKET, buf.getvalue())
 
+
 def test_socket_as_string_target():
     test_socket(target='socket.socket')
 
+
+def test_socket_meth(meth=socket.socket.close):
+    calls = []
+    with aspectlib.weave(meth, record(history=calls)):
+        s = socket.socket()
+        assert s.close() is None
+    assert calls == [(s, (), {})]
+    del calls[:]
+
+    s = socket.socket()
+    assert s.close() is None
+    assert calls == []
+
+
+def test_socket_meth_as_string_target():
+    test_socket_meth('socket.socket.close')
