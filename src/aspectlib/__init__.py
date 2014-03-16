@@ -15,10 +15,13 @@ from logging import getLogger
 
 from types import GeneratorType
 
+
+__all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
+
 try:
     import __builtin__
 except ImportError:
-    import builtins as __builtin__
+    import builtins as __builtin__  # pylint: disable=F0401
 
 try:
     from types import ClassType
@@ -32,7 +35,8 @@ PY2 = sys.version_info[0] == 2
 PYPY = platform.python_implementation() == 'PyPy'
 
 if PY3:
-    unicode = str
+    unicode = str  # pylint: disable=W0622
+
 
 class _Sentinel(object):
     def __init__(self, name, doc=''):
@@ -50,7 +54,7 @@ UNSPECIFIED = _Sentinel('UNSPECIFIED')
 ALL_METHODS = re.compile('.*')
 NORMAL_METHODS = re.compile('(?!__.*__$)')
 REGEX_TYPE = type(NORMAL_METHODS)
-
+VALID_IDENTIFIER = re.compile('^[^\W\d]\w*$', re.UNICODE if PY3 else 0)
 
 class Proceed(object):
     """
@@ -152,9 +156,18 @@ def checked_apply(aspect, function):
     return wrapper
 
 
+def check_name(name):
+    if not VALID_IDENTIFIER.match(name):
+        raise SyntaxError(
+            "Could not match %r to %r. It should be a string of "
+            "letters, numbers and underscore that starts with a letter or underscore." % (
+                name, VALID_IDENTIFIER.pattern
+            )
+        )
+
+
 def weave(target, aspect, **options):
     """
-
     Send a message to a recipient
 
     :param target: The object to weave
@@ -192,6 +205,9 @@ def weave(target, aspect, **options):
     elif isinstance(target, (unicode, str)):
         assert '.' in target, "Need at least a module in the target specification !"
         parts = target.split('.')
+        for part in parts:
+            check_name(part)
+
         for pos in reversed(range(1, len(parts))):
             owner, name = '.'.join(parts[:pos]), '.'.join(parts[pos:])
             try:

@@ -1,3 +1,4 @@
+# encoding: utf8
 from __future__ import print_function
 
 import pytest
@@ -972,7 +973,7 @@ def test_weave_unimportable():
     def aspect():
         yield aspectlib.Proceed
 
-    raises(ImportError, aspectlib.weave, "1.2", aspect)
+    raises(ImportError, aspectlib.weave, "asdf1.qwer2", aspect)
 
 
 def test_weave_subclass(Bub=Sub):
@@ -1019,3 +1020,37 @@ def test_unspecified_str():
 
 def test_sentinel():
     assert repr(aspectlib._Sentinel('STUFF', "Means it's some stuff")) == "STUFF: Means it's some stuff"
+
+
+def _internal():
+    pass
+
+if aspectlib.PY3:
+    exec(u"""# encoding: utf8
+
+def ăbc():
+    pass
+
+def test_ăbc():
+    with aspectlib.weave('test_aspectlib.ăbc', mock('stuff')):
+        assert ăbc() == 'stuff'
+""")
+else:
+    def test_py2_invalid_unicode_in_string_target():
+        raises(SyntaxError, aspectlib.weave, 'os.ăa', mock(None))
+        raises(SyntaxError, aspectlib.weave, u'os.ăa', mock(None))
+        raises(SyntaxError, aspectlib.weave, 'os.aă', mock(None))
+        raises(SyntaxError, aspectlib.weave, u'os.aă', mock(None))
+
+
+def test_invalid_string_target():
+    raises(AssertionError, aspectlib.weave, 'inva lid', mock(None))
+    raises(SyntaxError, aspectlib.weave, 'os.inva lid', mock(None))
+    raises(SyntaxError, aspectlib.weave, 'os.2invalid', mock(None))
+    raises(SyntaxError, aspectlib.weave, 'os.some,junk', mock(None))
+    raises(SyntaxError, aspectlib.weave, 'os.some?junk', mock(None))
+    raises(SyntaxError, aspectlib.weave, 'os.some*junk', mock(None))
+
+    with aspectlib.weave('test_aspectlib._internal', mock('stuff')):
+        assert _internal() == 'stuff'
+
