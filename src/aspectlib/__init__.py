@@ -150,10 +150,16 @@ class Rollback(object):
     rollback = __call__ = __exit__
 
 
-def checked_apply(aspect, function):
-    logger.debug('Applying aspect %s to function %s.', aspect, function)
-    wrapper = aspect(function)
-    assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspect, wrapper)
+def checked_apply(aspects, function):
+    logger.debug('Applying aspects %s to function %s.', aspects, function)
+    if callable(aspects):
+        wrapper = aspects(function)
+        assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspects, wrapper)
+    else:
+        wrapper = function
+        for aspect in aspects:
+            wrapper = aspect(wrapper)
+            assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspect, wrapper)
     return wrapper
 
 
@@ -167,15 +173,15 @@ def check_name(name):
         )
 
 
-def weave(target, aspect, **options):
+def weave(target, aspects, **options):
     """
     Send a message to a recipient
 
     :param target: The object to weave
     :type target: string, class, instance, function or builtin
 
-    :param aspect: The aspect to apply to the object
-    :type target: :py:obj:`aspectlib.Aspect` or function decorator
+    :param aspects: The aspects to apply to the object
+    :type target: :py:obj:`aspectlib.Aspect`, function decorator or list of those
 
     :param bool subclasses:
         If ``True``, subclasses of target are weaved. *Only available for classes*
@@ -197,11 +203,16 @@ def weave(target, aspect, **options):
         If target is a unacceptable object, or the specified options are not available for that type of object.
 
     """
-    assert callable(aspect), '%s must be an `Aspect` instance or be a callable.' % (aspect)
+    if not callable(aspects):
+        if not hasattr(aspects, '__iter__'):
+            raise RuntimeError('%s must be an `Aspect` instance, a callable or an iterable of.' % aspects)
+        for obj in aspects:
+            if not callable(obj):
+                raise RuntimeError('%s must be an `Aspect` instance or a callable.' % obj)
     assert target, "Can't weave falsy value %r." % target
     if isinstance(target, (list, tuple)):
         return Rollback([
-            weave(item, aspect, **options) for item in target
+            weave(item, aspects, **options) for item in target
         ])
     elif isinstance(target, (unicode, str)):
         assert '.' in target, "Need at least a module in the target specification !"
@@ -232,24 +243,24 @@ def weave(target, aspect, **options):
         if isinstance(obj, (type, ClassType)):
             logger.debug(" .. as a class %r.", obj)
             return weave_class(
-                obj, aspect,
+                obj, aspects,
                 owner=owner, name=name, **options
             )
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
             logger.debug(" .. as a callable %r.", obj)
-            return weave_module_function(owner, obj, aspect, force_name=name, **options)
+            return weave_module_function(owner, obj, aspects, force_name=name, **options)
         else:
             raise TypeError("Can't weave object %s of type %s" % (obj, type(obj)))
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
-        return weave_module_function(__builtin__, target, aspect, **options)
+        return weave_module_function(__builtin__, target, aspects, **options)
     elif PY3 and ismethod(target):
         inst = target.__self__
         name = target.__name__
         logger.debug("Weaving %r (%s) as instance method.", target, name)
         assert not options, "keyword arguments are not supported when weaving instance methods."
         func = getattr(inst, name)
-        setattr(inst, name, checked_apply(aspect, func).__get__(inst, type(inst)))
+        setattr(inst, name, checked_apply(aspects, func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
     elif PY3 and isfunction(target):
         owner = __import__(target.__module__)
@@ -259,9 +270,9 @@ def weave(target, aspect, **options):
         name = target.__name__
         logger.debug("Weaving %r (%s) as a property.", target, name)
         func = owner.__dict__[name]
-        return patch_module(owner, name, checked_apply(aspect, func), func, **options)
+        return patch_module(owner, name, checked_apply(aspects, func), func, **options)
     elif PY2 and isfunction(target):
-        return weave_module_function(__import__(target.__module__), target, aspect, **options)
+        return weave_module_function(__import__(target.__module__), target, aspects, **options)
     elif PY2 and ismethod(target):
         if target.im_self:
             inst = target.im_self
@@ -269,14 +280,14 @@ def weave(target, aspect, **options):
             logger.debug("Weaving %r (%s) as instance method.", target, name)
             assert not options, "keyword arguments are not supported when weaving instance methods."
             func = getattr(inst, name)
-            setattr(inst, name, checked_apply(aspect, func).__get__(inst, type(inst)))
+            setattr(inst, name, checked_apply(aspects, func).__get__(inst, type(inst)))
             return Rollback(lambda: delattr(inst, name))
         else:
             klass = target.im_class
             name = target.__name__
-            return weave(klass, aspect, methods='%s$' % name, **options)
+            return weave(klass, aspects, methods='%s$' % name, **options)
     elif isclass(target):
-        return weave_class(target, aspect, **options)
+        return weave_class(target, aspects, **options)
     else:
         raise RuntimeError("Can't weave object %s of type %s" % (target, type(target)))
 

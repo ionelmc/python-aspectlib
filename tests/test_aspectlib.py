@@ -295,11 +295,11 @@ def test_weave_func():
 
 
 def test_broken_aspect():
-    raises(AssertionError, aspectlib.weave, None, None)
+    raises(RuntimeError, aspectlib.weave, None, None)
 
 
 def test_weave_empty_target():
-    raises(AssertionError, aspectlib.weave, (), None)
+    raises(RuntimeError, aspectlib.weave, (), None)
 
 
 def test_weave_missing_global(cls=Global):
@@ -1054,3 +1054,18 @@ def test_invalid_string_target():
     with aspectlib.weave('test_aspectlib._internal', mock('stuff')):
         assert _internal() == 'stuff'
 
+
+def test_list_of_aspects():
+    with aspectlib.weave(module_func, [mock('foobar'), record(call=True)]):
+        assert module_func(1, 2, 3) == 'foobar'
+        assert module_func.calls == [(None, (1, 2, 3), {})]
+
+    with aspectlib.weave(module_func, [mock('foobar', call=True), record(call=True)]):
+        raises(TypeError, module_func, 1, 2, 3)
+        assert module_func.calls == [(None, (1, 2, 3), {})]
+
+def test_list_of_invalid_aspects():
+    raises(AssertionError, aspectlib.weave, module_func, [lambda func: None])
+    raises(TypeError, aspectlib.weave, module_func, [lambda: None])
+    raises(RuntimeError, aspectlib.weave, module_func, [None])
+    raises(RuntimeError, aspectlib.weave, module_func, ['foobar'])
