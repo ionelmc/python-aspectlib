@@ -11,3 +11,4 @@ framelist
 loglevel
 Changelog
 Indices
+nonascii

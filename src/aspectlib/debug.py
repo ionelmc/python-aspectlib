@@ -44,8 +44,9 @@ def log(func=None,
         stacktrace_align=60,
         attributes=(),
         module=True,
-        arguments=True,
-        arguments_repr=repr,
+        call=True,
+        call_args=True,
+        call_args_repr=repr,
         result=True,
         exception=True,
         exception_repr=repr,
@@ -55,21 +56,67 @@ def log(func=None,
     """
     Decorates `func` to have logging.
 
-    :param function func: Function to decorate. If missing log returns a partial which you can use as a decorator.
-    :param int stacktrace: Number of frames to show.
-    :param int stacktrace_align: Column to align the framelist to.
-    :param list attributes: List of instance attributes to show, in case the function is a instance method.
-    :param bool module: Show the module.
-    :param bool arguments: If ``True``, then show arguments.
-    :param bool arguments_repr: Function to convert one argument to a string.
-    :param bool result: If ``True``, then show result.
-    :param bool exception: If ``True``, then show exceptions.
-    :param function exception_repr: Function to convert an exception to a string.
-    :param function result_repr: Function to convert the result object to a string.
-    :param string use_logging: Emit log messages with the given loglevel.
-    :param fileobject print_to: File object to write to, in case you don't want to use logging module.
+    :param function func:
+        Function to decorate. If missing log returns a partial which you can use as a decorator.
+    :param int stacktrace:
+        Number of frames to show.
+    :param int stacktrace_align:
+        Column to align the framelist to.
+    :param list attributes:
+        List of instance attributes to show, in case the function is a instance method.
+    :param bool module:
+        Show the module.
+    :param bool call:
+        If ``True``, then logs calls. (default: ``True``)
+    :param bool call_args:
+        If ``True``, then show call arguments. (default: ``True``)
+    :param bool call_args_repr:
+        Function to convert one argument to a string. (default: ``repr``)
+    :param bool result:
+        If ``True``, then show result. (default: ``True``)
+    :param bool exception:
+        If ``True``, then show exceptions. (default: ``True``)
+    :param function exception_repr:
+        Function to convert an exception to a string. (default: ``repr``)
+    :param function result_repr:
+        Function to convert the result object to a string. (default: ``strip_non_ascii`` - like ``str`` but nonascii
+        characters are replaced with dots.)
+    :param string use_logging:
+        Emit log messages with the given loglevel. (default: ``"CRITICAL"``)
+    :param fileobject print_to:
+        File object to write to, in case you don't want to use logging module. (default: ``None`` - printing is
+        disabled)
 
     :returns: A decorator or a wrapper.
+
+    Example::
+
+        >>> @log(print_to=sys.stdout)
+        ... def a(weird=False):
+        ...     if weird:
+        ...         raise RuntimeError('BOOM!')
+        >>> a()
+        a()                                                           <<< ...
+        a => None
+        >>> try:
+        ...     a(weird=True)
+        ... except Exception:
+        ...     pass # naughty code !
+        a(weird=True)                                                 <<< ...
+        a ~ raised RuntimeError('BOOM!',)
+
+    You can conveniently use this to logs just errors, or just results, example::
+
+        >>> import aspectlib
+        >>> with aspectlib.weave(int, log(call=False, result=False, print_to=sys.stdout)):
+        ...     try:
+        ...         int('invalid')
+        ...     except Exception:
+        ...         pass # naughty code !
+        int('invalid')                                                <<< ...
+        int ~ raised ValueError("invalid literal for int() with base 10: 'invalid'",)
+
+    This makes debugging naughty code easier.
     """
 
     loglevel = use_logging and logging._levelNames.get(use_logging, logging.CRITICAL)
@@ -92,13 +139,13 @@ def log(func=None,
             info = []
             for key in attributes:
                 if key.endswith('()'):
-                    call = key = key.rstrip('()')
+                    callarg = key = key.rstrip('()')
                 else:
-                    call = False
+                    callarg = False
                 val = getattr(instance, key, _missing)
                 if val is not _missing and key != name:
                     info.append(' %s=%s' % (
-                        key, arguments_repr(val() if call else val)
+                        key, call_args_repr(val() if callarg else val)
                     ))
             sig = buf = '{%s%s%s}.%s' % (
                 instance_type.__module__ + '.' if module else '',
@@ -108,20 +155,23 @@ def log(func=None,
             )
         else:
             sig = buf = func.__name__
-        if arguments:
+        if call_args:
             buf += '(%s%s)' % (
-                ', '.join(repr(i) for i in (args if arguments is True else args[:arguments])),
+                ', '.join(repr(i) for i in (args if call_args is True else args[:call_args])),
                 ((', ' if args else '') + ', '.join('%s=%r' % i for i in kwargs.items()))
-                if kwargs and arguments is True
+                if kwargs and call_args is True
                 else '',
             )
         if stacktrace:
             buf = ("%%-%ds  <<< %%s" % stacktrace_align) % (buf, format_stack(skip=1, length=stacktrace))
-        dump(buf)
+        if call:
+            dump(buf)
         try:
             res = func(*args, **kwargs)
         except Exception as exc:
             if exception:
+                if not call:
+                    dump(buf)
                 dump('%s ~ raised %s' % (sig, exception_repr(exc)))
             raise
 
