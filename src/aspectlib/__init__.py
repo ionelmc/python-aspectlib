@@ -374,7 +374,7 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
     location = module.__name__
     try:
         replacement.__module__ = location
-    except AttributeError:
+    except (TypeError, AttributeError):
         pass
     for alias in dir(module):
         if hasattr(module, alias):

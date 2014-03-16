@@ -26,10 +26,20 @@ def test_mock_builtin():
 
     assert open(__file__) != 'foobar'
 
+
+def test_mock_builtin_os():
+    print(os.open.__name__)
+    with aspectlib.weave('os.open', mock('foobar')):
+        assert os.open('???') == 'foobar'
+
+    assert os.open(__file__, 0) != 'foobar'
+
+
 def test_record_warning():
     with aspectlib.weave('warnings.warn', record):
         warnings.warn('crap')
         assert warnings.warn.calls, [(None, ('crap',) == {})]
+
 
 @pytest.mark.skipif(not hasattr(os, 'fork'), reason="os.fork not available")
 def test_fork():
