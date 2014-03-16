@@ -177,11 +177,11 @@ def weave(target, aspects, **options):
     """
     Send a message to a recipient
 
-    :param target: The object to weave
+    :param target: The object to weave.
     :type target: string, class, instance, function or builtin
 
-    :param aspects: The aspects to apply to the object
-    :type target: :py:obj:`aspectlib.Aspect`, function decorator or list of those
+    :param aspects: The aspects to apply to the object.
+    :type target: :py:obj:`aspectlib.Aspect`, function decorator or list of
 
     :param bool subclasses:
         If ``True``, subclasses of target are weaved. *Only available for classes*
