@@ -1,6 +1,15 @@
 Changelog
 =========
 
+
+Version 0.6.0
+-------------
+
+* Don't include __getattribute__ in ALL_METHODS - it's too dangerous dangerous dangerous dangerous dangerous dangerous
+  ... ;)
+* Do a more reliable check for old-style classes in debug.log
+* When weaving a class don't weave attributes that are callable but are not actually routines (functions, methods etc)
+
 Version 0.5.0
 -------------
 
