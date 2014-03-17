@@ -2,33 +2,37 @@ language: python
 os:
   - linux
   - osx
-python:
-  - "2.5"
-  - "2.7"
-  - "2.6"
-  - "3.3"
-  - "pypy"
+python: 2.7
 env:
   global:
     PYTHONPATH=src:tests
     PYTHONUNBUFFERED=yes
   matrix:
-    - WITH_COVERAGE=no
-    - WITH_COVERAGE=yes
+    - TOX_ENV=2.6 WITH_COVERAGE=no
+    - TOX_ENV=2.6 WITH_COVERAGE=yes
+    - TOX_ENV=2.7 WITH_COVERAGE=no
+    - TOX_ENV=2.7 WITH_COVERAGE=yes
+    - TOX_ENV=3.3 WITH_COVERAGE=no
+    - TOX_ENV=3.3 WITH_COVERAGE=yes
+    - TOX_ENV=3.4 WITH_COVERAGE=no
+    - TOX_ENV=3.4 WITH_COVERAGE=yes
+    - TOX_ENV=pypy WITH_COVERAGE=no
+    - TOX_ENV=pypy WITH_COVERAGE=yes
 before_install:
   - |
-    if python --version |& grep PyPy; then
+    if [[ $TOX_ENV = pypy ]]; then
       deactivate
       sudo apt-add-repository --yes ppa:pypy/ppa
       sudo apt-get update
       sudo apt-get install pypy
       source ~/virtualenv/pypy/bin/activate
     fi
-    if python --version |& grep "Python 2.5"; then
+    if [[ $TOX_ENV = 3.4 ]]; then
       sudo apt-get update
       sudo apt-get install python3.4-dev
-      virtualenv ve-3.4 --python=$(which python3.4)
-      source ve-3.4/bin/activate
+      source ~/virtualenv/python3.4
+      virtualenv ~/virtualenv/python3.4 --python=$(which python3.4)
+      source ~/virtualenv/python3.4/bin/activate
     fi
     python --version
     uname -a
@@ -38,9 +42,9 @@ install:
 script:
   - |
     if [[ $WITH_COVERAGE == yes ]]; then
-      tox -v -e $TRAVIS_PYTHON_VERSION
+      tox -v 
     else
-      tox -v -e $TRAVIS_PYTHON_VERSION -- py.test
+      tox -v -- py.test
     fi
 after_success:
   - |
