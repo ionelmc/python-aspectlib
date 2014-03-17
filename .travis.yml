@@ -3,10 +3,10 @@ os:
   - linux
   - osx
 python:
+  - "2.4"
   - "2.7"
   - "2.6"
   - "3.3"
-  - "2.5"
   - "pypy"
 env:
   global:
@@ -24,7 +24,7 @@ before_install:
       sudo apt-get install pypy
       source ~/virtualenv/pypy/bin/activate
     fi
-    if python --version |& grep "Python 3.4"; then
+    if python --version |& grep "Python 2.4"; then
       sudo apt-get update
       sudo apt-get install python3.4-dev
       virtualenv ve-3.4 --python=$(which python3.4)
