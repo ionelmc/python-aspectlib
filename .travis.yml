@@ -49,9 +49,9 @@ script:
 after_success:
   - |
     if [[ $WITH_COVERAGE == yes ]]; then
-      .tox/$TRAVIS_PYTHON_VERSION/bin/coverage combine
-      .tox/$TRAVIS_PYTHON_VERSION/bin/coverage report
-      .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
+      .tox/$TOXENV/bin/coverage combine
+      .tox/$TOXENV/bin/coverage report
+      .tox/$TOXENV/bin/coveralls
     fi
 notifications:
   email:
