@@ -2,6 +2,10 @@ import logging
 import os
 import string
 import sys
+try:
+    from types import InstanceType
+except ImportError:
+    InstanceType = type(None)
 from itertools import islice
 
 from wrapt import decorator
@@ -136,7 +140,11 @@ def log(func=None,
     def logged(func, instance, args, kwargs, _missing=object()):
         name = func.__name__
         if instance:
-            instance_type = instance.__class__ if hasattr(instance, '__class__') else type(instance)
+            if isinstance(instance, InstanceType):
+                instance_type = instance.__class__
+            else:
+                instance_type = type(instance)
+
             info = []
             for key in attributes:
                 if key.endswith('()'):
