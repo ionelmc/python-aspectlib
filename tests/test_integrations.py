@@ -1,15 +1,22 @@
 from __future__ import print_function
 
 import os
+import re
 import socket
 import warnings
-import re
 
 import pytest
+from process_tests import wait_for_strings
+from process_tests import dump_on_error
 
 import aspectlib
 from aspectlib.test import mock
 from aspectlib.test import record
+
+try:
+    import thread
+except ImportError:
+    import _thread as thread
 
 try:
     from StringIO import StringIO
@@ -112,3 +119,55 @@ def test_socket_all_methods():
 
     assert "}.__init__ => None" in buf.getvalue()
 
+
+@pytest.mark.skipif(not hasattr(os, 'fork') or aspectlib.PYPY, reason="os.fork not available or PYPY")
+def test_realsocket_makefile():
+    buf = StringIO()
+    p = socket.socket()
+    p.bind(('127.0.0.1', 0))
+    p.listen(1)
+    p.settimeout(1)
+    pid = os.fork()
+
+    if pid:
+        with aspectlib.weave(
+            ['socket._fileobject' if aspectlib.PY2 else 'socket.SocketIO'] +
+            (['socket.socket', 'socket._realsocket'] if aspectlib.PY2 else ['socket.socket']),
+            aspectlib.debug.log(print_to=buf, stacktrace=False),
+            lazy=True,
+            methods=aspectlib.ALL_METHODS,
+        ):
+            s = socket.socket()
+            s.settimeout(1)
+            s.connect(p.getsockname())
+            if aspectlib.PY3:
+                fh = s.makefile('rwb', buffering=0)
+            else:
+                fh = s.makefile(bufsize=0)
+            fh.write(b"STUFF\n")
+            fh.readline()
+
+        with dump_on_error(buf.getvalue):
+            wait_for_strings(
+                buf.getvalue, 0,
+                "}.connect",
+                "}.makefile",
+                "}.write(",
+                "}.send",
+                "}.write =>",
+                "}.readline()",
+                "}.recv",
+                "}.readline => ",
+            )
+    else:
+        try:
+            c, _ = p.accept()
+            c.settimeout(1)
+            if aspectlib.PY3:
+                f = c.makefile('rw', buffering=1)
+            else:
+                f = c.makefile(bufsize=1)
+            while f.readline():
+                f.write('-\n')
+        finally:
+            os._exit(0)
