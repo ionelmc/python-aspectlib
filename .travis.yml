@@ -8,16 +8,16 @@ env:
     PYTHONPATH=src:tests
     PYTHONUNBUFFERED=yes
   matrix:
-    - TOX_ENV=2.6 WITH_COVERAGE=no
-    - TOX_ENV=2.6 WITH_COVERAGE=yes
-    - TOX_ENV=2.7 WITH_COVERAGE=no
-    - TOX_ENV=2.7 WITH_COVERAGE=yes
-    - TOX_ENV=3.3 WITH_COVERAGE=no
-    - TOX_ENV=3.3 WITH_COVERAGE=yes
-    - TOX_ENV=3.4 WITH_COVERAGE=no
-    - TOX_ENV=3.4 WITH_COVERAGE=yes
-    - TOX_ENV=pypy WITH_COVERAGE=no
-    - TOX_ENV=pypy WITH_COVERAGE=yes
+    - TOXENV=2.6 WITH_COVERAGE=no
+    - TOXENV=2.6 WITH_COVERAGE=yes
+    - TOXENV=2.7 WITH_COVERAGE=no
+    - TOXENV=2.7 WITH_COVERAGE=yes
+    - TOXENV=3.3 WITH_COVERAGE=no
+    - TOXENV=3.3 WITH_COVERAGE=yes
+    - TOXENV=3.4 WITH_COVERAGE=no
+    - TOXENV=3.4 WITH_COVERAGE=yes
+    - TOXENV=pypy WITH_COVERAGE=no
+    - TOXENV=pypy WITH_COVERAGE=yes
 before_install:
   - |
     if [[ $TOX_ENV = pypy ]]; then
