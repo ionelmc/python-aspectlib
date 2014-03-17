@@ -98,3 +98,17 @@ def test_socket_meth(meth=socket.socket.close):
 
 def test_socket_meth_as_string_target():
     test_socket_meth('socket.socket.close')
+
+
+def test_socket_all_methods():
+    buf = StringIO()
+    with aspectlib.weave(
+        socket.socket,
+        aspectlib.debug.log(print_to=buf, stacktrace=False),
+        lazy=True,
+        methods=aspectlib.ALL_METHODS
+    ):
+        s = socket.socket()
+
+    assert "}.__init__ => None" in buf.getvalue()
+

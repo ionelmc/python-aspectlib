@@ -332,7 +332,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
             super(SubClass, self).__init__(*args, **kwargs)
             for attr in dir(self):
                 func = getattr(self, attr, None)
-                if method_matches(attr) and attr not in wrappers and callable(func):
+                if method_matches(attr) and attr not in wrappers and isroutine(func):
                     setattr(self, attr, checked_apply(aspect, force_bind(func)).__get__(self, SubClass))
 
         wrappers = {
