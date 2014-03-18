@@ -451,6 +451,38 @@ def test_weave_instance_meth():
     assert inst.foo == 'stuff'
 
 
+@pytest.mark.xfail
+def test_weave_legacy_instance():
+    @aspectlib.Aspect
+    def aspect(self):
+        self.foo = 'bar'
+        yield aspectlib.Return
+
+    inst = LegacyTestClass()
+    with aspectlib.weave(inst, aspect):
+        inst.foobar()
+        assert inst.foo == 'bar'
+
+    inst.foobar('stuff')
+    assert inst.foo == 'stuff'
+
+
+@pytest.mark.xfail
+def test_weave_instance():
+    @aspectlib.Aspect
+    def aspect(self):
+        self.foo = 'bar'
+        yield aspectlib.Return
+
+    inst = NormalTestClass()
+    with aspectlib.weave(inst, aspect):
+        inst.foobar()
+        assert inst.foo == 'bar'
+
+    inst.foobar('stuff')
+    assert inst.foo == 'stuff'
+
+
 def test_weave_class():
     history = []
 
