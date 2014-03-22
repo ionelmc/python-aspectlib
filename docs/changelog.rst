@@ -2,6 +2,11 @@ Changelog
 =========
 
 
+Version 0.6.1
+-------------
+
+* Fix checks inside :obj:`aspectlib.debug.log` that would inadvertently call ``__bool__``/``__nonzero``.
+
 Version 0.6.0
 -------------
 
