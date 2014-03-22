@@ -139,7 +139,7 @@ def log(func=None,
     @decorator
     def logged(func, instance, args, kwargs, _missing=object()):
         name = func.__name__
-        if instance:
+        if instance is not None:
             if isinstance(instance, InstanceType):
                 instance_type = instance.__class__
             else:
