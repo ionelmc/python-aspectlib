@@ -15,11 +15,6 @@ from inspect import ismethoddescriptor
 from inspect import isroutine
 from logging import getLogger
 
-from six import PY2
-from six import PY3
-from six import reraise
-from six import string_types
-
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
 
 try:
@@ -34,7 +29,13 @@ except ImportError:
 
 logger = getLogger(__name__)
 
+PY3 = sys.version_info[0] == 3
+PY2 = sys.version_info[0] == 2
 PYPY = platform.python_implementation() == 'PyPy'
+
+if PY3:
+    unicode = str  # pylint: disable=W0622
+
 
 class _Sentinel(object):
     def __init__(self, name, doc=''):
@@ -243,7 +244,7 @@ def weave(target, aspects, **options):
         return Rollback([
             weave(item, aspects, **options) for item in target
         ])
-    elif isinstance(target, string_types):
+    elif isinstance(target, (unicode, str)):
         assert '.' in target, "Need at least a module in the target specification !"
         parts = target.split('.')
         for part in parts:
@@ -341,7 +342,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
 
     assert isclass(klass), "Can't weave %r. Must be a class." % klass
     entanglement = Rollback()
-    if isinstance(methods, string_types):
+    if isinstance(methods, (str, unicode)):
         method_matches = re.compile(methods).match
     elif isinstance(methods, (list, tuple)):
         method_matches = methods.__contains__
