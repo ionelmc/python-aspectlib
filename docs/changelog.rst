@@ -4,6 +4,7 @@ Changelog
 Version 0.7.0
 -------------
 
+* Fix issues with closing generators in :obj:`~aspectlib.Advice`.
 * Made aspectlib raise better exceptions.
 
 Version 0.6.1
