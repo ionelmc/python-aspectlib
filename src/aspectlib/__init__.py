@@ -100,6 +100,16 @@ class Return(object):
         self.value = value
 
 
+class Yield(object):
+    """
+    Instructs the Aspect to yield a value.
+    """
+    __slots__ = 'value',
+
+    def __init__(self, value):
+        self.value = value
+
+
 class Aspect(object):
     """
     Container for the advice yielding generator. Can be used as a decorator on other function to change behavior
@@ -114,7 +124,40 @@ class Aspect(object):
 
     def __call__(self, cutpoint_function):
         if isgeneratorfunction(cutpoint_function):
-            raise NotImplementedError()
+            @wraps(cutpoint_function)
+            def advising_generator_wrapper(*args, **kwargs):
+                advisor = self.advise_function(*args, **kwargs)
+                source = None
+                if not isgenerator(advisor):
+                    raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
+                try:
+                    advice = advisor.send(None)
+                    while True:
+                        logger.debug('Got advice %r from %s', advice, self.advise_function)
+                        if advice is Proceed or advice is None or isinstance(advice, Proceed):
+                            if isinstance(advice, Proceed):
+                                args = advice.args
+                                kwargs = advice.kwargs
+                            try:
+                                for item in cutpoint_function(*args, **kwargs):
+                                    yield item
+                            except Exception:
+                                advice = advisor.throw(*sys.exc_info())
+                            else:
+                                try:
+                                    advice = advisor.send(None)
+                                except StopIteration:
+                                    return
+                        elif advice is Return:
+                            return
+                        elif isinstance(advice, Yield):
+                            yield advice.value
+                            advice = advisor.send(None)
+                        else:
+                            raise UnacceptableAdvice("Unknown advice %s" % advice)
+                finally:
+                    advisor.close()
+            return advising_generator_wrapper
         else:
             @wraps(cutpoint_function)
             def advising_function_wrapper(*args, **kwargs):

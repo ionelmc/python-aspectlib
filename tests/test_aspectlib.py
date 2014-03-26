@@ -1145,21 +1145,52 @@ def test_aspect_on_func():
     assert hist == ['before', 'error', 'finally', 'closed']
 
 
-#
-#def test_aspect_on_generator():
-#    hist = []
-#
-#    @aspectlib.Aspect
-#    def aspect():
-#        try:
-#            hist.append('before')
-#            yield
-#            hist.append('after')
-#        except Exception:
-#            hist.append('error')
-#        finally:
-#            hist.append('finally')
-#
-#    def gen():
-#        pass
-#
+def test_aspect_on_func_invalid_advice():
+    hist = []
+
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Yield("stuff")
+
+    @aspect
+    def func():
+        raise RuntimeError()
+
+    raises(aspectlib.UnacceptableAdvice, func)
+
+def test_aspect_on_generator_func():
+    hist = []
+
+    @aspectlib.Aspect
+    def aspect():
+        try:
+            hist.append('before')
+            yield aspectlib.Yield('prefix')
+            yield aspectlib.Proceed
+            yield aspectlib.Yield('bad-suffix')
+            hist.append('after')
+        except Exception:
+            hist.append('error')
+        finally:
+            hist.append('finally')
+        yield aspectlib.Yield('suffix')
+        try:
+            hist.append((yield aspectlib.Return))
+        except GeneratorExit:
+            hist.append('closed')
+            raise
+        else:
+            hist.append('consumed')
+        hist.append((yield aspectlib.Yield('very-bad-suffix')))
+
+    @aspect
+    def func():
+        for i in range(3):
+            yield i
+        raise RuntimeError()
+    assert list(func()) == ['prefix', 0, 1, 2, 'suffix']
+    print (hist)
+    assert hist == ['before', 'error', 'finally', 'closed']
+
+if __name__ == '__main__':
+    test_aspect_on_generator_func()
