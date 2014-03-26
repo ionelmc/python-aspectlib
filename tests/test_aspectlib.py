@@ -205,13 +205,25 @@ class SlotsTestSubSubClass(SlotsTestSubClass):
 def test_aspect_bad():
     @aspectlib.Aspect
     def aspect():
+        yield
+
+    def aspect_fail():
         return "crap"
+
+    aspect.advise_function = aspect_fail
 
     @aspect
     def func():
         pass
 
-    raises(RuntimeError, func)
+    raises(aspectlib.ExpectedGenerator, func)
+
+
+def test_aspect_bad_decorate():
+    def aspect():
+        return "crap"
+
+    raises(aspectlib.ExpectedGeneratorFunction, aspectlib.Aspect, aspect)
 
 
 def test_aspect_return():
@@ -261,6 +273,7 @@ def test_aspect_raise_from_aspect():
     @aspectlib.Aspect
     def aspect():
         1/0
+        yield
 
     @aspect
     def func():
@@ -295,11 +308,11 @@ def test_weave_func():
 
 
 def test_broken_aspect():
-    raises(RuntimeError, aspectlib.weave, None, None)
+    raises(aspectlib.ExpectedAdvice, aspectlib.weave, None, None)
 
 
 def test_weave_empty_target():
-    raises(RuntimeError, aspectlib.weave, (), None)
+    raises(aspectlib.ExpectedAdvice, aspectlib.weave, (), None)
 
 
 def test_weave_missing_global(cls=Global):
@@ -997,7 +1010,7 @@ def test_weave_unknown():
     def aspect():
         yield aspectlib.Proceed
 
-    raises(RuntimeError, aspectlib.weave, 1, aspect)
+    raises(aspectlib.UnsupportedType, aspectlib.weave, 1, aspect)
 
 
 def test_weave_unimportable():
@@ -1099,5 +1112,5 @@ def test_list_of_aspects():
 def test_list_of_invalid_aspects():
     raises(AssertionError, aspectlib.weave, module_func, [lambda func: None])
     raises(TypeError, aspectlib.weave, module_func, [lambda: None])
-    raises(RuntimeError, aspectlib.weave, module_func, [None])
-    raises(RuntimeError, aspectlib.weave, module_func, ['foobar'])
+    raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, [None])
+    raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, ['foobar'])

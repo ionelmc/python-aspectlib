@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 0.7.0
+-------------
+
+* Made aspectlib raise better exceptions.
 
 Version 0.6.1
 -------------

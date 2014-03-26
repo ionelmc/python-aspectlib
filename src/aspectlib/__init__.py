@@ -8,13 +8,12 @@ from collections import deque
 from functools import wraps
 from inspect import isclass
 from inspect import isfunction
+from inspect import isgenerator
+from inspect import isgeneratorfunction
 from inspect import ismethod
 from inspect import ismethoddescriptor
 from inspect import isroutine
 from logging import getLogger
-
-from types import GeneratorType
-
 
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
 
@@ -58,6 +57,26 @@ REGEX_TYPE = type(NORMAL_METHODS)
 VALID_IDENTIFIER = re.compile(r'^[^\W\d]\w*$', re.UNICODE if PY3 else 0)
 
 
+class UnacceptableAdvice(RuntimeError):
+    pass
+
+
+class ExpectedGenerator(TypeError):
+    pass
+
+
+class ExpectedGeneratorFunction(ExpectedGenerator):
+    pass
+
+
+class ExpectedAdvice(TypeError):
+    pass
+
+
+class UnsupportedType(TypeError):
+    pass
+
+
 class Proceed(object):
     """
     Instructs the Aspect Calls to call the decorated function. Can be used multiple times.
@@ -89,15 +108,16 @@ class Aspect(object):
     __slots__ = 'advise_function'
 
     def __init__(self, advise_function):
-        assert callable(advise_function)
+        if not isgeneratorfunction(advise_function):
+            raise ExpectedGeneratorFunction("advise_function %s must be a generator function." % advise_function)
         self.advise_function = advise_function
 
     def __call__(self, cutpoint_function):
         @wraps(cutpoint_function)
         def advice_wrapper(*args, **kwargs):
             advisor = self.advise_function(*args, **kwargs)
-            if not isinstance(advisor, GeneratorType):
-                raise RuntimeError("advise_function %s did not return a generator." % self.advise_function)
+            if not isgenerator(advisor):
+                raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
             advice = advisor.send(None)
             while True:
                 if advice is Proceed or advice is None or isinstance(advice, Proceed):
@@ -117,6 +137,8 @@ class Aspect(object):
                     return
                 elif isinstance(advice, Return):
                     return advice.value
+                else:
+                    raise UnacceptableAdvice("Unknown advice %s" % advice)
         return advice_wrapper
 
 
@@ -206,10 +228,10 @@ def weave(target, aspects, **options):
     """
     if not callable(aspects):
         if not hasattr(aspects, '__iter__'):
-            raise RuntimeError('%s must be an `Aspect` instance, a callable or an iterable of.' % aspects)
+            raise ExpectedAdvice('%s must be an `Aspect` instance, a callable or an iterable of.' % aspects)
         for obj in aspects:
             if not callable(obj):
-                raise RuntimeError('%s must be an `Aspect` instance or a callable.' % obj)
+                raise ExpectedAdvice('%s must be an `Aspect` instance or a callable.' % obj)
     assert target, "Can't weave falsy value %r." % target
     if isinstance(target, (list, tuple)):
         return Rollback([
@@ -290,7 +312,7 @@ def weave(target, aspects, **options):
     elif isclass(target):
         return weave_class(target, aspects, **options)
     else:
-        raise RuntimeError("Can't weave object %s of type %s" % (target, type(target)))
+        raise UnsupportedType("Can't weave object %s of type %s" % (target, type(target)))
 
 
 def rewrap_method(func, klass, aspect):
