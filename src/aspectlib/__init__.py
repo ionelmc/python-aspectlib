@@ -112,33 +112,46 @@ class Aspect(object):
         self.advise_function = advise_function
 
     def __call__(self, cutpoint_function):
-        @wraps(cutpoint_function)
-        def advice_wrapper(*args, **kwargs):
-            advisor = self.advise_function(*args, **kwargs)
-            if not isgenerator(advisor):
-                raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
-            advice = advisor.send(None)
-            while True:
-                if advice is Proceed or advice is None or isinstance(advice, Proceed):
-                    if advice is not Proceed:
-                        args = advice.args
-                        kwargs = advice.kwargs
-                    try:
-                        result = cutpoint_function(*args, **kwargs)
-                    except Exception:
-                        advice = advisor.throw(*sys.exc_info())
-                    else:
-                        try:
-                            advice = advisor.send(result)
-                        except StopIteration:
-                            return result
-                elif advice is Return:
-                    return
-                elif isinstance(advice, Return):
-                    return advice.value
-                else:
-                    raise UnacceptableAdvice("Unknown advice %s" % advice)
-        return advice_wrapper
+        if isgeneratorfunction(cutpoint_function):
+            raise NotImplementedError()
+        else:
+            @wraps(cutpoint_function)
+            def advising_function_wrapper(*args, **kwargs):
+                advisor = self.advise_function(*args, **kwargs)
+                if not isgenerator(advisor):
+                    raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
+                try:
+                    advice = advisor.next()
+                    while True:
+                        logger.debug('Got advice %r from %s', advice, self.advise_function)
+                        if advice is Proceed or advice is None or isinstance(advice, Proceed):
+                            if isinstance(advice, Proceed):
+                                args = advice.args
+                                kwargs = advice.kwargs
+                            try:
+                                result = cutpoint_function(*args, **kwargs)
+                            except Exception:
+                                exc_info = sys.exc_info()
+                                try:
+                                    advice = advisor.throw(*exc_info)
+                                except StopIteration:
+                                    reraise(*exc_info)
+                                finally:
+                                    del exc_info
+                            else:
+                                try:
+                                    advice = advisor.send(result)
+                                except StopIteration:
+                                    return result
+                        elif advice is Return:
+                            return
+                        elif isinstance(advice, Return):
+                            return advice.value
+                        else:
+                            raise UnacceptableAdvice("Unknown advice %s" % advice)
+                finally:
+                    advisor.close()
+            return advising_function_wrapper
 
 
 class Fabric(object):

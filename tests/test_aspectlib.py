@@ -1109,8 +1109,57 @@ def test_list_of_aspects():
         raises(TypeError, module_func, 1, 2, 3)
         assert module_func.calls == [(None, (1, 2, 3), {})]
 
+
 def test_list_of_invalid_aspects():
     raises(AssertionError, aspectlib.weave, module_func, [lambda func: None])
     raises(TypeError, aspectlib.weave, module_func, [lambda: None])
     raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, [None])
     raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, ['foobar'])
+
+
+def test_aspect_on_func():
+    hist = []
+
+    @aspectlib.Aspect
+    def aspect():
+        try:
+            hist.append('before')
+            hist.append((yield aspectlib.Proceed))
+            hist.append('after')
+        except Exception:
+            hist.append('error')
+        finally:
+            hist.append('finally')
+        try:
+            hist.append((yield aspectlib.Return('squelched')))
+        except GeneratorExit:
+            hist.append('closed')
+            raise
+        else:
+            hist.append('consumed')
+
+    @aspect
+    def func():
+        raise RuntimeError()
+    assert func() == 'squelched'
+    assert hist == ['before', 'error', 'finally', 'closed']
+
+
+#
+#def test_aspect_on_generator():
+#    hist = []
+#
+#    @aspectlib.Aspect
+#    def aspect():
+#        try:
+#            hist.append('before')
+#            yield
+#            hist.append('after')
+#        except Exception:
+#            hist.append('error')
+#        finally:
+#            hist.append('finally')
+#
+#    def gen():
+#        pass
+#
