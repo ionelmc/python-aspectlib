@@ -121,7 +121,7 @@ class Aspect(object):
                 if not isgenerator(advisor):
                     raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
                 try:
-                    advice = advisor.next()
+                    advice = advisor.send(None)
                     while True:
                         logger.debug('Got advice %r from %s', advice, self.advise_function)
                         if advice is Proceed or advice is None or isinstance(advice, Proceed):
@@ -131,13 +131,7 @@ class Aspect(object):
                             try:
                                 result = cutpoint_function(*args, **kwargs)
                             except Exception:
-                                exc_info = sys.exc_info()
-                                try:
-                                    advice = advisor.throw(*exc_info)
-                                except StopIteration:
-                                    reraise(*exc_info)
-                                finally:
-                                    del exc_info
+                                advice = advisor.throw(*sys.exc_info())
                             else:
                                 try:
                                     advice = advisor.send(result)
