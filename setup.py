@@ -38,6 +38,7 @@ setup(
     ],
     install_requires=[
         'wrapt>=1.6.0',
+        'six>=1.6.1',
     ],
     extras_require={
     }
