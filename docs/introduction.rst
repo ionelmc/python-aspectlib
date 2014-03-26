@@ -8,11 +8,11 @@ a weaver.
 The aspect
 ==========
 
-An *aspect* can be created by decorating a generator with ``aspectlib.Aspect``. The generator yields *advices* -
+An *aspect* can be created by decorating a generator with an :obj:`~aspectlib.Aspect`. The generator yields *advices* -
 simple behavior changing instructions.
 
-The *aspect* is simple function decorator. Decorating a function with an *aspect* will change the function's
-behavior according to the *advices* yielded by the generator.
+An :obj:`~aspectlib.Aspect` instance is a simple function decorator. Decorating a function with an *aspect* will change
+the function's behavior according to the *advices* yielded by the generator.
 
 Example:
 
