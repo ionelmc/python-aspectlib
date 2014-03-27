@@ -137,23 +137,27 @@ class Aspect(object):
                             if isinstance(advice, Proceed):
                                 args = advice.args
                                 kwargs = advice.kwargs
+                            gen = cutpoint_function(*args, **kwargs)
                             try:
-                                gen = cutpoint_function(*args, **kwargs)
                                 try:
                                     generated = next(gen)
                                 except StopIteration as exc:
+                                    logger.exception("The cutpoint has been exhausted (early).")
                                     result = exc.args and exc.args[0]
                                 else:
                                     while True:
                                         try:
                                             sent = yield generated
                                         except GeneratorExit as exc:
+                                            logger.exception("Got GeneratorExit while consuming the cutpoint")
                                             gen.close()
                                             raise exc
                                         except BaseException as exc:
+                                            logger.exception("Got exception %r. Throwing it the cutpoint", exc)
                                             try:
                                                 generated = gen.throw(*sys.exc_info())
                                             except StopIteration as exc:
+                                                logger.exception("The cutpoint has been exhausted.")
                                                 result = exc.args and exc.args[0]
                                                 break
                                         else:
@@ -163,14 +167,22 @@ class Aspect(object):
                                                 else:
                                                     generated = gen.send(sent)
                                             except StopIteration as exc:
+                                                logger.exception("The cutpoint has been exhausted.")
                                                 result = exc.args and exc.args[0]
                                                 break
-                                advice = advisor.send(result)
-                            except Exception:
-                                logger.exception('foo')
+                            except BaseException as exc:
                                 advice = advisor.throw(*sys.exc_info())
+                            else:
+                                try:
+                                    advice = advisor.send(result)
+                                except StopIteration:
+                                    return
+                            finally:
+                                gen.close()
                         elif advice is Return:
                             return
+                        elif isinstance(advice, Return):
+                            raise StopIteration(advice.value)
                         elif isinstance(advice, Yield):
                             item = yield advice.value
                             logger.critical('sending %s (from yield %r)', item, advice.value)

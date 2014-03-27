@@ -219,6 +219,23 @@ def test_aspect_bad():
     raises(aspectlib.ExpectedGenerator, func)
 
 
+def test_aspect_bad_gen():
+    @aspectlib.Aspect
+    def aspect():
+        yield
+
+    def aspect_fail():
+        return "crap"
+
+    aspect.advise_function = aspect_fail
+
+    @aspect
+    def func():
+        yield
+
+    raises(aspectlib.ExpectedGenerator, list, func())
+
+
 def test_aspect_bad_decorate():
     def aspect():
         return "crap"
@@ -1196,8 +1213,7 @@ def test_aspect_on_generator_func():
 def test_aspect_on_generator_func_bad_advice():
     @aspectlib.Aspect
     def aspect():
-        yield aspectlib.Return('something')
-        yield aspectlib.Return('something')
+        yield 'crappo'
 
     @aspect
     def func():
@@ -1206,6 +1222,160 @@ def test_aspect_on_generator_func_bad_advice():
         raise RuntimeError()
 
     raises(aspectlib.UnacceptableAdvice, list, func())
+
+
+def test_aspect_on_generator_different_args():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed('something')
+
+    @aspect
+    def func(arg=None):
+        yield arg
+
+    assert list(func()) == ['something']
+
+
+def test_aspect_on_generator_raise_stopiteration():
+    @aspectlib.Aspect
+    def aspect():
+        val = yield aspectlib.Proceed
+        yield aspectlib.Yield(val)
+
+    @aspect
+    def func():
+        raise StopIteration('something')
+        yield
+
+    assert list(func()) == ['something']
+
+
+def test_aspect_on_generator_close():
+    excs = []
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+
+    @aspect
+    def func():
+        try:
+            yield 'something'
+        except BaseException as exc:
+            excs.append(type(exc))
+
+    assert list(func()) == ['something']
+    assert excs == []
+
+    gen = func()
+    next(gen)
+    gen.close()
+    del gen
+    assert excs == [GeneratorExit]
+
+
+def test_aspect_on_generator_throw():
+    excs = []
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+
+    @aspect
+    def func():
+        try:
+            yield 'something'
+        except BaseException as exc:
+            excs.append(type(exc))
+        yield 'lastthing'
+
+    assert list(func()) == ['something', 'lastthing']
+    assert excs == []
+
+    gen = func()
+    print(next(gen))
+    gen.throw(RuntimeError)
+    assert excs == [RuntimeError]
+
+
+def test_aspect_on_generator_throw_exhaust():
+    excs = []
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+
+    @aspect
+    def func():
+        try:
+            yield 'something'
+        except BaseException as exc:
+            excs.append(type(exc))
+
+    assert list(func()) == ['something']
+    assert excs == []
+
+    gen = func()
+    print(next(gen))
+    raises(StopIteration, gen.throw, RuntimeError)
+    assert excs == [RuntimeError]
+
+
+def test_aspect_on_generator_send_in_aspect():
+    a_values = []
+    f_values = []
+
+    @aspectlib.Aspect
+    def aspect():
+        a_values.append((yield aspectlib.Yield('value')))
+        yield aspectlib.Proceed
+
+    @aspect
+    def func():
+        f_values.append((yield 'something'))
+        yield
+        yield
+        yield
+
+    gen = func()
+    gen.send(None)
+    gen.send(1)
+    gen.send(2)
+
+    assert a_values == [1]
+    assert f_values == [2]
+
+
+def test_aspect_on_generator_result_from_aspect():
+    @aspectlib.Aspect
+    def aspect():
+        yield aspectlib.Proceed
+        yield aspectlib.Return('result')
+
+    @aspect
+    def func():
+        yield 'something'
+
+    gen = func()
+    try:
+        while 1:
+            next(gen)
+    except StopIteration as exc:
+        assert exc.args == ('result',)
+    else:
+        raise AssertionError("did not raise StopIteration")
+
+
+def test_aspect_on_generator_result():
+    result = []
+    @aspectlib.Aspect
+    def aspect():
+        result.append((yield aspectlib.Proceed))
+
+    @aspect
+    def func():
+        yield 'something'
+        raise StopIteration('value')
+
+    assert list(func()) == ['something']
+    assert result == ['value']
 
 
 def test_aspect_on_coroutine():
