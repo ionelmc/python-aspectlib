@@ -127,11 +127,10 @@ class Aspect(object):
             @wraps(cutpoint_function)
             def advising_generator_wrapper(*args, **kwargs):
                 advisor = self.advise_function(*args, **kwargs)
-                source = None
                 if not isgenerator(advisor):
                     raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
                 try:
-                    advice = advisor.send(None)
+                    advice = next(advisor)
                     while True:
                         logger.debug('Got advice %r from %s', advice, self.advise_function)
                         if advice is Proceed or advice is None or isinstance(advice, Proceed):
@@ -139,24 +138,48 @@ class Aspect(object):
                                 args = advice.args
                                 kwargs = advice.kwargs
                             try:
-                                for item in cutpoint_function(*args, **kwargs):
-                                    yield item
-                            except Exception:
-                                advice = advisor.throw(*sys.exc_info())
-                            else:
+                                gen = cutpoint_function(*args, **kwargs)
                                 try:
-                                    advice = advisor.send(None)
-                                except StopIteration:
-                                    return
+                                    generated = next(gen)
+                                except StopIteration as exc:
+                                    result = exc.args and exc.args[0]
+                                else:
+                                    while True:
+                                        try:
+                                            sent = yield generated
+                                        except GeneratorExit as exc:
+                                            gen.close()
+                                            raise exc
+                                        except BaseException as exc:
+                                            try:
+                                                generated = gen.throw(*sys.exc_info())
+                                            except StopIteration as exc:
+                                                result = exc.args and exc.args[0]
+                                                break
+                                        else:
+                                            try:
+                                                if sent is None:
+                                                    generated = next(gen)
+                                                else:
+                                                    generated = gen.send(sent)
+                                            except StopIteration as exc:
+                                                result = exc.args and exc.args[0]
+                                                break
+                                advice = advisor.send(result)
+                            except Exception:
+                                logger.exception('foo')
+                                advice = advisor.throw(*sys.exc_info())
                         elif advice is Return:
                             return
                         elif isinstance(advice, Yield):
-                            yield advice.value
-                            advice = advisor.send(None)
+                            item = yield advice.value
+                            logger.critical('sending %s (from yield %r)', item, advice.value)
+                            advice = advisor.send(item)
                         else:
                             raise UnacceptableAdvice("Unknown advice %s" % advice)
                 finally:
                     advisor.close()
+
             return advising_generator_wrapper
         else:
             @wraps(cutpoint_function)
@@ -165,7 +188,7 @@ class Aspect(object):
                 if not isgenerator(advisor):
                     raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
                 try:
-                    advice = advisor.send(None)
+                    advice = next(advisor)
                     while True:
                         logger.debug('Got advice %r from %s', advice, self.advise_function)
                         if advice is Proceed or advice is None or isinstance(advice, Proceed):
