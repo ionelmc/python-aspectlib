@@ -1238,11 +1238,12 @@ def test_aspect_on_coroutine():
         for _ in range(3):
             print("YIELD", val + 1)
             val = yield val + 1
+            print("GOT", val)
         raise StopIteration("the-return-value")
     gen = func()
     data = []
     try:
-        for i in [None, 'captured', 0, 1, 'captured', 2, 3, 4, 5, 6, 7, 8, 9]:
+        for i in [None, 'captured', 0, 1, 'last-one', 'captured', 2, 3, 4, 5, 6, 7, 8, 9]:
             data.append(gen.send(i))
     except StopIteration:
         data.append('done')
