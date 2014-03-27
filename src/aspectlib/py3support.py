@@ -15,9 +15,7 @@ from aspectlib import Yield
 
 logger = getLogger(__name__)
 
-if PY3:
-    exec("""
-def decorate_advising_generator(advise_function, cutpoint_function):
+def decorate_advising_generator_py3(advise_function, cutpoint_function):
     assert isgeneratorfunction(cutpoint_function)
 
     @wraps(cutpoint_function)
@@ -58,4 +56,3 @@ def decorate_advising_generator(advise_function, cutpoint_function):
         finally:
             advisor.close()
     return advising_generator_wrapper_py3
-""")

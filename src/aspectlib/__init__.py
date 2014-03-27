@@ -125,7 +125,10 @@ class Aspect(object):
     def __call__(self, cutpoint_function):
         if isgeneratorfunction(cutpoint_function):
             if PY3:
-                return __import__('aspectlib.py3support').py3support.decorate_advising_generator(
+                return __import__(
+                    'aspectlib.py3support',
+                    fromlist=['decorate_advising_generator_py3']
+                ).decorate_advising_generator_py3(
                     self.advise_function,
                     cutpoint_function
                 )
