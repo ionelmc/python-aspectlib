@@ -124,75 +124,80 @@ class Aspect(object):
 
     def __call__(self, cutpoint_function):
         if isgeneratorfunction(cutpoint_function):
-            @wraps(cutpoint_function)
-            def advising_generator_wrapper(*args, **kwargs):
-                advisor = self.advise_function(*args, **kwargs)
-                if not isgenerator(advisor):
-                    raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
-                try:
-                    advice = next(advisor)
-                    while True:
-                        logger.debug('Got advice %r from %s', advice, self.advise_function)
-                        if advice is Proceed or advice is None or isinstance(advice, Proceed):
-                            if isinstance(advice, Proceed):
-                                args = advice.args
-                                kwargs = advice.kwargs
-                            gen = cutpoint_function(*args, **kwargs)
-                            try:
+            if PY3:
+                return __import__('aspectlib.py3support').py3support.decorate_advising_generator(
+                    self.advise_function,
+                    cutpoint_function
+                )
+            else:
+                @wraps(cutpoint_function)
+                def advising_generator_wrapper(*args, **kwargs):
+                    advisor = self.advise_function(*args, **kwargs)
+                    if not isgenerator(advisor):
+                        raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
+                    try:
+                        advice = next(advisor)
+                        while True:
+                            logger.debug('Got advice %r from %s', advice, self.advise_function)
+                            if advice is Proceed or advice is None or isinstance(advice, Proceed):
+                                if isinstance(advice, Proceed):
+                                    args = advice.args
+                                    kwargs = advice.kwargs
+                                gen = cutpoint_function(*args, **kwargs)
                                 try:
-                                    generated = next(gen)
-                                except StopIteration as exc:
-                                    logger.exception("The cutpoint has been exhausted (early).")
-                                    result = exc.args and exc.args[0]
+                                    try:
+                                        generated = next(gen)
+                                    except StopIteration as exc:
+                                        logger.exception("The cutpoint has been exhausted (early).")
+                                        result = exc.args and exc.args[0]
+                                    else:
+                                        while True:
+                                            try:
+                                                sent = yield generated
+                                            except GeneratorExit as exc:
+                                                logger.exception("Got GeneratorExit while consuming the cutpoint")
+                                                gen.close()
+                                                raise exc
+                                            except BaseException as exc:
+                                                logger.exception("Got exception %r. Throwing it the cutpoint", exc)
+                                                try:
+                                                    generated = gen.throw(*sys.exc_info())
+                                                except StopIteration as exc:
+                                                    logger.exception("The cutpoint has been exhausted.")
+                                                    result = exc.args and exc.args[0]
+                                                    break
+                                            else:
+                                                try:
+                                                    if sent is None:
+                                                        generated = next(gen)
+                                                    else:
+                                                        generated = gen.send(sent)
+                                                except StopIteration as exc:
+                                                    logger.exception("The cutpoint has been exhausted.")
+                                                    result = exc.args and exc.args[0]
+                                                    break
+                                except BaseException as exc:
+                                    advice = advisor.throw(*sys.exc_info())
                                 else:
-                                    while True:
-                                        try:
-                                            sent = yield generated
-                                        except GeneratorExit as exc:
-                                            logger.exception("Got GeneratorExit while consuming the cutpoint")
-                                            gen.close()
-                                            raise exc
-                                        except BaseException as exc:
-                                            logger.exception("Got exception %r. Throwing it the cutpoint", exc)
-                                            try:
-                                                generated = gen.throw(*sys.exc_info())
-                                            except StopIteration as exc:
-                                                logger.exception("The cutpoint has been exhausted.")
-                                                result = exc.args and exc.args[0]
-                                                break
-                                        else:
-                                            try:
-                                                if sent is None:
-                                                    generated = next(gen)
-                                                else:
-                                                    generated = gen.send(sent)
-                                            except StopIteration as exc:
-                                                logger.exception("The cutpoint has been exhausted.")
-                                                result = exc.args and exc.args[0]
-                                                break
-                            except BaseException as exc:
-                                advice = advisor.throw(*sys.exc_info())
+                                    try:
+                                        advice = advisor.send(result)
+                                    except StopIteration:
+                                        return
+                                finally:
+                                    gen.close()
+                            elif advice is Return:
+                                return
+                            elif isinstance(advice, Return):
+                                raise StopIteration(advice.value)
+                            elif isinstance(advice, Yield):
+                                item = yield advice.value
+                                logger.critical('sending %s (from yield %r)', item, advice.value)
+                                advice = advisor.send(item)
                             else:
-                                try:
-                                    advice = advisor.send(result)
-                                except StopIteration:
-                                    return
-                            finally:
-                                gen.close()
-                        elif advice is Return:
-                            return
-                        elif isinstance(advice, Return):
-                            raise StopIteration(advice.value)
-                        elif isinstance(advice, Yield):
-                            item = yield advice.value
-                            logger.critical('sending %s (from yield %r)', item, advice.value)
-                            advice = advisor.send(item)
-                        else:
-                            raise UnacceptableAdvice("Unknown advice %s" % advice)
-                finally:
-                    advisor.close()
-
-            return advising_generator_wrapper
+                                raise UnacceptableAdvice("Unknown advice %s" % advice)
+                    finally:
+                        advisor.close()
+                return advising_generator_wrapper
         else:
             @wraps(cutpoint_function)
             def advising_function_wrapper(*args, **kwargs):
