@@ -3,6 +3,7 @@ $(document).ready(function() {
      * the >>> and ... prompts and the output and thus make the code
      * copyable. */
     var div = $('.highlight-python .highlight,' +
+                '.highlight-pycon .highlight,' +
                 '.highlight-python3 .highlight')
     var pre = div.find('pre');
 
@@ -54,4 +55,3 @@ $(document).ready(function() {
             button.attr('title', hide_text);
         });
 });
-
