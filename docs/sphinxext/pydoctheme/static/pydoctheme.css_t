@@ -225,6 +225,9 @@ div.viewcode-block:target {
 pre, table, img {
     box-shadow: 1px 1px 3px #efefef;
 }
+.sphinxsidebar {
+    box-shadow: 0px 0px 2px #999;
+}
 img {
     box-shadow: 1px 1px 6px #ccc;
     margin: 0 auto;
