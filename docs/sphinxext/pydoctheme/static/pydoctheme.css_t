@@ -204,7 +204,7 @@ div.viewcode-block:target {
 .sphinxsidebar li {
 }
 .toctree-l1 {
-    font-size: 125%;
+    font-size: 115%;
     padding: 3px 5px;
     margin: 5px 0;
 }
