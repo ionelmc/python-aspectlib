@@ -15,6 +15,7 @@ from aspectlib import Yield
 
 logger = getLogger(__name__)
 
+
 def decorate_advising_generator_py3(advise_function, cutpoint_function):
     assert isgeneratorfunction(cutpoint_function)
 
