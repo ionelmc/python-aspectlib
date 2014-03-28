@@ -33,7 +33,7 @@ div.sphinxsidebar h3, div.sphinxsidebar h4 {
     margin-top: 1.5em;
 }
 
-div.sphinxsidebarwrapper > h3:first-child {
+div.sphinxsidebarwrapper h3:first-child {
     margin-top: 0.2em;
 }
 
@@ -200,4 +200,33 @@ pre {
 }
 div.viewcode-block:target {
     background-color: #FFF4E6 !important;
+}
+.sphinxsidebar li {
+}
+.toctree-l1 {
+    font-size: 120%;
+    padding: 3px 5px;
+    margin: 5px 0;
+}
+.toctree-l1.current {
+    background: #444;
+    border-radius: 5px;
+}
+.toctree-l1.current * {
+    color: #eee;
+}
+.toctree-l2 {
+    list-style: disc;
+}
+.toctree-l2.current, .toctree-l2.current * {
+    color: white;
+    font-weight: bold;
+}
+pre, table, img {
+    box-shadow: 1px 1px 3px #efefef;
+}
+img {
+    box-shadow: 1px 1px 6px #ccc;
+    margin: 0 auto;
+    display: block;
 }

@@ -49,7 +49,9 @@ html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
 exclude_trees = ['sphinxext']
 html_split_index = True
-
+html_sidebars = {
+   '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
+}
 
 
 #html_theme = "default"
