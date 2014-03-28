@@ -4,7 +4,7 @@ Changelog
 Version 0.7.0
 -------------
 
-* Add support for decorating generators and coroutines in :obj:`~aspectlib.Advice`.
+* Add support for decorating generators and coroutines in :obj:`~aspectlib.Aspect`.
 * Made aspectlib raise better exceptions.
 
 Version 0.6.1
