@@ -6,7 +6,7 @@ Retry decorator
 
 TODO: Make a more configurable retry decorator and add it in ``aspectlib.contrib``.
 
-::
+.. code-block:: python
 
     class Client(object):
         def __init__(self, address):
@@ -39,15 +39,21 @@ TODO: Make a more configurable retry decorator and add it in ``aspectlib.contrib
 
         return retry_aspect
 
-Now patch the ``Client`` class to have the retry functionality on all its methods::
+Now patch the ``Client`` class to have the retry functionality on all its methods:
+
+.. code-block:: python
 
     aspectlib.weave(Client, retry())
 
-or with different retry options (reconnect before retry)::
+or with different retry options (reconnect before retry):
+
+.. code-block:: python
 
     aspectlib.weave(Client, retry(prepare=lambda self, *_: self.connect())
 
-or just for one method::
+or just for one method:
+
+.. code-block:: python
 
     aspectlib.weave(Client.action, retry())
 
@@ -57,7 +63,9 @@ decoupled from the ``Client`` class.
 Debugging
 ---------
 
-... those damn sockets::
+... those damn sockets:
+
+.. code-block:: pycon
 
     >>> import aspectlib, socket, sys
     >>> with aspectlib.weave(
@@ -90,7 +98,9 @@ The output looks a bit funky because it is written to be run by `doctest
 Testing
 -------
 
-Mock behavior for tests::
+Mock behavior for tests:
+
+.. code-block:: python
 
     class MyTestCase(unittest.TestCase):
 
