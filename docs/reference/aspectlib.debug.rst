@@ -20,5 +20,3 @@ aspectlib.debug
         Renamed `arguments` to `call_args`.
         Renamed `arguments_repr` to `call_args_repr`.
         Added `call` option.
-        Fixed issue with logging from old-style methods (object name was a generic "instance").
-

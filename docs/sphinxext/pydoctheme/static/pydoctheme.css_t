@@ -204,23 +204,24 @@ div.viewcode-block:target {
 .sphinxsidebar li {
 }
 .toctree-l1 {
-    font-size: 120%;
+    font-size: 125%;
     padding: 3px 5px;
     margin: 5px 0;
 }
 .toctree-l1.current {
-    background: #444;
+    background: white;
     border-radius: 5px;
 }
 .toctree-l1.current * {
-    color: #eee;
 }
 .toctree-l2 {
+    list-style: circle;
+}
+.toctree-l2.current {
     list-style: disc;
 }
 .toctree-l2.current, .toctree-l2.current * {
-    color: white;
-    font-weight: bold;
+    color: #000;
 }
 pre, table, img {
     box-shadow: 1px 1px 3px #efefef;
@@ -232,4 +233,19 @@ img {
     box-shadow: 1px 1px 6px #ccc;
     margin: 0 auto;
     display: block;
+}
+p > img {
+    display: inline-block;
+}
+h1, h2, h3, h4, h5, h6 {
+    text-shadow: 1px 1px 2px #ddd;
+    font-weight: bold;
+    color: #333;
+}
+tt {
+    background: none;
+    text-shadow: 1px 1px 2px #ddd;
+}
+div.sphinxsidebarwrapper > ul > li > ul > li {
+    margin: 0.4em 0 0 0;
 }
