@@ -115,12 +115,12 @@ class Aspect(object):
     Container for the advice yielding generator. Can be used as a decorator on other function to change behavior
     according to the advices yielded from the generator.
     """
-    __slots__ = 'advise_function'
+    __slots__ = 'advising_function'
 
-    def __init__(self, advise_function):
-        if not isgeneratorfunction(advise_function):
-            raise ExpectedGeneratorFunction("advise_function %s must be a generator function." % advise_function)
-        self.advise_function = advise_function
+    def __init__(self, advising_function):
+        if not isgeneratorfunction(advising_function):
+            raise ExpectedGeneratorFunction("advising_function %s must be a generator function." % advising_function)
+        self.advising_function = advising_function
 
     def __call__(self, cutpoint_function):
         if isgeneratorfunction(cutpoint_function):
@@ -129,19 +129,19 @@ class Aspect(object):
                     'aspectlib.py3support',
                     fromlist=['decorate_advising_generator_py3']
                 ).decorate_advising_generator_py3(
-                    self.advise_function,
+                    self.advising_function,
                     cutpoint_function
                 )
             else:
                 @wraps(cutpoint_function)
                 def advising_generator_wrapper(*args, **kwargs):
-                    advisor = self.advise_function(*args, **kwargs)
+                    advisor = self.advising_function(*args, **kwargs)
                     if not isgenerator(advisor):
-                        raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
+                        raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
                     try:
                         advice = next(advisor)
                         while True:
-                            logger.debug('Got advice %r from %s', advice, self.advise_function)
+                            logger.debug('Got advice %r from %s', advice, self.advising_function)
                             if advice is Proceed or advice is None or isinstance(advice, Proceed):
                                 if isinstance(advice, Proceed):
                                     args = advice.args
@@ -204,13 +204,13 @@ class Aspect(object):
         else:
             @wraps(cutpoint_function)
             def advising_function_wrapper(*args, **kwargs):
-                advisor = self.advise_function(*args, **kwargs)
+                advisor = self.advising_function(*args, **kwargs)
                 if not isgenerator(advisor):
-                    raise ExpectedGenerator("advise_function %s did not return a generator." % self.advise_function)
+                    raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
                 try:
                     advice = next(advisor)
                     while True:
-                        logger.debug('Got advice %r from %s', advice, self.advise_function)
+                        logger.debug('Got advice %r from %s', advice, self.advising_function)
                         if advice is Proceed or advice is None or isinstance(advice, Proceed):
                             if isinstance(advice, Proceed):
                                 args = advice.args

@@ -16,18 +16,18 @@ from aspectlib import Yield
 logger = getLogger(__name__)
 
 
-def decorate_advising_generator_py3(advise_function, cutpoint_function):
+def decorate_advising_generator_py3(advising_function, cutpoint_function):
     assert isgeneratorfunction(cutpoint_function)
 
     @wraps(cutpoint_function)
     def advising_generator_wrapper_py3(*args, **kwargs):
-        advisor = advise_function(*args, **kwargs)
+        advisor = advising_function(*args, **kwargs)
         if not isgenerator(advisor):
-            raise ExpectedGenerator("advise_function %s did not return a generator." % advise_function)
+            raise ExpectedGenerator("advising_function %s did not return a generator." % advising_function)
         try:
             advice = next(advisor)
             while True:
-                logger.debug('Got advice %r from %s', advice, advise_function)
+                logger.debug('Got advice %r from %s', advice, advising_function)
                 if advice is Proceed or advice is None or isinstance(advice, Proceed):
                     if isinstance(advice, Proceed):
                         args = advice.args

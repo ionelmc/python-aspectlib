@@ -210,7 +210,7 @@ def test_aspect_bad():
     def aspect_fail():
         return "crap"
 
-    aspect.advise_function = aspect_fail
+    aspect.advising_function = aspect_fail
 
     @aspect
     def func():
@@ -227,7 +227,7 @@ def test_aspect_bad_gen():
     def aspect_fail():
         return "crap"
 
-    aspect.advise_function = aspect_fail
+    aspect.advising_function = aspect_fail
 
     @aspect
     def func():
