@@ -7,6 +7,7 @@ from inspect import isgeneratorfunction
 from logging import getLogger
 
 from aspectlib import ExpectedGenerator
+from aspectlib import mimic
 from aspectlib import Proceed
 from aspectlib import PY3
 from aspectlib import Return
@@ -19,7 +20,6 @@ logger = getLogger(__name__)
 def decorate_advising_generator_py3(advising_function, cutpoint_function):
     assert isgeneratorfunction(cutpoint_function)
 
-    @wraps(cutpoint_function)
     def advising_generator_wrapper_py3(*args, **kwargs):
         advisor = advising_function(*args, **kwargs)
         if not isgenerator(advisor):
@@ -56,4 +56,4 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function):
                     raise UnacceptableAdvice("Unknown advice %s" % advice)
         finally:
             advisor.close()
-    return advising_generator_wrapper_py3
+    return mimic(advising_generator_wrapper_py3, cutpoint_function)
