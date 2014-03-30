@@ -37,7 +37,6 @@ setup(
         'debug', 'log', 'tests', 'mock'
     ],
     install_requires=[
-        'wrapt>=1.6.0',
     ],
     extras_require={
     }

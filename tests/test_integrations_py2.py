@@ -10,11 +10,12 @@ def test_decorate_coroutine():
     buf = StringIO()
 
     @asyncio.coroutine
-    @debug.log(print_to=buf, module=False, stacktrace=2)
+    @debug.log(print_to=buf, module=False, stacktrace=2, result_repr=repr)
     def coro():
         yield asyncio.From(asyncio.sleep(0.01))
+        raise StopIteration("result")
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(coro())
-    print(buf.getvalue())
-    assert 0
+    output = buf.getvalue()
+    assert 'coro => %r' % 'result'

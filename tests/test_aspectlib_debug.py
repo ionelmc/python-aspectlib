@@ -47,7 +47,7 @@ class OldStuff:
 
 def test_simple():
     buf = StringIO()
-    with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, module=False, stacktrace=2)):
+    with aspectlib.weave(some_meth, aspectlib.debug.log(print_to=buf, module=False, stacktrace=10)):
         some_meth(1, 2, 3, a=4)
 
     assert re.match(LOG_TEST_SIMPLE, buf.getvalue())
@@ -79,7 +79,7 @@ def test_attributes():
     buf = StringIO()
     with aspectlib.weave(MyStuff, aspectlib.debug.log(
         print_to=buf,
-        stacktrace=2,
+        stacktrace=10,
         attributes=('foo', 'bar()')
     ), methods='(?!bar)(?!__.*__$)'):
         MyStuff('bar').stuff()
@@ -105,7 +105,7 @@ def test_attributes_old_style():
     buf = StringIO()
     with aspectlib.weave(OldStuff, aspectlib.debug.log(
         print_to=buf,
-        stacktrace=2,
+        stacktrace=10,
         attributes=('foo', 'bar()')
     ), methods='(?!bar)(?!__.*__$)'):
         OldStuff('bar').stuff()

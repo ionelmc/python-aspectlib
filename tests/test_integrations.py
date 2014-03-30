@@ -65,7 +65,7 @@ def test_socket(target=socket.socket):
     buf = StringIO()
     with aspectlib.weave(target, aspectlib.debug.log(
         print_to=buf,
-        stacktrace=2,
+        stacktrace=4,
         module=False
     ), lazy=True):
         s = socket.socket()

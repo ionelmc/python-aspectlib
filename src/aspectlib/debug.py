@@ -8,7 +8,9 @@ except ImportError:
     InstanceType = type(None)
 from itertools import islice
 
-from wrapt import decorator
+from aspectlib import Aspect
+from aspectlib import mimic
+
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,6 @@ def strip_non_ascii(val):
     Convert to string (using `str`) and replace non-ascii characters with a dot (``.``).
     """
     return str(val).translate(ASCII_ONLY)
-
 
 def log(func=None,
         stacktrace=10,
@@ -125,6 +126,7 @@ def log(func=None,
     """
 
     loglevel = use_logging and logging._levelNames.get(use_logging, logging.CRITICAL)
+    _missing = object()
 
     def dump(buf):
         try:
@@ -136,59 +138,71 @@ def log(func=None,
         except Exception as exc:
             logger.critical('Failed to log a message: %s', exc, exc_info=True)
 
-    @decorator
-    def logged(func, instance, args, kwargs, _missing=object()):
-        name = func.__name__
-        if instance is not None:
-            if isinstance(instance, InstanceType):
-                instance_type = instance.__class__
-            else:
-                instance_type = type(instance)
+    class __logged__(Aspect):
+        def __init__(self, cutpoint_function, binding=None):
+            mimic(self, cutpoint_function)
+            self.cutpoint_function = cutpoint_function
+            self.final_function = super(__logged__, self).__call__(cutpoint_function)
+            self.binding = binding
 
-            info = []
-            for key in attributes:
-                if key.endswith('()'):
-                    callarg = key = key.rstrip('()')
+        def __get__(self, instance, owner):
+            return __logged__(self.cutpoint_function.__get__(instance, owner), instance)
+
+        def __call__(self, *args, **kwargs):
+            return self.final_function(*args, **kwargs)
+
+        def advising_function(self, *args, **kwargs):
+            name = self.cutpoint_function.__name__
+            instance = self.binding
+            if instance is not None:
+                if isinstance(instance, InstanceType):
+                    instance_type = instance.__class__
                 else:
-                    callarg = False
-                val = getattr(instance, key, _missing)
-                if val is not _missing and key != name:
-                    info.append(' %s=%s' % (
-                        key, call_args_repr(val() if callarg else val)
-                    ))
-            sig = buf = '{%s%s%s}.%s' % (
-                instance_type.__module__ + '.' if module else '',
-                instance_type.__name__,
-                ''.join(info),
-                name
-            )
-        else:
-            sig = buf = func.__name__
-        if call_args:
-            buf += '(%s%s)' % (
-                ', '.join(repr(i) for i in (args if call_args is True else args[:call_args])),
-                ((', ' if args else '') + ', '.join('%s=%r' % i for i in kwargs.items()))
-                if kwargs and call_args is True
-                else '',
-            )
-        if stacktrace:
-            buf = ("%%-%ds  <<< %%s" % stacktrace_align) % (buf, format_stack(skip=1, length=stacktrace))
-        if call:
-            dump(buf)
-        try:
-            res = func(*args, **kwargs)
-        except Exception as exc:
-            if exception:
-                if not call:
-                    dump(buf)
-                dump('%s ~ raised %s' % (sig, exception_repr(exc)))
-            raise
+                    instance_type = type(instance)
 
-        if result:
-            dump('%s => %s' % (sig, result_repr(res)))
-        return res
+                info = []
+                for key in attributes:
+                    if key.endswith('()'):
+                        callarg = key = key.rstrip('()')
+                    else:
+                        callarg = False
+                    val = getattr(instance, key, _missing)
+                    if val is not _missing and key != name:
+                        info.append(' %s=%s' % (
+                            key, call_args_repr(val() if callarg else val)
+                        ))
+                sig = buf = '{%s%s%s}.%s' % (
+                    instance_type.__module__ + '.' if module else '',
+                    instance_type.__name__,
+                    ''.join(info),
+                    name
+                )
+            else:
+                sig = buf = name
+            if call_args:
+                buf += '(%s%s)' % (
+                    ', '.join(repr(i) for i in (args if call_args is True else args[:call_args])),
+                    ((', ' if args else '') + ', '.join('%s=%r' % i for i in kwargs.items()))
+                    if kwargs and call_args is True
+                    else '',
+                )
+            if stacktrace:
+                buf = ("%%-%ds  <<< %%s" % stacktrace_align) % (buf, format_stack(skip=1, length=stacktrace))
+            if call:
+                dump(buf)
+            try:
+                res = yield
+            except Exception as exc:
+                if exception:
+                    if not call:
+                        dump(buf)
+                    dump('%s ~ raised %s' % (sig, exception_repr(exc)))
+                raise
+
+            if result:
+                dump('%s => %s' % (sig, result_repr(res)))
 
     if func:
-        return logged(func)
+        return __logged__(func)
     else:
-        return logged
+        return __logged__
