@@ -125,7 +125,9 @@ def log(func=None,
     This makes debugging naughty code easier.
     """
 
-    loglevel = use_logging and logging._levelNames.get(use_logging, logging.CRITICAL)
+    loglevel = use_logging and (
+        logging._levelNames if hasattr(logging, '_levelNames') else logging._nameToLevel
+    ).get(use_logging, logging.CRITICAL)
     _missing = object()
 
     def dump(buf):
