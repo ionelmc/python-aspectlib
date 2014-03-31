@@ -63,6 +63,9 @@ div.body {
 div.body p {
     line-height: 140%;
 }
+div.body p, div.body dd, div.body li {
+    text-align: left;
+}
 
 div.body h1, div.body h2, div.body h3, div.body h4, div.body h5, div.body h6 {
     margin: 0;
@@ -104,6 +107,19 @@ div.body a:visited {
 div.body a:hover {
     color: #00B0E4;
 }
+div.body .section:target > h1,
+div.body .section:target > h2,
+div.body .section:target > h3,
+div.body .section:target > h4,
+div.body .section:target > h5 {
+    color: #000;
+    background: #f1c40f;
+    border-radius: 4px;
+    padding-left: 10px;
+    margin-left: -10px;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.6);
+}
+
 
 tt, pre {
     font-family: monospace, sans-serif;
@@ -231,7 +247,7 @@ pre, table, img {
 }
 img {
     box-shadow: 1px 1px 6px #ccc;
-    margin: 0 auto;
+    margin: 5px auto 7px auto;
     display: block;
 }
 p > img {
@@ -276,6 +292,15 @@ div.related:first-child li.right {
 div.related ul {
     padding: 0;
 }
+
+{% if theme_sidebarwide|tobool %}
+    div.sphinxsidebar {
+        width: 350px;
+    }
+    div.bodywrapper {
+        margin-left: 350px;
+    }
+{% endif %}
 
 @media only screen and (max-width: 768px) {
     div.related:first-child li.responsive-menu {
