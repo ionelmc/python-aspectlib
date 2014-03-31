@@ -2,7 +2,12 @@
 from setuptools import setup, find_packages
 
 import os
-read = lambda *names: open(os.path.join(os.path.dirname(__file__), *names)).read()
+import re
+
+
+def read(*names):
+    return open(os.path.join(os.path.dirname(__file__), *names)).read()
+
 setup(
     name="aspectlib",
     version="0.8.0",
@@ -10,7 +15,7 @@ setup(
     download_url='',
     license='BSD',
     description="Aspect-Oriented Programming toolkit.",
-    long_description="%s\n%s" % (read('README.rst'), read('docs', 'changelog.rst').replace(':obj:', '')),
+    long_description="%s\n%s" % (read('README.rst'), re.sub(':obj:`~?(.*?)`', r'``\1``', read('docs', 'changelog.rst'))),
     author='Ionel Cristian Mărieș',
     author_email='contact@ionelmc.ro',
     packages=find_packages('src'),
