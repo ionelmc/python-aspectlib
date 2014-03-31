@@ -93,7 +93,7 @@ Debugging
     ...
 
 The output looks a bit funky because it is written to be run by `doctest
-<http://docs.python.org/2/library/doctest.html>`_.
+<https://docs.python.org/2/library/doctest.html>`_ - so you don't use broken examples :)
 
 Testing
 -------
