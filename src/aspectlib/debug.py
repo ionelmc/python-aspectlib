@@ -114,15 +114,24 @@ def log(func=None,
     You can conveniently use this to logs just errors, or just results, example::
 
         >>> import aspectlib
-        >>> with aspectlib.weave(int, log(call=False, result=False, print_to=sys.stdout)):
+        >>> with aspectlib.weave(float, log(call=False, result=False, print_to=sys.stdout)):
         ...     try:
-        ...         int('invalid')
-        ...     except Exception:
+        ...         float('invalid')
+        ...     except Exception as e:
         ...         pass # naughty code !
-        int('invalid')                                                <<< ...
-        int ~ raised ValueError("invalid literal for int() with base 10: 'invalid'",)
+        float('invalid')                                              <<< ...
+        float ~ raised ValueError("could not convert string to float: ...invalid...)
 
     This makes debugging naughty code easier.
+
+    PS: Without the weaving it looks like this::
+
+        >>> try:
+        ...     log(call=False, result=False, print_to=sys.stdout)(float)('invalid')
+        ... except Exception:
+        ...     pass # naughty code !
+        float('invalid')                                              <<< ...
+        float ~ raised ValueError("could not convert string to float: ...invalid...)
     """
 
     loglevel = use_logging and (
