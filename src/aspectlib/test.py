@@ -36,9 +36,8 @@ from collections import namedtuple
 from functools import partial
 from functools import wraps
 
-from wrapt.decorators import FunctionWrapper, BoundFunctionWrapper
-
-import aspectlib
+from aspectlib import mimic
+from aspectlib import weave
 
 __all__ = 'mock', 'record'
 
@@ -62,14 +61,7 @@ def mock(return_value, call=False):
         return mock_wrapper
     return mock_decorator
 
-class BoundRecordingWrapper(BoundFunctionWrapper):
-    calls = None
-
-    def __init__(self, wrapped, instance, wrapper, enabled, binding, parent):
-        super(BoundRecordingWrapper, self).__init__(wrapped, instance, wrapper, enabled, binding, parent)
-        self.calls = parent.calls
-
-class RecordingWrapper(FunctionWrapper):
+class RecordingWrapper(object):
     """
     Function wrapper that has a `calls` attribute.
 
@@ -77,20 +69,28 @@ class RecordingWrapper(FunctionWrapper):
     :param function wrapped: Wrapper function
     :param list calls: Instance to put in the `.calls` attribute.
     """
-    calls = None
-    __bound_function_wrapper__ = BoundRecordingWrapper
+    def __init__(self, wrapped, history, call, binding=None):
+        mimic(self, wrapped)
+        self.__wrapped = wrapped
+        self.__entanglement = None
+        self.__call = call
+        self.__binding = binding
+        self.calls = history
 
-    def __init__(self, wrapped, wrapper, calls):
-        super(RecordingWrapper, self).__init__(wrapped, wrapper)
-        self.calls = calls
+    def __call__(self, *args, **kwargs):
+        self.calls.append(Call(self.__binding, args, kwargs))
+        if self.__call:
+            return self.__wrapped(*args, **kwargs)
+
+    def __get__(self, instance, owner):
+        return RecordingWrapper(self.__wrapped.__get__(instance, owner), self.calls, self.__call, instance)
 
     def __enter__(self):
-        self._self_entanglement = aspectlib.weave(self.__wrapped__, lambda _: self)
+        self.__entanglement = weave(self.__wrapped, lambda _: self)
         return self
 
     def __exit__(self, *args):
-        self._self_entanglement.rollback()
-
+        self.__entanglement.rollback()
 
 def record(func=None, call=False, history=None):
     """
@@ -131,17 +131,7 @@ def record(func=None, call=False, history=None):
         True
 
     """
-    def record_decorator(func):
-        calls = list() if history is None else history
-
-        def record_wrapper(wrapped, instance, args, kwargs):
-            calls.append(Call(instance, args, kwargs))
-            if call:
-                return wrapped(*args, **kwargs)
-        recorded = RecordingWrapper(func, record_wrapper, calls)
-        return recorded
-
     if func:
-        return record_decorator(func)
+        return RecordingWrapper(func, list() if history is None else history, call)
     else:
         return partial(record, call=call, history=history)
