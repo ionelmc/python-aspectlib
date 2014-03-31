@@ -112,7 +112,13 @@ class Yield(object):
 def mimic(wrapper, func):
     try:
         wrapper.__name__ = func.__name__
+    except (TypeError, AttributeError):
+        pass
+    try:
         wrapper.__module__ = func.__module__
+    except (TypeError, AttributeError):
+        pass
+    try:
         wrapper.__doc__ = func.__doc__
     except (TypeError, AttributeError):
         pass
