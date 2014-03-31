@@ -45,7 +45,7 @@ def test_mock_builtin_os():
 def test_record_warning():
     with aspectlib.weave('warnings.warn', record):
         warnings.warn('crap')
-        assert warnings.warn.calls, [(None, ('crap',) == {})]
+        assert warnings.warn.calls == [(None, ('crap',), {})]
 
 
 @pytest.mark.skipif(not hasattr(os, 'fork'), reason="os.fork not available")

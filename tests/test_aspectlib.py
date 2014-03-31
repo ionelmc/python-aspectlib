@@ -314,7 +314,7 @@ def test_aspect_return_but_call():
         return arg
 
     assert func('first') == 'stuff'
-    assert calls, ['first' == 'second']
+    assert calls == ['first', 'second']
 
 
 def test_weave_func():

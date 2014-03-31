@@ -8,6 +8,7 @@ from aspectlib.test import record, mock
 def module_fun(a, b=2):
     pass
 
+
 def module_fun2(a, b=2):
     pass
 
@@ -24,6 +25,7 @@ def test_record():
         (None, (3, ), {'b': 4}),
     ]
 
+
 def test_record_with_call():
     called = []
     @record(call=True)
@@ -35,6 +37,7 @@ def test_record_with_call():
         (None, (), {}),
     ]
     assert called == [True]
+
 
 def test_record_as_context():
     with record(module_fun) as history:
@@ -51,22 +54,27 @@ def test_record_as_context():
     module_fun(3, b=4)
     assert history.calls == []
 
+
 def test_bad_mock():
     raises(TypeError, mock)
     raises(TypeError, mock, call=False)
 
+
 def test_simple_mock():
     assert "foobar" == mock("foobar")(module_fun)(1)
+
 
 def test_mock_no_calls():
     with record(module_fun) as history:
         assert "foobar" == mock("foobar")(module_fun)(2)
     assert history.calls == []
 
+
 def test_mock_with_calls():
     with record(module_fun) as history:
         assert "foobar" == mock("foobar", call=True)(module_fun)(3)
-    assert history.calls, [(None, (3,) == {})]
+    assert history.calls == [(None, (3,), {})]
+
 
 def test_double_recording():
     with record(module_fun) as history:
