@@ -2,15 +2,15 @@
 from setuptools import setup, find_packages
 
 import os
-
+read = lambda *names: open(os.path.join(os.path.dirname(__file__), *names)).read()
 setup(
     name="aspectlib",
-    version="0.7.0",
+    version="0.8.0",
     url='https://github.com/ionelmc/python-aspectlib',
     download_url='',
     license='BSD',
     description="Aspect-Oriented Programming toolkit.",
-    long_description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
+    long_description="%s\n%s" % (read('README.rst'), read('docs', 'changelog.rst').replace(':obj:', '')),
     author='Ionel Cristian Mărieș',
     author_email='contact@ionelmc.ro',
     packages=find_packages('src'),
