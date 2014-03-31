@@ -6,8 +6,8 @@ import socket
 import warnings
 
 import pytest
-from process_tests import wait_for_strings
 from process_tests import dump_on_error
+from process_tests import wait_for_strings
 
 import aspectlib
 from aspectlib.test import mock

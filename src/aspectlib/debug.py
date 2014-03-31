@@ -2,15 +2,15 @@ import logging
 import os
 import string
 import sys
-try:
-    from types import InstanceType
-except ImportError:
-    InstanceType = type(None)
 from itertools import islice
 
 from aspectlib import Aspect
 from aspectlib import mimic
 
+try:
+    from types import InstanceType
+except ImportError:
+    InstanceType = type(None)
 
 logger = logging.getLogger(__name__)
 

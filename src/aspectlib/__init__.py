@@ -15,8 +15,6 @@ from inspect import ismethoddescriptor
 from inspect import isroutine
 from logging import getLogger
 
-__all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
-
 try:
     import __builtin__
 except ImportError:
@@ -26,6 +24,8 @@ try:
     from types import ClassType
 except ImportError:
     ClassType = type
+
+__all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
 
 logger = getLogger(__name__)
 
