@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.8.0
+-------------
+
+* Change :obj:`aspectlib.debug.log` to use :obj:`~aspectlib.Aspect` and work as expected with coroutines or generators.
+* Fixed :obj:`aspectlib.debug.log` to work on Python 3.4.
+* Remove the undocumented ``aspectlib.Yield`` advice. It was only usable when decorating generators.
+
 Version 0.7.0
 -------------
 
