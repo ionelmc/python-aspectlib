@@ -120,7 +120,7 @@ def log(func=None,
         ...     except Exception as e:
         ...         pass # naughty code !
         float('invalid')                                              <<< ...
-        float ~ raised ValueError("could not convert string to float: ...invalid...)
+        float ~ raised ValueError(...could not convert string to float: ...invalid...)
 
     This makes debugging naughty code easier.
 
@@ -131,7 +131,7 @@ def log(func=None,
         ... except Exception:
         ...     pass # naughty code !
         float('invalid')                                              <<< ...
-        float ~ raised ValueError("could not convert string to float: ...invalid...)
+        float ~ raised ValueError(...could not convert string to float: ...invalid...)
     """
 
     loglevel = use_logging and (
