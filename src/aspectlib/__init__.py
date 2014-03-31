@@ -100,15 +100,6 @@ class Return(object):
         self.value = value
 
 
-class Yield(object):
-    """
-    Instructs the Aspect to yield a value.
-    """
-    __slots__ = 'value',
-
-    def __init__(self, value):
-        self.value = value
-
 def mimic(wrapper, func):
     try:
         wrapper.__name__ = func.__name__
@@ -123,6 +114,7 @@ def mimic(wrapper, func):
     except (TypeError, AttributeError):
         pass
     return wrapper
+
 
 class Aspect(object):
     """
@@ -205,10 +197,6 @@ class Aspect(object):
                                 return
                             elif isinstance(advice, Return):
                                 raise StopIteration(advice.value)
-                            elif isinstance(advice, Yield):
-                                item = yield advice.value
-                                logger.critical('sending %s (from yield %r)', item, advice.value)
-                                advice = advisor.send(item)
                             else:
                                 raise UnacceptableAdvice("Unknown advice %s" % advice)
                     finally:

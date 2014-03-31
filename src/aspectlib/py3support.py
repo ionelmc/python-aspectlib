@@ -12,7 +12,6 @@ from aspectlib import Proceed
 from aspectlib import PY3
 from aspectlib import Return
 from aspectlib import UnacceptableAdvice
-from aspectlib import Yield
 
 logger = getLogger(__name__)
 
@@ -48,10 +47,6 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function):
                     return
                 elif isinstance(advice, Return):
                     raise StopIteration(advice.value)
-                elif isinstance(advice, Yield):
-                    item = yield advice.value
-                    logger.critical('sending %s (from yield %r)', item, advice.value)
-                    advice = advisor.send(item)
                 else:
                     raise UnacceptableAdvice("Unknown advice %s" % advice)
         finally:

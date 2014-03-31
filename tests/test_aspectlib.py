@@ -1167,7 +1167,7 @@ def test_aspect_on_func_invalid_advice():
 
     @aspectlib.Aspect
     def aspect():
-        yield aspectlib.Yield("stuff")
+        yield "stuff"
 
     @aspect
     def func():
@@ -1182,15 +1182,12 @@ def test_aspect_on_generator_func():
     def aspect():
         try:
             hist.append('before')
-            yield aspectlib.Yield('prefix')
             yield aspectlib.Proceed
-            yield aspectlib.Yield('bad-suffix')
             hist.append('after')
         except Exception:
             hist.append('error')
         finally:
             hist.append('finally')
-        yield aspectlib.Yield('suffix')
         try:
             hist.append((yield aspectlib.Return))
         except GeneratorExit:
@@ -1198,14 +1195,14 @@ def test_aspect_on_generator_func():
             raise
         else:
             hist.append('consumed')
-        hist.append((yield aspectlib.Yield('very-bad-suffix')))
+        hist.append('bad-suffix')
 
     @aspect
     def func():
         for i in range(3):
             yield i
         raise RuntimeError()
-    assert list(func()) == ['prefix', 0, 1, 2, 'suffix']
+    assert list(func()) == [0, 1, 2]
     print (hist)
     assert hist == ['before', 'error', 'finally', 'closed']
 
@@ -1237,17 +1234,20 @@ def test_aspect_on_generator_different_args():
 
 
 def test_aspect_on_generator_raise_stopiteration():
+    result = []
+
     @aspectlib.Aspect
     def aspect():
         val = yield aspectlib.Proceed
-        yield aspectlib.Yield(val)
+        result.append(val)
 
     @aspect
     def func():
         raise StopIteration('something')
         yield
 
-    assert list(func()) == ['something']
+    assert list(func()) == []
+    assert result == ['something']
 
 
 def test_aspect_on_generator_close():
@@ -1319,28 +1319,26 @@ def test_aspect_on_generator_throw_exhaust():
 
 
 def test_aspect_on_generator_send_in_aspect():
-    a_values = []
-    f_values = []
+    values = []
 
     @aspectlib.Aspect
     def aspect():
-        a_values.append((yield aspectlib.Yield('value')))
         yield aspectlib.Proceed
 
     @aspect
     def func():
-        f_values.append((yield 'something'))
+        values.append((yield 'something'))
         yield
-        yield
+        values.append((yield))
         yield
 
     gen = func()
     gen.send(None)
     gen.send(1)
     gen.send(2)
+    gen.send(3)
 
-    assert a_values == [1]
-    assert f_values == [2]
+    assert values == [1, 3]
 
 
 def test_aspect_on_generator_result_from_aspect():
@@ -1385,9 +1383,7 @@ def test_aspect_on_coroutine():
     def aspect():
         try:
             hist.append('before')
-            hist.append((yield aspectlib.Yield('prefix')))
             hist.append((yield aspectlib.Proceed))
-            hist.append((yield aspectlib.Yield('suffix')))
             hist.append('after')
         except Exception:
             hist.append('error')
@@ -1400,7 +1396,7 @@ def test_aspect_on_coroutine():
             raise
         else:
             hist.append('consumed')
-        hist.append((yield aspectlib.Yield('bad-suffix')))
+        hist.append('bad-suffix')
 
     @aspect
     def func():
@@ -1413,14 +1409,14 @@ def test_aspect_on_coroutine():
     gen = func()
     data = []
     try:
-        for i in [None, 'captured', 0, 1, 'last-one', 'captured', 2, 3, 4, 5, 6, 7, 8, 9]:
+        for i in [None, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
             data.append(gen.send(i))
     except StopIteration:
         data.append('done')
     print(data)
-    assert data == ['prefix', 100, 1, 2, 'suffix', 'done']
+    assert data == [100, 1, 2, 'done'], hist
     print (hist)
-    assert hist == ['before', 'captured', 'the-return-value', 'captured', 'after', 'finally', 'closed']
+    assert hist == ['before', 'the-return-value', 'after', 'finally', 'closed']
 
 if __name__ == '__main__':
     test_aspect_on_generator_func_bad_advice()
