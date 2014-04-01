@@ -10,7 +10,7 @@ def read(*names):
 
 setup(
     name="aspectlib",
-    version="0.8.0",
+    version="0.8.1",
     url='https://github.com/ionelmc/python-aspectlib',
     download_url='',
     license='BSD',

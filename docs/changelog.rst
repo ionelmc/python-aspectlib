@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.8.1
+-------------
+
+* Use simpler import for the py3support.
+
 Version 0.8.0
 -------------
 
