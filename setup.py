@@ -3,10 +3,14 @@ from setuptools import setup, find_packages
 
 import os
 import re
+import io
 
 
-def read(*names):
-    return open(os.path.join(os.path.dirname(__file__), *names)).read()
+def read(*names, **kwargs):
+    return io.open(
+        os.path.join(os.path.dirname(__file__), *names),
+        encoding=kwargs.get('encoding', 'utf8')
+    ).read()
 
 setup(
     name="aspectlib",
