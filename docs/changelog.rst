@@ -10,6 +10,8 @@ Version 0.9.0
     * Renamed `call` option to `iscalled`.
     * Added `callback` option.
 
+* Changed :obj:`aspectlib.weave` to allow weaving everything in a module.
+
 Version 0.8.1
 -------------
 

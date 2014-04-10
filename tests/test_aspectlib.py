@@ -1419,6 +1419,20 @@ def test_aspect_on_coroutine():
     assert hist == ['before', 'the-return-value', 'after', 'finally', 'closed']
 
 
-#def test_weave_module():
-#    calls = []
-#    with aspectlib.weave('test_pkg1.test_pkg2.test_mod', lambda func: record(history=calls)()
+
+def test_weave_module(strmod=None):
+    calls = []
+    from test_pkg1.test_pkg2 import test_mod
+    with aspectlib.weave(
+        strmod or test_mod,
+        lambda func: record(
+            callback=lambda inst, args, kwargs, name=func.__name__: calls.append((name, inst, args, kwargs))
+        )(func)
+    ):
+        test_mod.target()
+        obj = test_mod.Stuff()
+        obj.meth()
+    assert calls == [('target', None, (), {}), ('meth', obj, (), {})]
+
+def test_weave_module_as_str():
+    test_weave_module("test_pkg1.test_pkg2.test_mod")

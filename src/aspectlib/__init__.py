@@ -13,6 +13,7 @@ from inspect import isgeneratorfunction
 from inspect import ismethod
 from inspect import ismethoddescriptor
 from inspect import isroutine
+from inspect import ismodule
 from logging import getLogger
 
 try:
@@ -284,8 +285,8 @@ class Rollback(object):
         else:
             self._rollbacks = [rollback]
 
-    def merge(self, other):
-        self._rollbacks.append(other)
+    def merge(self, *others):
+        self._rollbacks.extend(others)
 
     def __enter__(self):
         return self
@@ -404,7 +405,7 @@ def weave(target, aspects, **options):
             logger.debug(" .. as a callable %r.", obj)
             return weave_module_function(owner, obj, aspects, force_name=name, **options)
         else:
-            raise TypeError("Can't weave object %s of type %s" % (obj, type(obj)))
+            return weave(obj, aspects, **options)
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
         return weave_module_function(__builtin__, target, aspects, **options)
@@ -442,6 +443,8 @@ def weave(target, aspects, **options):
             return weave(klass, aspects, methods='%s$' % name, **options)
     elif isclass(target):
         return weave_class(target, aspects, **options)
+    elif ismodule(target):
+        return weave_module(target, aspects, **options)
     else:
         raise UnsupportedType("Can't weave object %s of type %s" % (target, type(target)))
 
@@ -461,19 +464,42 @@ def rewrap_method(func, klass, aspect):
         return checked_apply(aspect, func)
 
 
+def make_method_matcher(regex_or_regexstr_or_namelist):
+    if isinstance(regex_or_regexstr_or_namelist, (str, unicode)):
+        return re.compile(regex_or_regexstr_or_namelist).match
+    elif isinstance(regex_or_regexstr_or_namelist, (list, tuple)):
+        return regex_or_regexstr_or_namelist.__contains__
+    elif isinstance(regex_or_regexstr_or_namelist, REGEX_TYPE):
+        return regex_or_regexstr_or_namelist.match
+    else:
+        raise TypeError("Unacceptable methods spec %r." % regex_or_regexstr_or_namelist)
+
+
+def weave_module(module, aspect, functions=NORMAL_METHODS, **options):
+    entanglement = Rollback()
+    method_matches = make_method_matcher(functions)
+
+    for attr in dir(module):
+        func = getattr(module, attr)
+        if method_matches(attr):
+            if isroutine(func):
+                entanglement.merge(weave_module_function(module, func, aspect, force_name=attr, **options))
+            elif isclass(func):
+                entanglement.merge(
+                    weave_class(func, aspect, owner=module, name=attr, **options),
+                    #  it's not consistent with the other ways of weaving a class (it's never weaved as a routine).
+                    #  therefore it's disabled until it's considered useful.
+                    #weave_module_function(module, getattr(module, attr), aspect, force_name=attr, **options),
+                )
+    return entanglement
+
+
 def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=False,
                 owner=None, name=None, aliases=True):
 
     assert isclass(klass), "Can't weave %r. Must be a class." % klass
     entanglement = Rollback()
-    if isinstance(methods, (str, unicode)):
-        method_matches = re.compile(methods).match
-    elif isinstance(methods, (list, tuple)):
-        method_matches = methods.__contains__
-    elif isinstance(methods, REGEX_TYPE):
-        method_matches = methods.match
-    else:
-        raise TypeError("Unacceptable methods spec %r." % methods)
+    method_matches = make_method_matcher(methods)
 
     if subclasses and hasattr(klass, '__subclasses__'):
         for sub_class in klass.__subclasses__():

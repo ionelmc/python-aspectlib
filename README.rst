@@ -33,8 +33,7 @@ Weaving functions, methods, instances and classes is completed.
 
 Pending:
 
-* Whole-module weaving
-* *Concerns* (see `docs/todo.rst`)
+* *"Concerns"* (see `docs/todo.rst`)
 
 If ``aspectlib.weave`` doesn't work for your scenario please report a bug !
 
