@@ -349,6 +349,13 @@ def weave(target, aspects, **options):
     :raises TypeError:
         If target is a unacceptable object, or the specified options are not available for that type of object.
 
+
+    .. versionchanged:: 0.4.0
+
+        Replaced `only_methods`, `skip_methods`, `skip_magicmethods` options with `methods`.
+        Renamed `on_init` option to `lazy`.
+        Added `aliases` option.
+        Replaced `skip_subclasses` option with `subclasses`.
     """
     if not callable(aspects):
         if not hasattr(aspects, '__iter__'):

@@ -132,6 +132,13 @@ def log(func=None,
         ...     pass # naughty code !
         float('invalid')                                              <<< ...
         float ~ raised ValueError(...float...invalid...)
+
+
+    .. versionchanged:: 0.5.0
+
+        Renamed `arguments` to `call_args`.
+        Renamed `arguments_repr` to `call_args_repr`.
+        Added `call` option.
     """
 
     loglevel = use_logging and (
