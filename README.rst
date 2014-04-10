@@ -18,8 +18,6 @@ python-aspectlib
     :alt: PYPI Package
     :target: https://pypi.python.org/pypi/aspectlib
 
-.. contents:: **Table of Contents**
-
 ``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing
 behavior in existing code is desired.
 
