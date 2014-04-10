@@ -45,3 +45,8 @@ Requirements
 :Runtime: Python 2.6, 2.7, 3.3, 3.4 or PyPy
 
 Python 3.2, 3.1 and 3.0 are *NOT* supported (some objects are too crippled).
+
+Similar projects
+================
+
+* `function_trace <https://github.com/RedHatQE/function_trace>`_ - extremely simple
