@@ -378,7 +378,7 @@ def test_weave_str_class_meth_target():
 
 def test_weave_wrong_module():
     calls = []
-    with aspectlib.weave('warnings.warn', record(history=calls)):
+    with aspectlib.weave('warnings.warn', record(calls=calls)):
         aspectlib.weave(AliasedGlobal, mock('stuff'), lazy=True)
     assert calls == [
         (None,
@@ -1118,11 +1118,11 @@ def test_invalid_string_target():
 
 
 def test_list_of_aspects():
-    with aspectlib.weave(module_func, [mock('foobar'), record(call=True)]):
+    with aspectlib.weave(module_func, [mock('foobar'), record]):
         assert module_func(1, 2, 3) == 'foobar'
         assert module_func.calls == [(None, (1, 2, 3), {})]
 
-    with aspectlib.weave(module_func, [mock('foobar', call=True), record(call=True)]):
+    with aspectlib.weave(module_func, [mock('foobar', call=True), record]):
         raises(TypeError, module_func, 1, 2, 3)
         assert module_func.calls == [(None, (1, 2, 3), {})]
 
@@ -1418,7 +1418,7 @@ def test_aspect_on_coroutine():
     print (hist)
     assert hist == ['before', 'the-return-value', 'after', 'finally', 'closed']
 
-if __name__ == '__main__':
-    test_aspect_on_generator_func_bad_advice()
-    import os
-    os._exit(1)
+
+#def test_weave_module():
+#    calls = []
+#    with aspectlib.weave('test_pkg1.test_pkg2.test_mod', lambda func: record(history=calls)()

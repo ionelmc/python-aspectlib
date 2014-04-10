@@ -12,7 +12,7 @@ Example usage, suppose you want to test this class:
 With :mod:`aspectlib.test`::
 
     >>> from aspectlib import weave, test
-    >>> patch = weave(real.method, [test.mock(3), test.record(call=True)])
+    >>> patch = weave(real.method, [test.mock(3), test.record])
     >>> real.method(3, 4, 5, key='value')
     3
     >>> assert real.method.calls == [(real, (3, 4, 5), {'key': 'value'})]
@@ -69,21 +69,33 @@ class RecordingWrapper(object):
     :param function wrapped: Wrapper function
     :param list calls: Instance to put in the `.calls` attribute.
     """
-    def __init__(self, wrapped, history, call, binding=None):
+    def __init__(self, wrapped, wrapped_iscalled, calls=None, callback=None, binding=None):
         mimic(self, wrapped)
         self.__wrapped = wrapped
         self.__entanglement = None
-        self.__call = call
+        self.__wrapped_iscalled = wrapped_iscalled
         self.__binding = binding
-        self.calls = history
+        self.__callback = callback
+        self.calls = calls
+        if calls is None and callback is None:
+            raise RuntimeError("Can't have both calls (%r) and callback (%r) be None" % (calls, callback))
 
     def __call__(self, *args, **kwargs):
-        self.calls.append(Call(self.__binding, args, kwargs))
-        if self.__call:
+        if self.calls is not None:
+            self.calls.append(Call(self.__binding, args, kwargs))
+        if self.__callback is not None:
+            self.__callback(self.__binding, args, kwargs)
+        if self.__wrapped_iscalled:
             return self.__wrapped(*args, **kwargs)
 
     def __get__(self, instance, owner):
-        return RecordingWrapper(self.__wrapped.__get__(instance, owner), self.calls, self.__call, instance)
+        return RecordingWrapper(
+            self.__wrapped.__get__(instance, owner),
+            self.__wrapped_iscalled,
+            calls=self.calls,
+            callback=self.__callback,
+            binding=instance,
+        )
 
     def __enter__(self):
         self.__entanglement = weave(self.__wrapped, lambda _: self)
@@ -92,16 +104,17 @@ class RecordingWrapper(object):
     def __exit__(self, *args):
         self.__entanglement.rollback()
 
-def record(func=None, call=False, history=None):
+def record(func=None, iscalled=True, calls=None, callback=None):
     """
     Factory or decorator (depending if `func` is initially given).
 
-    :param list history:
-        An object where the `Call` objects are appended. If not given a new list object will be created.
-
-    :param bool call:
+    :param list callback:
+        An a callable that is to be called with ``instance, args, kwargs``.
+    :param list calls:
+        An object where the `Call` objects are appended. If not given and ``callback`` is not specified then a new list
+        object will be created.
+    :param bool iscalled:
         If ``True`` the `func` will be called. (default: ``False``)
-
     :returns:
         A wrapper that has a `calls` property.
 
@@ -111,7 +124,7 @@ def record(func=None, call=False, history=None):
     Example::
 
         >>> @record
-        ... def a():
+        ... def a(x, y, a, b):
         ...     pass
         >>> a(1, 2, 3, b='c')
         >>> a.calls
@@ -121,8 +134,8 @@ def record(func=None, call=False, history=None):
     Or, with your own history list::
 
         >>> calls = []
-        >>> @record(history=calls)
-        ... def a():
+        >>> @record(calls=calls)
+        ... def a(x, y, a, b):
         ...     pass
         >>> a(1, 2, 3, b='c')
         >>> a.calls
@@ -130,8 +143,19 @@ def record(func=None, call=False, history=None):
         >>> calls is a.calls
         True
 
+
+    .. versionchanged:: 0.9.0
+
+        Renamed `history` option to `calls`.
+        Renamed `call` option to `iscalled`.
+        Added `callback` option.
     """
     if func:
-        return RecordingWrapper(func, list() if history is None else history, call)
+        return RecordingWrapper(
+            func,
+            iscalled,
+            calls=(list() if not callback and calls is None else calls),
+            callback=callback,
+        )
     else:
-        return partial(record, call=call, history=history)
+        return partial(record, iscalled=iscalled, calls=calls, callback=callback)

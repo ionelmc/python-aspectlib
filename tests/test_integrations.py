@@ -92,7 +92,7 @@ def test_socket_as_string_target():
 
 def test_socket_meth(meth=socket.socket.close):
     calls = []
-    with aspectlib.weave(meth, record(history=calls)):
+    with aspectlib.weave(meth, record(calls=calls)):
         s = socket.socket()
         assert s.close() is None
     assert calls == [(s, (), {})]

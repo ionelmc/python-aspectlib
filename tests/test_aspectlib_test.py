@@ -26,9 +26,22 @@ def test_record():
     ]
 
 
+def test_record_with_no_call():
+    called = []
+    @record(iscalled=False)
+    def fun():
+        called.append(True)
+
+    fun()
+    assert fun.calls == [
+        (None, (), {}),
+    ]
+    assert called == []
+
+
 def test_record_with_call():
     called = []
-    @record(call=True)
+    @record
     def fun():
         called.append(True)
 

@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.9.0
+-------------
+
+* Changed :obj:`aspectlib.test.record`:
+
+    * Renamed `history` option to `calls`.
+    * Renamed `call` option to `iscalled`.
+    * Added `callback` option.
+
 Version 0.8.1
 -------------
 
