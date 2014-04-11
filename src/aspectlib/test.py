@@ -42,7 +42,7 @@ from aspectlib import weave
 __all__ = 'mock', 'record'
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
-CallEx = namedtuple('Call', ('self', 'name', 'args', 'kwargs'))
+CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
 
 
 def mock(return_value, call=False):
