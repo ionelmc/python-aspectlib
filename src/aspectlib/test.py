@@ -43,6 +43,8 @@ __all__ = 'mock', 'record'
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
+Result = namedtuple('Result', ('self', 'args', 'kwargs', 'result', 'exception'))
+ResultEx = namedtuple('ResultEx', ('self', 'name', 'args', 'kwargs', 'result', 'exception'))
 
 
 def mock(return_value, call=False):
@@ -64,42 +66,60 @@ def mock(return_value, call=False):
 
 class RecordingWrapper(object):
     """
-    Function wrapper that has a `calls` attribute.
+    Function wrapper that records calls and can be used as an weaver context manager.
 
-    :param function wrapped: Function to be wrapped
-    :param function wrapped: Wrapper function
-    :param list calls: Instance to put in the `.calls` attribute.
+    See :obj:`aspectlib.test.record` for arguments.
     """
-    def __init__(self, wrapped, wrapped_iscalled, calls=None, callback=None, extended=False, binding=None):
+
+    def __init__(self, wrapped, iscalled=True, calls=None, callback=None, extended=False, results=False, binding=None):
+        assert not results or iscalled, "`iscalled` must be True if `results` is True"
         mimic(self, wrapped)
         self.__wrapped = wrapped
+        self.__name = wrapped.__name__
         self.__entanglement = None
-        self.__wrapped_iscalled = wrapped_iscalled
+        self.__iscalled = iscalled
         self.__binding = binding
         self.__callback = callback
         self.__extended = extended
-        self.calls = calls
-        if calls is None and callback is None:
-            raise RuntimeError("Can't have both calls (%r) and callback (%r) be None" % (calls, callback))
+        self.__results = results
+        self.calls = [] if not callback and calls is None else calls
 
     def __call__(self, *args, **kwargs):
+        if self.__results:
+            try:
+                result = self.__wrapped(*args, **kwargs)
+            except Exception as exc:
+                self.__record(args, kwargs, None, exc)
+                raise
+            else:
+                self.__record(args, kwargs, result, None)
+
+        else:
+            self.__record(args, kwargs)
+            if self.__iscalled:
+                return self.__wrapped(*args, **kwargs)
+
+    def __record(self, args, kwargs, *response):
+        if self.__callback is not None:
+            self.__callback(self.__binding, self.__name, args, kwargs, *response)
         if self.calls is not None:
             if self.__extended:
-                self.calls.append(CallEx(self.__binding, self.__wrapped.__name__, args, kwargs))
+                self.calls.append((ResultEx if response else CallEx)(
+                    self.__binding, self.__name, args, kwargs, *response
+                ))
             else:
-                self.calls.append(Call(self.__binding, args, kwargs))
-        if self.__callback is not None:
-            self.__callback(self.__binding, self.__wrapped, args, kwargs)
-        if self.__wrapped_iscalled:
-            return self.__wrapped(*args, **kwargs)
+                self.calls.append((Result if response else Call)(
+                    self.__binding, args, kwargs, *response
+                ))
 
     def __get__(self, instance, owner):
         return RecordingWrapper(
             self.__wrapped.__get__(instance, owner),
-            self.__wrapped_iscalled,
+            iscalled=self.__iscalled,
             calls=self.calls,
             callback=self.__callback,
             extended=self.__extended,
+            results=self.__results,
             binding=instance,
         )
 
@@ -110,7 +130,8 @@ class RecordingWrapper(object):
     def __exit__(self, *args):
         self.__entanglement.rollback()
 
-def record(func=None, iscalled=True, calls=None, callback=None, extended=False):
+
+def record(func=None, **options):
     """
     Factory or decorator (depending if `func` is initially given).
 
@@ -123,6 +144,8 @@ def record(func=None, iscalled=True, calls=None, callback=None, extended=False):
         If ``True`` the `func` will be called. (default: ``False``)
     :param bool extended:
         If ``True`` the `func`'s ``__name__`` will also be included in the call list. (default: ``False``)
+    :param bool results:
+        If ``True`` the results (and exceptions) will also be included in the call list. (default: ``False``)
     :returns:
         A wrapper that has a `calls` property.
 
@@ -162,10 +185,7 @@ def record(func=None, iscalled=True, calls=None, callback=None, extended=False):
     if func:
         return RecordingWrapper(
             func,
-            iscalled,
-            calls=(list() if not callback and calls is None else calls),
-            callback=callback,
-            extended=extended,
+            **options
         )
     else:
-        return partial(record, iscalled=iscalled, calls=calls, callback=callback, extended=extended)
+        return partial(record, **options)

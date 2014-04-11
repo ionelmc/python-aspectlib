@@ -25,19 +25,74 @@ def test_record():
         (None, (3, ), {'b': 4}),
     ]
 
+
+def test_record_result():
+    @record(results=True)
+    def fun(a, b=2):
+        return a, b
+
+    fun(2, 3)
+    fun(3, b=4)
+    assert fun.calls == [
+        (None, (2, 3), {}, (2, 3), None),
+        (None, (3, ), {'b': 4}, (3, 4), None),
+    ]
+
+
+def test_record_exception():
+    exc = RuntimeError()
+
+    @record(results=True)
+    def fun():
+        raise exc
+
+    raises(RuntimeError, fun)
+    assert fun.calls == [
+        (None, (), {}, None, exc),
+    ]
+
+
+def test_record_result_callback():
+    calls = []
+
+    @record(results=True, callback=lambda *args: calls.append(args))
+    def fun(a, b=2):
+        return a, b
+
+    fun(2, 3)
+    fun(3, b=4)
+    assert calls == [
+        (None, 'fun', (2, 3), {}, (2, 3), None),
+        (None, 'fun', (3, ), {'b': 4}, (3, 4), None),
+    ]
+
+
+def test_record_exception_callback():
+    exc = RuntimeError()
+    calls = []
+
+    @record(results=True, callback=lambda *args: calls.append(args))
+    def fun():
+        raise exc
+
+    raises(RuntimeError, fun)
+    assert calls == [
+        (None, 'fun', (), {}, None, exc),
+    ]
+
+
 def test_record_callback():
     calls = []
 
+    @record(callback=lambda *args: calls.append(args))
     def fun(a, b=2):
         pass
 
-    wfun = record(callback=lambda *args: calls.append(args))(fun)
-
-    wfun(2, 3)
-    wfun(3, b=4)
+    fun(2, 3)
+    fun(3, b=4)
     assert calls == [
-        (None, fun, (2, 3), {}),
-        (None, fun, (3, ), {'b': 4}),
+        (None, 'fun', (2, 3), {}),
+        (None, 'fun', (3, ), {'b': 4}),
     ]
 
 
@@ -122,3 +177,10 @@ def test_double_recording():
     module_fun(2, 3)
     assert history.calls == []
     assert history2.calls == []
+
+
+def test_record_not_iscalled_and_results():
+    raises(AssertionError, record, module_fun, iscalled=False, results=True)
+    record(module_fun, iscalled=False, results=False)
+    record(module_fun, iscalled=True, results=True)
+    record(module_fun, iscalled=True, results=False)
