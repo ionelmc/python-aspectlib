@@ -171,3 +171,16 @@ def test_realsocket_makefile():
                 f.write('-\n')
         finally:
             os._exit(0)
+
+
+def test_weave_os_module():
+    calls = []
+
+    with aspectlib.weave('os', record(calls=calls, extended=True), functions="getenv|walk"):
+        os.getenv('BUBU', 'bubu')
+        os.walk('.')
+
+    assert calls == [
+        (None, 'getenv', ('BUBU', 'bubu'), {}),
+        (None, 'walk', ('.',), {})
+    ]

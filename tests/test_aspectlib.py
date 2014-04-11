@@ -1106,7 +1106,7 @@ else:
 
 
 def test_invalid_string_target():
-    raises(AssertionError, aspectlib.weave, 'inva lid', mock(None))
+    raises(SyntaxError, aspectlib.weave, 'inva lid', mock(None))
     raises(SyntaxError, aspectlib.weave, 'os.inva lid', mock(None))
     raises(SyntaxError, aspectlib.weave, 'os.2invalid', mock(None))
     raises(SyntaxError, aspectlib.weave, 'os.some,junk', mock(None))

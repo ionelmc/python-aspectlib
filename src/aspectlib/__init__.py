@@ -370,10 +370,13 @@ def weave(target, aspects, **options):
             weave(item, aspects, **options) for item in target
         ])
     elif isinstance(target, (unicode, str)):
-        assert '.' in target, "Need at least a module in the target specification !"
         parts = target.split('.')
         for part in parts:
             check_name(part)
+
+        if len(parts) == 1:
+            __import__(part)
+            return weave_module(sys.modules[part], aspects, **options)
 
         for pos in reversed(range(1, len(parts))):
             owner, name = '.'.join(parts[:pos]), '.'.join(parts[pos:])
@@ -395,6 +398,7 @@ def weave(target, aspects, **options):
 
         logger.debug("Patching %s from %s ...", name, owner)
         obj = getattr(owner, name)
+
         if isinstance(obj, (type, ClassType)):
             logger.debug(" .. as a class %r.", obj)
             return weave_class(
