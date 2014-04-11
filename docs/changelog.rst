@@ -9,6 +9,7 @@ Version 0.9.0
     * Renamed `history` option to `calls`.
     * Renamed `call` option to `iscalled`.
     * Added `callback` option.
+    * Added `extended` option.
 
 * Changed :obj:`aspectlib.weave` to allow weaving everything in a module.
 

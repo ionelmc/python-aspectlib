@@ -25,6 +25,21 @@ def test_record():
         (None, (3, ), {'b': 4}),
     ]
 
+def test_record_callback():
+    calls = []
+
+    def fun(a, b=2):
+        pass
+
+    wfun = record(callback=lambda *args: calls.append(args))(fun)
+
+    wfun(2, 3)
+    wfun(3, b=4)
+    assert calls == [
+        (None, fun, (2, 3), {}),
+        (None, fun, (3, ), {'b': 4}),
+    ]
+
 
 def test_record_with_no_call():
     called = []

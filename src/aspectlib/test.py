@@ -42,6 +42,7 @@ from aspectlib import weave
 __all__ = 'mock', 'record'
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
+CallEx = namedtuple('Call', ('self', 'name', 'args', 'kwargs'))
 
 
 def mock(return_value, call=False):
@@ -69,22 +70,26 @@ class RecordingWrapper(object):
     :param function wrapped: Wrapper function
     :param list calls: Instance to put in the `.calls` attribute.
     """
-    def __init__(self, wrapped, wrapped_iscalled, calls=None, callback=None, binding=None):
+    def __init__(self, wrapped, wrapped_iscalled, calls=None, callback=None, extended=False, binding=None):
         mimic(self, wrapped)
         self.__wrapped = wrapped
         self.__entanglement = None
         self.__wrapped_iscalled = wrapped_iscalled
         self.__binding = binding
         self.__callback = callback
+        self.__extended = extended
         self.calls = calls
         if calls is None and callback is None:
             raise RuntimeError("Can't have both calls (%r) and callback (%r) be None" % (calls, callback))
 
     def __call__(self, *args, **kwargs):
         if self.calls is not None:
-            self.calls.append(Call(self.__binding, args, kwargs))
+            if self.__extended:
+                self.calls.append(CallEx(self.__binding, self.__wrapped.__name__, args, kwargs))
+            else:
+                self.calls.append(Call(self.__binding, args, kwargs))
         if self.__callback is not None:
-            self.__callback(self.__binding, args, kwargs)
+            self.__callback(self.__binding, self.__wrapped, args, kwargs)
         if self.__wrapped_iscalled:
             return self.__wrapped(*args, **kwargs)
 
@@ -94,6 +99,7 @@ class RecordingWrapper(object):
             self.__wrapped_iscalled,
             calls=self.calls,
             callback=self.__callback,
+            extended=self.__extended,
             binding=instance,
         )
 
@@ -104,17 +110,19 @@ class RecordingWrapper(object):
     def __exit__(self, *args):
         self.__entanglement.rollback()
 
-def record(func=None, iscalled=True, calls=None, callback=None):
+def record(func=None, iscalled=True, calls=None, callback=None, extended=False):
     """
     Factory or decorator (depending if `func` is initially given).
 
     :param list callback:
-        An a callable that is to be called with ``instance, args, kwargs``.
+        An a callable that is to be called with ``instance, function, args, kwargs``.
     :param list calls:
         An object where the `Call` objects are appended. If not given and ``callback`` is not specified then a new list
         object will be created.
     :param bool iscalled:
         If ``True`` the `func` will be called. (default: ``False``)
+    :param bool extended:
+        If ``True`` the `func`'s ``__name__`` will also be included in the call list. (default: ``False``)
     :returns:
         A wrapper that has a `calls` property.
 
@@ -149,6 +157,7 @@ def record(func=None, iscalled=True, calls=None, callback=None):
         Renamed `history` option to `calls`.
         Renamed `call` option to `iscalled`.
         Added `callback` option.
+        Added `extended` option.
     """
     if func:
         return RecordingWrapper(
@@ -156,6 +165,7 @@ def record(func=None, iscalled=True, calls=None, callback=None):
             iscalled,
             calls=(list() if not callback and calls is None else calls),
             callback=callback,
+            extended=extended,
         )
     else:
-        return partial(record, iscalled=iscalled, calls=calls, callback=callback)
+        return partial(record, iscalled=iscalled, calls=calls, callback=callback, extended=extended)
