@@ -64,6 +64,7 @@ def mock(return_value, call=False):
         return mock_wrapper
     return mock_decorator
 
+
 class RecordingWrapper(object):
     """
     Function wrapper that records calls and can be used as an weaver context manager.
@@ -71,7 +72,8 @@ class RecordingWrapper(object):
     See :obj:`aspectlib.test.record` for arguments.
     """
 
-    def __init__(self, wrapped, iscalled=True, calls=None, callback=None, extended=False, results=False, binding=None):
+    def __init__(self, wrapped, iscalled=True, calls=None, callback=None, extended=False, results=False,
+                 recurse_lock=None, binding=None):
         assert not results or iscalled, "`iscalled` must be True if `results` is True"
         mimic(self, wrapped)
         self.__wrapped = wrapped
@@ -82,22 +84,31 @@ class RecordingWrapper(object):
         self.__callback = callback
         self.__extended = extended
         self.__results = results
+        self.__recurse_lock = recurse_lock
         self.calls = [] if not callback and calls is None else calls
 
     def __call__(self, *args, **kwargs):
-        if self.__results:
-            try:
-                result = self.__wrapped(*args, **kwargs)
-            except Exception as exc:
-                self.__record(args, kwargs, None, exc)
-                raise
+        record = not self.__recurse_lock or self.__recurse_lock.acquire(False)
+        try:
+            if self.__results:
+                try:
+                    result = self.__wrapped(*args, **kwargs)
+                except Exception as exc:
+                    if record:
+                        self.__record(args, kwargs, None, exc)
+                    raise
+                else:
+                    if record:
+                        self.__record(args, kwargs, result, None)
+                    return result
             else:
-                self.__record(args, kwargs, result, None)
-                return result
-        else:
-            self.__record(args, kwargs)
-            if self.__iscalled:
-                return self.__wrapped(*args, **kwargs)
+                if record:
+                    self.__record(args, kwargs)
+                if self.__iscalled:
+                    return self.__wrapped(*args, **kwargs)
+        finally:
+            if record and self.__recurse_lock:
+                self.__recurse_lock.release()
 
     def __record(self, args, kwargs, *response):
         if self.__callback is not None:
