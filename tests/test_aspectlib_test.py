@@ -16,10 +16,10 @@ def module_fun2(a, b=2):
 def test_record():
     @record
     def fun(a, b=2):
-        pass
+        return a, b
 
-    fun(2, 3)
-    fun(3, b=4)
+    assert fun(2, 3) == (2, 3)
+    assert fun(3, b=4) == (3, 4)
     assert fun.calls == [
         (None, (2, 3), {}),
         (None, (3, ), {'b': 4}),
@@ -31,8 +31,8 @@ def test_record_result():
     def fun(a, b=2):
         return a, b
 
-    fun(2, 3)
-    fun(3, b=4)
+    assert fun(2, 3) == (2, 3)
+    assert fun(3, b=4) == (3, 4)
     assert fun.calls == [
         (None, (2, 3), {}, (2, 3), None),
         (None, (3, ), {'b': 4}, (3, 4), None),
@@ -59,8 +59,8 @@ def test_record_result_callback():
     def fun(a, b=2):
         return a, b
 
-    fun(2, 3)
-    fun(3, b=4)
+    assert fun(2, 3) == (2, 3)
+    assert fun(3, b=4) == (3, 4)
     assert calls == [
         (None, 'fun', (2, 3), {}, (2, 3), None),
         (None, 'fun', (3, ), {'b': 4}, (3, 4), None),
@@ -86,10 +86,10 @@ def test_record_callback():
 
     @record(callback=lambda *args: calls.append(args))
     def fun(a, b=2):
-        pass
+        return a, b
 
-    fun(2, 3)
-    fun(3, b=4)
+    assert fun(2, 3) == (2, 3)
+    assert fun(3, b=4) == (3, 4)
     assert calls == [
         (None, 'fun', (2, 3), {}),
         (None, 'fun', (3, ), {'b': 4}),
@@ -102,7 +102,7 @@ def test_record_with_no_call():
     def fun():
         called.append(True)
 
-    fun()
+    assert fun() is None
     assert fun.calls == [
         (None, (), {}),
     ]

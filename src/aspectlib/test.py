@@ -93,7 +93,7 @@ class RecordingWrapper(object):
                 raise
             else:
                 self.__record(args, kwargs, result, None)
-
+                return result
         else:
             self.__record(args, kwargs)
             if self.__iscalled:
