@@ -200,3 +200,17 @@ def record(func=None, **options):
         )
     else:
         return partial(record, **options)
+
+#class Story(object):
+#    def __init__(self, target):
+#        self.target = target
+#        self.calls = []
+#
+#    def __enter__(self):
+#        self.__entanglement = weave(self.target, lambda _: self)
+#        return self
+#
+#    def __exit__(self, *args):
+#        self.__entanglement.rollback()
+
+#class StoryRecordingWrapper(RecordingWrapper):
