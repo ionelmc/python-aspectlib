@@ -1427,7 +1427,10 @@ def test_weave_module(strmod=None):
         test_mod.target()
         obj = test_mod.Stuff()
         obj.meth()
-    assert calls == [(None, 'target', (), {}), (obj, 'meth', (), {})]
+    assert calls == [
+        (None, 'test_pkg1.test_pkg2.test_mod.target', (), {}),
+        (obj, 'test_pkg1.test_pkg2.test_mod.meth', (), {})
+    ]
 
 def test_weave_module_as_str():
     test_weave_module("test_pkg1.test_pkg2.test_mod")

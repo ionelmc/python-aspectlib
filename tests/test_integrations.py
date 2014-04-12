@@ -181,6 +181,6 @@ def test_weave_os_module():
         os.walk('.')
 
     assert calls == [
-        (None, 'getenv', ('BUBU', 'bubu'), {}),
-        (None, 'walk', ('.',), {})
+        (None, 'os.getenv', ('BUBU', 'bubu'), {}),
+        (None, 'os.walk', ('.',), {})
     ]

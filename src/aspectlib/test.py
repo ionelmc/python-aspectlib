@@ -77,10 +77,7 @@ class RecordingWrapper(object):
         assert not results or iscalled, "`iscalled` must be True if `results` is True"
         mimic(self, wrapped)
         self.__wrapped = wrapped
-        if hasattr(wrapped, '__qualname__'):
-            self.__name = wrapped.__qualname__
-        else:
-            self.__name = '%s.%s' % (wrapped.__module__, wrapped.__name__)
+        self.__name = '%s.%s' % (wrapped.__module__, wrapped.__name__)
         self.__entanglement = None
         self.__iscalled = iscalled
         self.__binding = binding
