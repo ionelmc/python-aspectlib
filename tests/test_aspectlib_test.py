@@ -186,6 +186,33 @@ def test_record_not_iscalled_and_results():
     record(module_fun, iscalled=True, results=False)
 
 
+def xtest_story():
+    with Story('os') as story:
+        os.listdir('.') == ['stuff']
+        os.listdir(None) ** RuntimeError
+
+    with story(proxy=True):
+        assert os.listdir('.') == ['stuff']
+        raises(RuntimeError, os.listdir(None))
+        os.listdir('/')  # this isn't in the story but works
+
+    with story(proxy=False):  # run the story completely isolated - aka a "stub", see
+        # http://martinfowler.com/articles/mocksArentStubs.html#TheDifferenceBetweenMocksAndStubs
+        assert os.listdir('.') == ['stuff']
+        raises(RuntimeError, os.listdir, None)
+        raises(AssertionError, os.listdir, '/')  # unknown arg '/'
+
+    with story(proxy=False, checked=True):  # run the story as a "mock" (see MF)
+        assert os.listdir('.') == ['stuff']
+        raises(AssertionError, os.listdir, '/')  # unknown arg '/'
+    # will raise AssertionError as os.listdir(None) was specified in the Story by not actually called
+
+    with story(proxy=True, checked=True):  # aka
+        assert os.listdir('.') == ['stuff']
+        raises(AssertionError, os.listdir, '/')  # unknown arg '/'
+        # will raise AssertionError as os.listdir(None) was specified in the Story by not actually called
+
+
 def test_story_result_wrapper():
     x = StoryResultWrapper(lambda *a: None)
     raises(AttributeError, setattr, x, 'stuff', 1)
@@ -215,30 +242,3 @@ def test_story_create():
         assert isinstance(obj.meth(), StoryResultWrapper)
     print(story.calls)
     fail
-
-
-def xtest_story():
-    with Story('os') as story:
-        os.listdir('.') == ['stuff']
-        os.listdir(None) ** RuntimeError
-
-    with story(proxy=True):
-        assert os.listdir('.') == ['stuff']
-        raises(RuntimeError, os.listdir(None))
-        os.listdir('/')  # this isn't in the story but works
-
-    with story(proxy=False):  # run the story completely isolated - aka a "stub", see
-        # http://martinfowler.com/articles/mocksArentStubs.html#TheDifferenceBetweenMocksAndStubs
-        assert os.listdir('.') == ['stuff']
-        raises(RuntimeError, os.listdir, None)
-        raises(AssertionError, os.listdir, '/')  # unknown arg '/'
-
-    with story(proxy=False, checked=True):  # run the story as a "mock" (see MF)
-        assert os.listdir('.') == ['stuff']
-        raises(AssertionError, os.listdir, '/')  # unknown arg '/'
-    # will raise AssertionError as os.listdir(None) was specified in the Story by not actually called
-
-    with story(proxy=True, checked=True):  # aka
-        assert os.listdir('.') == ['stuff']
-        raises(AssertionError, os.listdir, '/')  # unknown arg '/'
-        # will raise AssertionError as os.listdir(None) was specified in the Story by not actually called
