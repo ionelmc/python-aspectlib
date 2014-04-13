@@ -86,7 +86,7 @@ class RecordingFunctionWrapper(object):
         self.__entanglement = None
         self.__iscalled = iscalled
         self.__binding = binding
-        self.__callback = callback
+        self.__callback__ = callback
         self.__extended = extended
         self.__results = results
         self.__recurse_lock = recurse_lock
@@ -116,8 +116,8 @@ class RecordingFunctionWrapper(object):
                 self.__recurse_lock.release()
 
     def __record__(self, args, kwargs, *response):
-        if self.__callback is not None:
-            self.__callback(self.__binding, self.__name, args, kwargs, *response)
+        if self.__callback__ is not None:
+            self.__callback__(self.__binding, self.__name, args, kwargs, *response)
         if self.calls is not None:
             if self.__extended:
                 self.calls.append((ResultEx if response else CallEx)(
@@ -133,7 +133,7 @@ class RecordingFunctionWrapper(object):
             self.__wrapped__.__get__(instance, owner),
             iscalled=self.__iscalled,
             calls=self.calls,
-            callback=self.__callback,
+            callback=self.__callback__,
             extended=self.__extended,
             results=self.__results,
             binding=instance,
@@ -234,7 +234,7 @@ class StoryFunctionWrapper(RecordingFunctionWrapper):
     def __get__(self, instance, owner):
         return StoryFunctionWrapper(
             self.__wrapped__.__get__(instance, owner),
-            calls=self.calls,
+            callback=self.__callback__,
             binding=instance,
         )
 
@@ -264,6 +264,7 @@ class StoryResultWrapper(object):
         '__itruediv__', '__ifloordiv__', '__imod__', '__ipow__', '__ilshift__', '__irshift__', '__iand__',
         '__ixor__', '__ior__', '__neg__', '__pos__', '__abs__', '__invert__', '__complex__', '__int__', '__long__',
         '__float__', '__oct__', '__hex__', '__index__', '__coerce__', '__getslice__', '__setslice__', '__delslice__',
-        '__len__', '__getitem__', '__reversed__', '__contains__', '__call__',
+        '__len__', '__getitem__', '__reversed__', '__contains__', '__call__', '__lt__', '__le__', '__eq__', '__ne__',
+        '__gt__', '__ge__', '__cmp__', '__rcmp__', '__nonzero__',
     ):
         exec ("%s = __unsupported__" % mm)
