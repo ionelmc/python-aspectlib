@@ -1,8 +1,10 @@
 from __future__ import print_function
 
+import os
+
 from pytest import raises
 
-from aspectlib.test import record, mock
+from aspectlib.test import record, mock, Story, StoryResultWrapper
 
 
 def module_fun(a, b=2):
@@ -11,6 +13,7 @@ def module_fun(a, b=2):
 
 def module_fun2(a, b=2):
     pass
+
 
 exc = RuntimeError()
 
@@ -183,8 +186,38 @@ def test_record_not_iscalled_and_results():
     record(module_fun, iscalled=True, results=False)
 
 
+def test_story_result_wrapper():
+    x = StoryResultWrapper(lambda *a: None)
+    raises(AttributeError, setattr, x, 'stuff', 1)
+    raises(AttributeError, getattr, x, 'stuff')
+    raises(TypeError, lambda: x >> 2)
+    raises(TypeError, lambda: x << 1)
+    raises(TypeError, lambda: x > 1)
+    x == 1
+    x ** Exception()
+
+
+def test_story_result_wrapper_bad_exception():
+    x = StoryResultWrapper(lambda *a: None)
+    raises(RuntimeError, lambda: x ** 1)
+    x ** Exception
+    x ** Exception('boom!')
+
+
+def test_story_create():
+    from test_pkg1.test_pkg2 import test_mod
+    with Story(test_mod) as story:
+        assert isinstance(test_mod.target('a', 'b', 'c'), StoryResultWrapper)
+        test_mod.target() ** Exception
+        test_mod.target(1, 2, 3) == 'foobar'
+        obj = test_mod.Stuff()
+        assert isinstance(obj, test_mod.Stuff)
+        assert isinstance(obj.meth(), StoryResultWrapper)
+    print(story.calls)
+    fail
+
+
 def xtest_story():
-    import os
     with Story('os') as story:
         os.listdir('.') == ['stuff']
         os.listdir(None) ** RuntimeError
@@ -195,7 +228,7 @@ def xtest_story():
         os.listdir('/')  # this isn't in the story but works
 
     with story(proxy=False):  # run the story completely isolated - aka a "stub", see
-                              # http://martinfowler.com/articles/mocksArentStubs.html#TheDifferenceBetweenMocksAndStubs
+        # http://martinfowler.com/articles/mocksArentStubs.html#TheDifferenceBetweenMocksAndStubs
         assert os.listdir('.') == ['stuff']
         raises(RuntimeError, os.listdir, None)
         raises(AssertionError, os.listdir, '/')  # unknown arg '/'
@@ -208,4 +241,4 @@ def xtest_story():
     with story(proxy=True, checked=True):  # aka
         assert os.listdir('.') == ['stuff']
         raises(AssertionError, os.listdir, '/')  # unknown arg '/'
-    # will raise AssertionError as os.listdir(None) was specified in the Story by not actually called
+        # will raise AssertionError as os.listdir(None) was specified in the Story by not actually called
