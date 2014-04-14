@@ -209,7 +209,7 @@ def test_story_empty_play_proxy():
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
-    assert replay.report() == format_calls({
+    assert replay.missing() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),
@@ -255,7 +255,7 @@ def test_story_empty_play_proxy_class():
     from pprint import pprint as print
 
     print(replay.calls.unexpected)
-    assert replay.report() == format_calls({
+    assert replay.missing() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): unexpected({
             ('mix', ('a', 'b'), frozenset([])): ((1, 2, 'a', 'b'), None),
             ('mix', (3, 4), frozenset([])): ((1, 2, 3, 4), None),
@@ -292,7 +292,7 @@ def test_story_half_play_proxy_class():
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
         raises(TypeError, obj.meth, 123)
-    assert replay.report() == format_calls({
+    assert replay.missing() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): {
             ('meth', (), frozenset([])): (None, None),
             ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
@@ -332,7 +332,7 @@ def test_story_full_play_proxy():
         raises(ValueError, test_mod.target, 1234)
         raises(TypeError, test_mod.target, 'asdf')
 
-    assert replay.report() == format_calls({
+    assert replay.missing() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),

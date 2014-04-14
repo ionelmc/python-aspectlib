@@ -416,5 +416,5 @@ class Replay(EntanglingBase):
         self._proxy = proxy
         self._recurse_lock = recurse_lock_factory()
 
-    def report(self):
+    def missing(self):
         return format_calls(self.calls.unexpected)
