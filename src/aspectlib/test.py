@@ -36,14 +36,12 @@ from collections import namedtuple
 from functools import partial
 from functools import wraps
 from inspect import isclass
-from operator import setitem
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
 from aspectlib import weave
 
-
-__all__ = 'mock', 'record'
+__all__ = 'mock', 'record', "Story"
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
@@ -212,14 +210,6 @@ def record(func=None, **options):
     else:
         return partial(record, **options)
 
-
-from collections import OrderedDict
-
-class StoryObject(object):
-    def __init__(self, qualname, init_args, init_kwargs):
-        self.init_args = init_args
-        self.init_kwargs = init_kwargs
-        self.uses = {}
 
 class Story(object):
     def __init__(self, target, lazy=False):
