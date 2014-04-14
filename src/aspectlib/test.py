@@ -40,7 +40,10 @@ from inspect import isclass
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
 from aspectlib import weave
-from dummy_threading import allocate_lock
+try:
+    from dummy_thread import allocate_lock
+except ImportError:
+    from _dummy_thread import allocate_lock
 
 __all__ = 'mock', 'record', "Story"
 
@@ -152,7 +155,7 @@ class RecordingFunctionWrapper(object):
         self.__entanglement.rollback()
 
 
-def record(func=None, **options):
+def record(func=None, recurse_lock_factory=allocate_lock, **options):
     """
     Factory or decorator (depending if `func` is initially given).
 
@@ -206,6 +209,7 @@ def record(func=None, **options):
     if func:
         return RecordingFunctionWrapper(
             func,
+            recurse_lock=recurse_lock_factory(),
             **options
         )
     else:
