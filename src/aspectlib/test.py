@@ -211,57 +211,83 @@ def record(func=None, **options):
         return partial(record, **options)
 
 
-class Story(object):
-    def __init__(self, target, lazy=False):
-        self.__target = target
-        self.calls = {}
-        self.ids = {}
-
-    def __enter__(self):
-        self.__entanglement = weave(
-            self.__target,
-            partial(StoryFunctionWrapper, story=self),
-            methods=ALL_METHODS,
-        )
-        return self
-
-    def __exit__(self, *args):
-        self.__entanglement.rollback()
-
 class StoryFunctionWrapper(object):
     def __init__(self, wrapped, story, binding=None, owner=None):
-        self.__wrapped = wrapped
-        self.__name = wrapped.__name__
-        self.__qualname = qualname(wrapped)
-        self.__story = story
-        self.__binding = binding
-        self.__owner = owner
+        self._wrapped = wrapped
+        self._name = wrapped.__name__
+        self._qualname = qualname(wrapped)
+        self._story = story
+        self._binding = binding
+        self._owner = owner
 
     def __call__(self, *args, **kwargs):
-        story = self.__story
-        if self.__binding is None:
-            pk = self.__qualname, args, frozenset(kwargs.items())
-            return StoryResultWrapper(partial(self.__save, story.calls, pk))
+        story = self._story
+        if self._binding is None:
+            pk = self._qualname, args, frozenset(kwargs.items())
+            return StoryResultWrapper(partial(self._save, story.calls, pk))
         else:
-            if self.__name == '__init__':
-                pk = qualname(self.__owner), args, frozenset(kwargs.items())
-                story.ids[self.__binding] = self.__save(story.calls, pk, {})
+            if self._name == '__init__':
+                pk = qualname(self._owner), args, frozenset(kwargs.items())
+                story.ids[self._binding] = self._save(story.calls, pk, {})
             else:
-                pk = self.__name, args, frozenset(kwargs.items())
-                return StoryResultWrapper(partial(self.__save, story.ids[self.__binding], pk))
+                pk = self._name, args, frozenset(kwargs.items())
+                return StoryResultWrapper(partial(self._save, story.ids[self._binding], pk))
 
-    def __save(self, calls, pk, response):
+    def _save(self, calls, pk, response):
         assert pk not in calls, "Story creation inconsistency. There is already a call cache for %r and it's: %r." % (pk, calls[pk])
         calls[pk] = response
         return response
 
     def __get__(self, binding, owner):
-        return StoryFunctionWrapper(
-            self.__wrapped.__get__(binding, owner),
-            story=self.__story,
+        return type(self)(
+            self._wrapped.__get__(binding, owner),
+            story=self._story,
             binding=binding,
             owner=owner,
         )
+
+
+class unexpected(dict):
+    def __repr__(self):
+        return "unexpected(%s)" % super(unexpected, self).__repr__()
+
+
+class ReplayFunctionWrapper(StoryFunctionWrapper):
+    def __call__(self, *args, **kwargs):
+        story = self._story
+        if self._binding is None:
+            pk = self._qualname, args, frozenset(kwargs.items())
+            calls = story.calls
+        else:
+            if self._name == '__init__':
+                pk = qualname(self._owner), args, frozenset(kwargs.items())
+                calls = story.calls
+                if pk in calls.expected:
+                    story.ids[self._binding] = ReplayPair(calls.expected[pk], calls.unexpected.setdefult(pk, {}))
+                    return
+                elif story.isproxy:
+                    story.ids[self._binding] = ReplayPair({}, calls.unexpected.setdefault(pk, unexpected()))
+                    return self._wrapped(*args, **kwargs)
+            else:
+                pk = self._name, args, frozenset(kwargs.items())
+                calls = story.ids[self._binding]
+
+        if pk in calls.expected:
+            result, exception = calls.expected[pk]
+            if exception is None:
+                return result
+            else:
+                raise exception
+        elif story.isproxy:
+            try:
+                result = self._wrapped(*args, **kwargs)
+            except Exception as exc:
+                calls.unexpected[pk] = None, exc
+                raise
+            else:
+                calls.unexpected[pk] = result, None
+        else:
+            raise AssertionError("Unexpected call to %s with args:%s kwargs:%s" % pk)
 
 
 class StoryResultWrapper(object):
@@ -293,3 +319,41 @@ class StoryResultWrapper(object):
         '__nonzero__',
     ):
         exec ("%s = __unsupported__" % mm)
+
+
+class EntanglingBase(object):
+
+    def __enter__(self):
+        self.__entanglement = weave(
+            self._target,
+            partial(self.FunctionWrapper, story=self),
+            methods=ALL_METHODS,
+        )
+        return self
+
+    def __exit__(self, *args):
+        self.__entanglement.rollback()
+
+
+class Story(EntanglingBase):
+    FunctionWrapper = StoryFunctionWrapper
+
+    def __init__(self, target):
+        self._target = target
+        self.calls = {}  # if calls is None else calls
+        self.ids = {}
+
+    def replay(self, proxy=False):
+        return Replay(self._target, self.calls, proxy)
+
+ReplayPair = namedtuple("ReplayPair", ('expected', 'unexpected'))
+
+
+class Replay(EntanglingBase):
+    FunctionWrapper = ReplayFunctionWrapper
+
+    def __init__(self, target, expected, isproxy):
+        self._target = target
+        self.calls = ReplayPair(expected, {})
+        self.ids = {}
+        self.isproxy = isproxy
