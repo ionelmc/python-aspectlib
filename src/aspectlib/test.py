@@ -40,6 +40,7 @@ from inspect import isclass
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
 from aspectlib import weave
+from dummy_threading import allocate_lock
 
 __all__ = 'mock', 'record', "Story"
 
@@ -263,7 +264,7 @@ class ReplayFunctionWrapper(StoryFunctionWrapper):
                 pk = qualname(self._owner), args, frozenset(kwargs.items())
                 calls = story.calls
                 if pk in calls.expected:
-                    story.ids[self._binding] = ReplayPair(calls.expected[pk], calls.unexpected.setdefult(pk, {}))
+                    story.ids[self._binding] = ReplayPair(calls.expected[pk], calls.unexpected.setdefault(pk, {}))
                     return
                 elif story.isproxy:
                     story.ids[self._binding] = ReplayPair({}, calls.unexpected.setdefault(pk, unexpected()))
@@ -286,9 +287,9 @@ class ReplayFunctionWrapper(StoryFunctionWrapper):
                 raise
             else:
                 calls.unexpected[pk] = result, None
+                return result
         else:
             raise AssertionError("Unexpected call to %s with args:%s kwargs:%s" % pk)
-
 
 class StoryResultWrapper(object):
     __slots__ = '__recorder__'
@@ -343,8 +344,8 @@ class Story(EntanglingBase):
         self.calls = {}  # if calls is None else calls
         self.ids = {}
 
-    def replay(self, proxy=False):
-        return Replay(self._target, self.calls, proxy)
+    def replay(self, **options):
+        return Replay(self._target, self.calls, **options)
 
 ReplayPair = namedtuple("ReplayPair", ('expected', 'unexpected'))
 
@@ -352,8 +353,9 @@ ReplayPair = namedtuple("ReplayPair", ('expected', 'unexpected'))
 class Replay(EntanglingBase):
     FunctionWrapper = ReplayFunctionWrapper
 
-    def __init__(self, target, expected, isproxy):
+    def __init__(self, target, expected, proxy=False, recurse_lock_factory=allocate_lock):
         self._target = target
         self.calls = ReplayPair(expected, {})
         self.ids = {}
-        self.isproxy = isproxy
+        self.isproxy = proxy
+        self.recurse_lock = recurse_lock_factory()
