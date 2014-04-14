@@ -33,10 +33,10 @@ With ``mock``::
     >>> real.method.assert_called_with(3, 4, 5, key='value')
 """
 from collections import namedtuple
+from collections import defaultdict
 from functools import partial
 from functools import wraps
 from inspect import isclass
-from pprint import pformat
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
@@ -381,11 +381,11 @@ def _output_signature(out, name, args, kwargs, *resp):
         else:
             out.write(' ** %s(%s)  # this exception is raised\n' % (qualname(type(exception)), ', '.join(repr(i) for i in args)))
 
+
 def format_calls(calls):
     if calls:
         out = StringIO()
-        from collections import Counter
-        instances = Counter()
+        instances = defaultdict(int)
         for (name, args, kwargs), resp in calls.items():
             if isinstance(resp, tuple):
                 _output_signature(out, name, args, kwargs, *resp)
@@ -405,6 +405,7 @@ def format_calls(calls):
         return out.getvalue()
     else:
         return ""
+
 
 class Replay(EntanglingBase):
     FunctionWrapper = ReplayFunctionWrapper
