@@ -265,6 +265,45 @@ def test_story_empty_play_proxy_class():
         })
     })
 
+
+def test_story_half_play_proxy_class():
+    assert test_mod.Stuff(1, 2).mix(3, 4) == (1, 2, 3, 4)
+
+    with Story(test_mod) as story:
+        obj = test_mod.Stuff(1, 2)
+        obj.mix(3, 4) == (1, 2, 3, 4)
+
+    with story.replay(proxy=True) as replay:
+        obj = test_mod.Stuff(1, 2)
+        assert obj.mix(3, 4) == (1, 2, 3, 4)
+        assert obj.meth() is None
+
+        raises(TypeError, obj.meth, 123)
+
+        obj = test_mod.Stuff(0, 1)
+        assert obj.mix('a', 'b') == (0, 1, 'a', 'b')
+        assert obj.mix(3, 4) == (0, 1, 3, 4)
+
+        raises(TypeError, obj.meth, 123)
+    from pprint import pprint as print
+
+    print(replay.calls.unexpected)
+    assert repr(replay.calls.unexpected) == repr({
+        ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): {
+            ('meth', (), frozenset([])): (None, None),
+            ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
+                                                              if PY2
+                                                              else 'meth() takes 1 positional argument but 2 were given',))
+        },
+        ('test_pkg1.test_pkg2.test_mod.Stuff', (0, 1), frozenset([])): unexpected({
+            ('mix', ('a', 'b'), frozenset([])): ((0, 1, 'a', 'b'), None),
+            ('mix', (3, 4), frozenset([])): ((0, 1, 3, 4), None),
+            ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
+                                                              if PY2
+                                                              else 'meth() takes 1 positional argument but 2 were given',))
+        })
+    })
+
 def test_story_full_play_noproxy():
     with Story(test_mod) as story:
         test_mod.target(123) == 'foobar'
