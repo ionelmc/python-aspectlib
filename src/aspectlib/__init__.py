@@ -1,11 +1,9 @@
 from __future__ import print_function
 
-import platform
 import re
 import sys
 import warnings
 from collections import deque
-from functools import wraps
 from inspect import isclass
 from inspect import isfunction
 from inspect import isgenerator
@@ -26,9 +24,13 @@ try:
 except ImportError:
     ClassType = type
 
+from .utils import basestring
 from .utils import force_bind
 from .utils import make_method_matcher
 from .utils import mimic
+from .utils import PY2
+from .utils import PY3
+from .utils import PYPY
 from .utils import Sentinel
 
 
@@ -36,12 +38,6 @@ __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS
 
 logger = getLogger(__name__)
 
-PY3 = sys.version_info[0] == 3
-PY2 = sys.version_info[0] == 2
-PYPY = platform.python_implementation() == 'PyPy'
-
-if PY3:
-    unicode = str  # pylint: disable=W0622
 
 UNSPECIFIED = Sentinel('UNSPECIFIED')
 ABSOLUTELLY_ALL_METHODS = re.compile('.*')
@@ -309,7 +305,7 @@ def weave(target, aspects, **options):
         return Rollback([
             weave(item, aspects, **options) for item in target
         ])
-    elif isinstance(target, (unicode, str)):
+    elif isinstance(target, basestring):
         parts = target.split('.')
         for part in parts:
             _check_name(part)

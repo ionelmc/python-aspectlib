@@ -1,8 +1,19 @@
 from __future__ import print_function
 
 import re
+import sys
+import platform
 
 RegexType = type(re.compile(""))
+
+PY3 = sys.version_info[0] == 3
+PY2 = sys.version_info[0] == 2
+PYPY = platform.python_implementation() == 'PyPy'
+
+if PY3:
+    basestring = str
+else:
+    basestring = str, unicode
 
 
 def qualname(obj):
@@ -18,7 +29,7 @@ def force_bind(func):
 
 
 def make_method_matcher(regex_or_regexstr_or_namelist):
-    if isinstance(regex_or_regexstr_or_namelist, (str, unicode)):
+    if isinstance(regex_or_regexstr_or_namelist, basestring):
         return re.compile(regex_or_regexstr_or_namelist).match
     elif isinstance(regex_or_regexstr_or_namelist, (list, tuple)):
         return regex_or_regexstr_or_namelist.__contains__
