@@ -12,6 +12,7 @@ from process_tests import wait_for_strings
 import aspectlib
 from aspectlib.test import mock
 from aspectlib.test import record
+from aspectlib.utils import PYPY
 
 try:
     import thread
@@ -120,7 +121,7 @@ def test_socket_all_methods():
     assert "}.__init__ => None" in buf.getvalue()
 
 
-@pytest.mark.skipif(not hasattr(os, 'fork') or aspectlib.PYPY, reason="os.fork not available or PYPY")
+@pytest.mark.skipif(not hasattr(os, 'fork') or PYPY, reason="os.fork not available or PYPY")
 def test_realsocket_makefile():
     buf = StringIO()
     p = socket.socket()

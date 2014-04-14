@@ -30,7 +30,6 @@ from .utils import make_method_matcher
 from .utils import mimic
 from .utils import PY2
 from .utils import PY3
-from .utils import PYPY
 from .utils import Sentinel
 
 
