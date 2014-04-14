@@ -234,11 +234,20 @@ def test_story_result_wrapper_bad_exception():
 def test_story_create():
     from test_pkg1.test_pkg2 import test_mod
     with Story(test_mod) as story:
-        assert isinstance(test_mod.target('a', 'b', 'c'), StoryResultWrapper)
+        test_mod.target('a', 'b', 'c') == 'abc'
         test_mod.target() ** Exception
         test_mod.target(1, 2, 3) == 'foobar'
-        obj = test_mod.Stuff()
+        obj = test_mod.Stuff('stuff')
         assert isinstance(obj, test_mod.Stuff)
-        assert isinstance(obj.meth(), StoryResultWrapper)
-    print(story.calls)
-    fail
+        obj.meth('other', 1, 2) == 123
+        obj.mix('other') == 'mixymix'
+
+    assert story.calls == {
+        ('test_pkg1.test_pkg2.test_mod.Stuff', ('stuff',), frozenset()): {
+            ('meth', ('other', 1, 2), frozenset()): (123, None),
+            ('mix', ('other',), frozenset()): ('mixymix', None)
+        },
+        ('test_pkg1.test_pkg2.test_mod.target', (), frozenset()): (None, Exception),
+        ('test_pkg1.test_pkg2.test_mod.target', (1, 2, 3), frozenset()): ('foobar', None),
+        ('test_pkg1.test_pkg2.test_mod.target', ('a', 'b', 'c'), frozenset()): ('abc', None)
+    }

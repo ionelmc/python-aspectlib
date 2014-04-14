@@ -36,7 +36,9 @@ from collections import namedtuple
 from functools import partial
 from functools import wraps
 from inspect import isclass
+from operator import setitem
 
+from aspectlib import ALL_METHODS
 from aspectlib import mimic
 from aspectlib import weave
 
@@ -47,6 +49,10 @@ Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
 Result = namedtuple('Result', ('self', 'args', 'kwargs', 'result', 'exception'))
 ResultEx = namedtuple('ResultEx', ('self', 'name', 'args', 'kwargs', 'result', 'exception'))
+
+
+def qualname(obj):
+    return '%s.%s' % (obj.__module__, obj.__name__)
 
 
 def mock(return_value, call=False):
@@ -81,11 +87,11 @@ class RecordingFunctionWrapper(object):
                  recurse_lock=None, binding=None):
         assert not results or iscalled, "`iscalled` must be True if `results` is True"
         mimic(self, wrapped)
-        self.__wrapped__ = wrapped
-        self.__name = '%s.%s' % (wrapped.__module__, wrapped.__name__)
+        self.__wrapped = wrapped
+        self.__name = qualname(wrapped)
         self.__entanglement = None
         self.__iscalled = iscalled
-        self.__binding = binding
+        self.__binding__ = binding
         self.__callback__ = callback
         self.__extended = extended
         self.__results = results
@@ -97,40 +103,40 @@ class RecordingFunctionWrapper(object):
         try:
             if self.__results:
                 try:
-                    result = self.__wrapped__(*args, **kwargs)
+                    result = self.__wrapped(*args, **kwargs)
                 except Exception as exc:
                     if record:
-                        self.__record__(args, kwargs, None, exc)
+                        self.__record(args, kwargs, None, exc)
                     raise
                 else:
                     if record:
-                        self.__record__(args, kwargs, result, None)
+                        self.__record(args, kwargs, result, None)
                     return result
             else:
                 if record:
-                    self.__record__(args, kwargs)
+                    self.__record(args, kwargs)
                 if self.__iscalled:
-                    return self.__wrapped__(*args, **kwargs)
+                    return self.__wrapped(*args, **kwargs)
         finally:
             if record and self.__recurse_lock:
                 self.__recurse_lock.release()
 
-    def __record__(self, args, kwargs, *response):
+    def __record(self, args, kwargs, *response):
         if self.__callback__ is not None:
-            self.__callback__(self.__binding, self.__name, args, kwargs, *response)
+            self.__callback__(self.__binding__, self.__name, args, kwargs, *response)
         if self.calls is not None:
             if self.__extended:
                 self.calls.append((ResultEx if response else CallEx)(
-                    self.__binding, self.__name, args, kwargs, *response
+                    self.__binding__, self.__name, args, kwargs, *response
                 ))
             else:
                 self.calls.append((Result if response else Call)(
-                    self.__binding, args, kwargs, *response
+                    self.__binding__, args, kwargs, *response
                 ))
 
     def __get__(self, instance, owner):
         return RecordingFunctionWrapper(
-            self.__wrapped__.__get__(instance, owner),
+            self.__wrapped.__get__(instance, owner),
             iscalled=self.__iscalled,
             calls=self.calls,
             callback=self.__callback__,
@@ -140,7 +146,7 @@ class RecordingFunctionWrapper(object):
         )
 
     def __enter__(self):
-        self.__entanglement = weave(self.__wrapped__, lambda _: self)
+        self.__entanglement = weave(self.__wrapped, lambda _: self)
         return self
 
     def __exit__(self, *args):
@@ -207,35 +213,64 @@ def record(func=None, **options):
         return partial(record, **options)
 
 
-class Story(object):
-    def __init__(self, target):
-        self.target = target
-        self.calls = {}
+from collections import OrderedDict
 
-    def __recorder(self, inst, name, args, kwargs, result, exception):
-        print(type(inst), name, args, kwargs)
-        self.calls[type(inst), name, args, kwargs] = result, exception
+class StoryObject(object):
+    def __init__(self, qualname, init_args, init_kwargs):
+        self.init_args = init_args
+        self.init_kwargs = init_kwargs
+        self.uses = {}
+
+class Story(object):
+    def __init__(self, target, lazy=False):
+        self.__target = target
+        self.calls = {}
+        self.ids = {}
 
     def __enter__(self):
-        self.__entanglement = weave(self.target, partial(StoryFunctionWrapper, callback=self.__recorder))
+        self.__entanglement = weave(
+            self.__target,
+            partial(StoryFunctionWrapper, story=self),
+            methods=ALL_METHODS,
+        )
         return self
 
     def __exit__(self, *args):
         self.__entanglement.rollback()
 
-
-class StoryFunctionWrapper(RecordingFunctionWrapper):
-    def __init__(self, wrapped, callback, binding=None):
-        super(StoryFunctionWrapper, self).__init__(wrapped, callback=callback, extended=True, binding=binding)
+class StoryFunctionWrapper(object):
+    def __init__(self, wrapped, story, binding=None, owner=None):
+        self.__wrapped = wrapped
+        self.__name = wrapped.__name__
+        self.__qualname = qualname(wrapped)
+        self.__story = story
+        self.__binding = binding
+        self.__owner = owner
 
     def __call__(self, *args, **kwargs):
-        return StoryResultWrapper(partial(self.__record__, args, kwargs))
+        story = self.__story
+        if self.__binding is None:
+            pk = self.__qualname, args, frozenset(kwargs.items())
+            return StoryResultWrapper(partial(self.__save, story.calls, pk))
+        else:
+            if self.__name == '__init__':
+                pk = qualname(self.__owner), args, frozenset(kwargs.items())
+                story.ids[self.__binding] = self.__save(story.calls, pk, {})
+            else:
+                pk = self.__name, args, frozenset(kwargs.items())
+                return StoryResultWrapper(partial(self.__save, story.ids[self.__binding], pk))
 
-    def __get__(self, instance, owner):
+    def __save(self, calls, pk, response):
+        assert pk not in calls, "Story creation inconsistency. There is already a call cache for %r and it's: %r." % (pk, calls[pk])
+        calls[pk] = response
+        return response
+
+    def __get__(self, binding, owner):
         return StoryFunctionWrapper(
-            self.__wrapped__.__get__(instance, owner),
-            callback=self.__callback__,
-            binding=instance,
+            self.__wrapped.__get__(binding, owner),
+            story=self.__story,
+            binding=binding,
+            owner=owner,
         )
 
 
@@ -246,25 +281,25 @@ class StoryResultWrapper(object):
         self.__recorder__ = recorder
 
     def __eq__(self, result):
-        self.__recorder__(result, None)
+        self.__recorder__((result, None))
 
     def __pow__(self, exception):
         if not (isinstance(exception, BaseException) or isclass(exception) and issubclass(exception, BaseException)):
             raise RuntimeError("Value %r must be an exception type or instance." % exception)
-        self.__recorder__(None, exception)
+        self.__recorder__((None, exception))
 
     def __unsupported__(self, *args):
         raise TypeError("Unsupported operation. Only `==` (for results) and `**` (for exceptions) can be used.")
 
     for mm in (
-        '__add__', '__sub__', '__mul__', '__floordiv__', '__mod__', '__divmod__', '__lshift__',
-        '__rshift__', '__and__', '__xor__', '__or__', '__div__', '__truediv__', '__radd__', '__rsub__', '__rmul__',
-        '__rdiv__', '__rtruediv__', '__rfloordiv__', '__rmod__', '__rdivmod__', '__rpow__', '__rlshift__',
-        '__rrshift__', '__rand__', '__rxor__', '__ror__', '__iadd__', '__isub__', '__imul__', '__idiv__',
-        '__itruediv__', '__ifloordiv__', '__imod__', '__ipow__', '__ilshift__', '__irshift__', '__iand__',
-        '__ixor__', '__ior__', '__neg__', '__pos__', '__abs__', '__invert__', '__complex__', '__int__', '__long__',
-        '__float__', '__oct__', '__hex__', '__index__', '__coerce__', '__getslice__', '__setslice__', '__delslice__',
-        '__len__', '__getitem__', '__reversed__', '__contains__', '__call__', '__lt__', '__le__', '__eq__', '__ne__',
-        '__gt__', '__ge__', '__cmp__', '__rcmp__', '__nonzero__',
+        '__add__', '__sub__', '__mul__', '__floordiv__', '__mod__', '__divmod__', '__lshift__', '__rshift__', '__and__',
+        '__xor__', '__or__', '__div__', '__truediv__', '__radd__', '__rsub__', '__rmul__', '__rdiv__', '__rtruediv__',
+        '__rfloordiv__', '__rmod__', '__rdivmod__', '__rpow__', '__rlshift__', '__rrshift__', '__rand__', '__rxor__',
+        '__ror__', '__iadd__', '__isub__', '__imul__', '__idiv__', '__itruediv__', '__ifloordiv__', '__imod__',
+        '__ipow__', '__ilshift__', '__irshift__', '__iand__', '__ixor__', '__ior__', '__neg__', '__pos__', '__abs__',
+        '__invert__', '__complex__', '__int__', '__long__', '__float__', '__oct__', '__hex__', '__index__',
+        '__coerce__', '__getslice__', '__setslice__', '__delslice__', '__len__', '__getitem__', '__reversed__',
+        '__contains__', '__call__', '__lt__', '__le__', '__ne__', '__gt__', '__ge__', '__cmp__', '__rcmp__',
+        '__nonzero__',
     ):
         exec ("%s = __unsupported__" % mm)

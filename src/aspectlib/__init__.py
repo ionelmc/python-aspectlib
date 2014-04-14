@@ -230,42 +230,6 @@ class Aspect(object):
                     advisor.close()
             return mimic(advising_function_wrapper, cutpoint_function)
 
-#class Boundable(object):
-#    def __init__(self, binding=None):
-#        self.binding = binding
-#
-#    def __get__(self, instance, owner):
-#        return type(self)(instance)
-
-#class DescriptorAspect(Aspect):
-#    """
-#    Aspect that call the generator with ``instance, args, kwargs, cutpoint`` instead of the original arguments.
-#    """
-#    def __init__(self, advising_function):
-#        if not isgeneratorfunction(advising_function):
-#            raise ExpectedGeneratorFunction("advising_function %s must be a generator function." % advising_function)
-#        self.advising_function = advising_function
-#
-#    def __call__(self, cutpoint_function):
-#        wrapper = super(DescriptorAspect, self).__call__(lambda _i, args, kwargs, _f: cutpoint_function(*args, **kwargs))
-#        cutpoint_wrapping = wraps(cutpoint_function)
-#
-#        class descriptor_wrapper(object):
-#            __doc__ = cutpoint_function.__doc__
-#            __name__ = cutpoint_function.__name__
-#            __module__ = cutpoint_function.__module__
-#
-#            def __get__(self, instance, owner):
-#                print('__get__(', instance, owner, ')')
-#                return cutpoint_wrapping(lambda *args, **kwargs:
-#                    wrapper(instance, args, kwargs, cutpoint_function)
-#                )
-#
-#            def __call__(self, *args, **kwargs):
-#                print('__call__(', args, kwargs, ')')
-#                return wrapper(None, args, kwargs, cutpoint_function)
-#
-#        return descriptor_wrapper()
 
 class Fabric(object):
     pass
@@ -299,7 +263,7 @@ class Rollback(object):
 
 
 def checked_apply(aspects, function):
-    logger.debug('Applying aspects %s to function %s.', aspects, function)
+    logger.debug(' - Applying aspects %s to function %s.', aspects, function)
     if callable(aspects):
         wrapper = aspects(function)
         assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspects, wrapper)
@@ -479,9 +443,9 @@ def make_method_matcher(regex_or_regexstr_or_namelist):
         raise TypeError("Unacceptable methods spec %r." % regex_or_regexstr_or_namelist)
 
 
-def weave_module(module, aspect, functions=NORMAL_METHODS, **options):
+def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
     entanglement = Rollback()
-    method_matches = make_method_matcher(functions)
+    method_matches = make_method_matcher(methods)
 
     for attr in dir(module):
         func = getattr(module, attr)
@@ -490,7 +454,7 @@ def weave_module(module, aspect, functions=NORMAL_METHODS, **options):
                 entanglement.merge(weave_module_function(module, func, aspect, force_name=attr, **options))
             elif isclass(func):
                 entanglement.merge(
-                    weave_class(func, aspect, owner=module, name=attr, **options),
+                    weave_class(func, aspect, owner=module, name=attr, methods=methods, lazy=lazy, **options),
                     #  it's not consistent with the other ways of weaving a class (it's never weaved as a routine).
                     #  therefore it's disabled until it's considered useful.
                     #weave_module_function(module, getattr(module, attr), aspect, force_name=attr, **options),
@@ -539,6 +503,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         for attr, func in klass.__dict__.items():
             if method_matches(attr):
                 if isroutine(func):
+                    logger.debug(" * Patching attributes %r (original: %r).", attr, func)
                     setattr(klass, attr, rewrap_method(func, klass, aspect))
                 else:
                     continue
