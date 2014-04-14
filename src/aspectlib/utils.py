@@ -25,7 +25,7 @@ def camelcase_to_underscores(name):
 
 
 def qualname(obj):
-    if hasattr(obj, '__module__'):
+    if hasattr(obj, '__module__') and obj.__module__ not in ('builtins', 'exceptions'):
         return '%s.%s' % (obj.__module__, obj.__name__)
     else:
         return obj.__name__

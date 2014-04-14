@@ -1,8 +1,5 @@
 from __future__ import print_function
 
-import os
-from pprint import pformat
-
 from pytest import raises
 
 from aspectlib import PY2
@@ -209,7 +206,7 @@ def test_story_empty_play_proxy():
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
-    assert replay.missing() == format_calls({
+    assert replay.missing(prefix=False) == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),
@@ -237,6 +234,46 @@ def test_story_half_play_noproxy_class():
         raises(AssertionError, obj.mix, 3, 4)
 
 
+def test_story_empty_play_proxy_class_missing_report():
+    with Story(test_mod).replay(proxy=True) as replay:
+        obj = test_mod.Stuff(1, 2)
+        obj.mix(3, 4)
+        obj.mix('a', 'b')
+        raises(TypeError, obj.meth, 123)
+        obj = test_mod.Stuff(0, 1)
+        obj.mix('a', 'b')
+        obj.mix(3, 4)
+        test_mod.target()
+        raises(TypeError, test_mod.target, 'badarg')
+        raises(TypeError, obj.meth, 123)
+        test_mod.ThatLONGStuf(1).mix(2)
+        test_mod.ThatLONGStuf(3).mix(4)
+        obj = test_mod.ThatLONGStuf(1)
+        obj.mix()
+        obj.meth()
+        obj.mix(10)
+    print(replay.missing())
+    assert replay.missing() == """### UNEXPECTED CALLS (add these in your story)
+
+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)  # was never called in the Story !
+stuff_1.meth(123) ** TypeError(123)  # raised
+stuff_1.mix('a', 'b') == (0, 1, 'a', 'b')  # returned
+stuff_1.mix(3, 4) == (0, 1, 3, 4)  # returned
+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)  # was never called in the Story !
+stuff_2.meth(123) ** TypeError(123)  # raised
+stuff_2.mix('a', 'b') == (1, 2, 'a', 'b')  # returned
+stuff_2.mix(3, 4) == (1, 2, 3, 4)  # returned
+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)  # was never called in the Story !
+that_long_stuf_1.meth() == None  # returned
+that_long_stuf_1.mix() == (1,)  # returned
+that_long_stuf_1.mix(10) == (1, 10)  # returned
+that_long_stuf_1.mix(2) == (1, 2)  # returned
+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)  # was never called in the Story !
+that_long_stuf_2.mix(4) == (3, 4)  # returned
+test_pkg1.test_pkg2.test_mod.target('badarg') ** TypeError('badarg')  # raised
+test_pkg1.test_pkg2.test_mod.target() == None  # returned
+"""
+
 def test_story_empty_play_proxy_class():
     assert test_mod.Stuff(1, 2).mix(3, 4) == (1, 2, 3, 4)
 
@@ -252,10 +289,8 @@ def test_story_empty_play_proxy_class():
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
         raises(TypeError, obj.meth, 123)
-    from pprint import pprint as print
 
-    print(replay.calls.unexpected)
-    assert replay.missing() == format_calls({
+    assert replay.missing(prefix=False) == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): unexpected({
             ('mix', ('a', 'b'), frozenset([])): ((1, 2, 'a', 'b'), None),
             ('mix', (3, 4), frozenset([])): ((1, 2, 3, 4), None),
@@ -292,7 +327,7 @@ def test_story_half_play_proxy_class():
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
         raises(TypeError, obj.meth, 123)
-    assert replay.missing() == format_calls({
+    assert replay.missing(prefix=False) == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): {
             ('meth', (), frozenset([])): (None, None),
             ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
@@ -332,7 +367,7 @@ def test_story_full_play_proxy():
         raises(ValueError, test_mod.target, 1234)
         raises(TypeError, test_mod.target, 'asdf')
 
-    assert replay.missing() == format_calls({
+    assert replay.missing(prefix=False) == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),

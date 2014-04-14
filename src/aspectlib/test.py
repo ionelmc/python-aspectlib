@@ -32,11 +32,13 @@ With ``mock``::
     3
     >>> real.method.assert_called_with(3, 4, 5, key='value')
 """
-from collections import namedtuple
+import warnings
 from collections import defaultdict
+from collections import namedtuple
 from functools import partial
 from functools import wraps
 from inspect import isclass
+from operator import itemgetter
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
@@ -377,32 +379,38 @@ def _output_signature(out, name, args, kwargs, *resp):
     if resp:
         result, exception = resp
         if exception is None:
-            out.write(' == %s  # this result is returned\n' % repr(result))
+            out.write(' == %s  # returned\n' % repr(result))
         else:
-            out.write(' ** %s(%s)  # this exception is raised\n' % (qualname(type(exception)), ', '.join(repr(i) for i in args)))
+            out.write(' ** %s(%s)  # raised\n' % (qualname(type(exception)), ', '.join(repr(i) for i in args)))
 
 
-def format_calls(calls):
+def format_calls(calls, prefix=""):
     if calls:
-        out = StringIO()
-        instances = defaultdict(int)
-        for (name, args, kwargs), resp in calls.items():
-            if isinstance(resp, tuple):
-                _output_signature(out, name, args, kwargs, *resp)
-            else:
-                instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
-                instances[instance_name] += 1
-                instance_name = "%s_%s" % (instance_name, instances[instance_name])
-
-                out.write('%s = ' % instance_name)
-                _output_signature(out, name, args, kwargs)
-                if isinstance(resp, unexpected):
-                    out.write('  # was never called in the Story !')
-                out.write('\n')
-                for (name, args, kwargs), resp in resp.items():
-                    out.write('%s.' % instance_name)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "comparing unequal types not supported", DeprecationWarning)
+            out = StringIO()
+            out.write("### %s\n\n" % prefix)
+            instances = defaultdict(int)
+            for pk in sorted(calls, key=repr):
+                name, args, kwargs = pk
+                resp = calls[pk]
+                if isinstance(resp, tuple):
                     _output_signature(out, name, args, kwargs, *resp)
-        return out.getvalue()
+                else:
+                    instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
+                    instances[instance_name] += 1
+                    instance_name = "%s_%s" % (instance_name, instances[instance_name])
+                    out.write('%s = ' % instance_name)
+                    _output_signature(out, name, args, kwargs)
+                    if isinstance(resp, unexpected):
+                        out.write('  # was never called in the Story !')
+                    out.write('\n')
+                    for pk in sorted(resp, key=repr):
+                        name, args, kwargs = pk
+                        iresp = resp[pk]
+                        out.write('%s.' % instance_name)
+                        _output_signature(out, name, args, kwargs, *iresp)
+            return out.getvalue()
     else:
         return ""
 
@@ -417,5 +425,5 @@ class Replay(EntanglingBase):
         self._proxy = proxy
         self._recurse_lock = recurse_lock_factory()
 
-    def missing(self):
-        return format_calls(self.calls.unexpected)
+    def missing(self, prefix=True):
+        return format_calls(self.calls.unexpected, 'UNEXPECTED CALLS (add these in your story)' if prefix else '')

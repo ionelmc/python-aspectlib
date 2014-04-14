@@ -14,3 +14,7 @@ class Stuff(object):
     def mix(self, *args):
         self.meth()
         return self.args + args
+
+
+class ThatLONGStuf(Stuff):
+    pass
