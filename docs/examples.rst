@@ -77,19 +77,19 @@ Debugging
     ...     lazy=True,
     ... ):
     ...     s = socket.socket()
-    ...     s.connect(('google.com', 80))
-    ...     s.send(b'GET / HTTP/1.0\r\n\r\n')
+    ...     s.connect(('example.com', 80))
+    ...     s.send(b'GET / HTTP/1.1\r\nHost: example.com\r\n\r\n')
     ...     s.recv(8)
     ...     s.close()
     ...
-    {socket...}.connect(('google.com', 80))
+    {socket...}.connect(('example.com', 80))
     {socket...}.connect => None
-    {socket...}.send(...'GET / HTTP/1.0\r\n\r\n')
-    {socket...}.send => 18
-    18
+    {socket...}.send(...'GET / HTTP/1.1\r\nHost: example.com\r\n\r\n')
+    {socket...}.send => 37
+    37
     {socket...}.recv(8)
-    {socket...}.recv => ...HTTP/1.0...
-    ...'HTTP/1.0'
+    {socket...}.recv => ...HTTP/1.1...
+    ...'HTTP/1.1'
     ...
 
 The output looks a bit funky because it is written to be run by `doctest
