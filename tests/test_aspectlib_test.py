@@ -1,13 +1,20 @@
 from __future__ import print_function
 
 import os
+from pprint import pformat
 
 from pytest import raises
 
-from aspectlib.test import record, mock, Story, StoryResultWrapper, unexpected
 from aspectlib import PY2
+from aspectlib.test import format_calls
+from aspectlib.test import mock
+from aspectlib.test import record
+from aspectlib.test import Story
+from aspectlib.test import StoryResultWrapper
+from aspectlib.test import unexpected
 
 from test_pkg1.test_pkg2 import test_mod
+
 
 def module_fun(a, b=2):
     pass
@@ -202,7 +209,7 @@ def test_story_empty_play_proxy():
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
-    assert repr(replay.calls.unexpected) == repr({
+    assert replay.report() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),
@@ -248,7 +255,7 @@ def test_story_empty_play_proxy_class():
     from pprint import pprint as print
 
     print(replay.calls.unexpected)
-    assert repr(replay.calls.unexpected) == repr({
+    assert replay.report() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): unexpected({
             ('mix', ('a', 'b'), frozenset([])): ((1, 2, 'a', 'b'), None),
             ('mix', (3, 4), frozenset([])): ((1, 2, 3, 4), None),
@@ -285,10 +292,7 @@ def test_story_half_play_proxy_class():
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
         raises(TypeError, obj.meth, 123)
-    from pprint import pprint as print
-
-    print(replay.calls.unexpected)
-    assert repr(replay.calls.unexpected) == repr({
+    assert replay.report() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): {
             ('meth', (), frozenset([])): (None, None),
             ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
@@ -328,7 +332,7 @@ def test_story_full_play_proxy():
         raises(ValueError, test_mod.target, 1234)
         raises(TypeError, test_mod.target, 'asdf')
 
-    assert repr(replay.calls.unexpected) == repr({
+    assert replay.report() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),

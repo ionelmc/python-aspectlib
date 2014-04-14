@@ -15,9 +15,20 @@ if PY3:
 else:
     basestring = str, unicode
 
+FIRST_CAP_RE = re.compile('(.)([A-Z][a-z]+)')
+ALL_CAP_RE = re.compile('([a-z0-9])([A-Z])')
+
+
+def camelcase_to_underscores(name):
+    s1 = FIRST_CAP_RE.sub(r'\1_\2', name)
+    return ALL_CAP_RE.sub(r'\1_\2', s1).lower()
+
 
 def qualname(obj):
-    return '%s.%s' % (obj.__module__, obj.__name__)
+    if hasattr(obj, '__module__'):
+        return '%s.%s' % (obj.__module__, obj.__name__)
+    else:
+        return obj.__name__
 
 
 def force_bind(func):

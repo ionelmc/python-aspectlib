@@ -36,16 +36,23 @@ from collections import namedtuple
 from functools import partial
 from functools import wraps
 from inspect import isclass
+from pprint import pformat
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
 from aspectlib import weave
+
+from .utils import camelcase_to_underscores
+from .utils import qualname
+
 try:
     from dummy_thread import allocate_lock
 except ImportError:
     from _dummy_thread import allocate_lock
-
-from .utils import qualname
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 __all__ = 'mock', 'record', "Story"
 
@@ -359,6 +366,46 @@ class Story(EntanglingBase):
 ReplayPair = namedtuple("ReplayPair", ('expected', 'unexpected'))
 
 
+def _output_signature(out, name, args, kwargs, *resp):
+
+    out.write('%s(%s%s%s)' % (
+        name,
+        ', '.join(repr(i) for i in args),
+        ', ' if kwargs else '',
+        ', '.join("%s=%r" % i for i in (kwargs.items() if isinstance(kwargs, dict) else kwargs)),
+    ))
+    if resp:
+        result, exception = resp
+        if exception is None:
+            out.write(' == %s  # this result is returned\n' % repr(result))
+        else:
+            out.write(' ** %s(%s)  # this exception is raised\n' % (qualname(type(exception)), ', '.join(repr(i) for i in args)))
+
+def format_calls(calls):
+    if calls:
+        out = StringIO()
+        from collections import Counter
+        instances = Counter()
+        for (name, args, kwargs), resp in calls.items():
+            if isinstance(resp, tuple):
+                _output_signature(out, name, args, kwargs, *resp)
+            else:
+                instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
+                instances[instance_name] += 1
+                instance_name = "%s_%s" % (instance_name, instances[instance_name])
+
+                out.write('%s = ' % instance_name)
+                _output_signature(out, name, args, kwargs)
+                if isinstance(resp, unexpected):
+                    out.write('  # was never called in the Story !')
+                out.write('\n')
+                for (name, args, kwargs), resp in resp.items():
+                    out.write('%s.' % instance_name)
+                    _output_signature(out, name, args, kwargs, *resp)
+        return out.getvalue()
+    else:
+        return ""
+
 class Replay(EntanglingBase):
     FunctionWrapper = ReplayFunctionWrapper
 
@@ -368,3 +415,6 @@ class Replay(EntanglingBase):
         self._ids = {}
         self._proxy = proxy
         self._recurse_lock = recurse_lock_factory()
+
+    def report(self):
+        return format_calls(self.calls.unexpected)
