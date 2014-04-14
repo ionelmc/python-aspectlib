@@ -42,9 +42,9 @@ install:
 script:
   - |
     if [[ $WITH_COVERAGE == yes ]]; then
-      tox -v 
+      tox -v -- py.test --cov aspectlib -vv
     else
-      tox -v -- py.test
+      tox -v -- py.test -vv
     fi
 after_success:
   - |
