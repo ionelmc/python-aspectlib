@@ -26,6 +26,12 @@ try:
 except ImportError:
     ClassType = type
 
+from .utils import force_bind
+from .utils import make_method_matcher
+from .utils import mimic
+from .utils import Sentinel
+
+
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
 
 logger = getLogger(__name__)
@@ -37,24 +43,10 @@ PYPY = platform.python_implementation() == 'PyPy'
 if PY3:
     unicode = str  # pylint: disable=W0622
 
-
-class _Sentinel(object):
-    def __init__(self, name, doc=''):
-        self.name = name
-        self.__doc__ = doc
-
-    def __repr__(self):
-        if not self.__doc__:
-            return "%s" % self.name
-        else:
-            return "%s: %s" % (self.name, self.__doc__)
-    __str__ = __repr__
-
-UNSPECIFIED = _Sentinel('UNSPECIFIED')
+UNSPECIFIED = Sentinel('UNSPECIFIED')
 ABSOLUTELLY_ALL_METHODS = re.compile('.*')
 ALL_METHODS = re.compile('(?!__getattribute__$)')
 NORMAL_METHODS = re.compile('(?!__.*__$)')
-REGEX_TYPE = type(NORMAL_METHODS)
 VALID_IDENTIFIER = re.compile(r'^[^\W\d]\w*$', re.UNICODE if PY3 else 0)
 
 
@@ -99,22 +91,6 @@ class Return(object):
 
     def __init__(self, value):
         self.value = value
-
-
-def mimic(wrapper, func):
-    try:
-        wrapper.__name__ = func.__name__
-    except (TypeError, AttributeError):
-        pass
-    try:
-        wrapper.__module__ = func.__module__
-    except (TypeError, AttributeError):
-        pass
-    try:
-        wrapper.__doc__ = func.__doc__
-    except (TypeError, AttributeError):
-        pass
-    return wrapper
 
 
 class Aspect(object):
@@ -262,7 +238,7 @@ class Rollback(object):
     rollback = __call__ = __exit__
 
 
-def checked_apply(aspects, function):
+def _checked_apply(aspects, function):
     logger.debug(' - Applying aspects %s to function %s.', aspects, function)
     if callable(aspects):
         wrapper = aspects(function)
@@ -275,7 +251,7 @@ def checked_apply(aspects, function):
     return wrapper
 
 
-def check_name(name):
+def _check_name(name):
     if not VALID_IDENTIFIER.match(name):
         raise SyntaxError(
             "Could not match %r to %r. It should be a string of "
@@ -336,7 +312,7 @@ def weave(target, aspects, **options):
     elif isinstance(target, (unicode, str)):
         parts = target.split('.')
         for part in parts:
-            check_name(part)
+            _check_name(part)
 
         if len(parts) == 1:
             __import__(part)
@@ -383,7 +359,7 @@ def weave(target, aspects, **options):
         logger.debug("Weaving %r (%s) as instance method.", target, name)
         assert not options, "keyword arguments are not supported when weaving instance methods."
         func = getattr(inst, name)
-        setattr(inst, name, checked_apply(aspects, func).__get__(inst, type(inst)))
+        setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
     elif PY3 and isfunction(target):
         owner = __import__(target.__module__)
@@ -393,7 +369,7 @@ def weave(target, aspects, **options):
         name = target.__name__
         logger.debug("Weaving %r (%s) as a property.", target, name)
         func = owner.__dict__[name]
-        return patch_module(owner, name, checked_apply(aspects, func), func, **options)
+        return patch_module(owner, name, _checked_apply(aspects, func), func, **options)
     elif PY2 and isfunction(target):
         return weave_module_function(__import__(target.__module__), target, aspects, **options)
     elif PY2 and ismethod(target):
@@ -403,7 +379,7 @@ def weave(target, aspects, **options):
             logger.debug("Weaving %r (%s) as instance method.", target, name)
             assert not options, "keyword arguments are not supported when weaving instance methods."
             func = getattr(inst, name)
-            setattr(inst, name, checked_apply(aspects, func).__get__(inst, type(inst)))
+            setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
             return Rollback(lambda: delattr(inst, name))
         else:
             klass = target.im_class
@@ -417,33 +393,29 @@ def weave(target, aspects, **options):
         raise UnsupportedType("Can't weave object %s of type %s" % (target, type(target)))
 
 
-def rewrap_method(func, klass, aspect):
+def _rewrap_method(func, klass, aspect):
     if isinstance(func, staticmethod):
         if hasattr(func, '__func__'):
-            return staticmethod(checked_apply(aspect, func.__func__))
+            return staticmethod(_checked_apply(aspect, func.__func__))
         else:
-            return staticmethod(checked_apply(aspect, func.__get__(None, klass)))
+            return staticmethod(_checked_apply(aspect, func.__get__(None, klass)))
     elif isinstance(func, classmethod):
         if hasattr(func, '__func__'):
-            return classmethod(checked_apply(aspect, func.__func__))
+            return classmethod(_checked_apply(aspect, func.__func__))
         else:
-            return classmethod(checked_apply(aspect, func.__get__(None, klass).im_func))
+            return classmethod(_checked_apply(aspect, func.__get__(None, klass).im_func))
     else:
-        return checked_apply(aspect, func)
-
-
-def make_method_matcher(regex_or_regexstr_or_namelist):
-    if isinstance(regex_or_regexstr_or_namelist, (str, unicode)):
-        return re.compile(regex_or_regexstr_or_namelist).match
-    elif isinstance(regex_or_regexstr_or_namelist, (list, tuple)):
-        return regex_or_regexstr_or_namelist.__contains__
-    elif isinstance(regex_or_regexstr_or_namelist, REGEX_TYPE):
-        return regex_or_regexstr_or_namelist.match
-    else:
-        raise TypeError("Unacceptable methods spec %r." % regex_or_regexstr_or_namelist)
+        return _checked_apply(aspect, func)
 
 
 def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
+    """
+    Low-level weaver for "whole module weaving".
+
+    .. warning:: You should not use this directly.
+
+    :returns: An :obj:`aspectlib.Entanglement` object.
+    """
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
 
@@ -464,6 +436,11 @@ def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
 
 def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=False,
                 owner=None, name=None, aliases=True):
+    """
+    Low-level weaver for classes.
+
+    .. warning:: You should not use this directly.
+    """
 
     assert isclass(klass), "Can't weave %r. Must be a class." % klass
     entanglement = Rollback()
@@ -481,15 +458,15 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
             for attr in dir(self):
                 func = getattr(self, attr, None)
                 if method_matches(attr) and attr not in wrappers and isroutine(func):
-                    setattr(self, attr, checked_apply(aspect, force_bind(func)).__get__(self, SubClass))
+                    setattr(self, attr, _checked_apply(aspect, force_bind(func)).__get__(self, SubClass))
 
         wrappers = {
-            '__init__': checked_apply(aspect, __init__) if method_matches('__init__') else __init__
+            '__init__': _checked_apply(aspect, __init__) if method_matches('__init__') else __init__
         }
         for attr, func in klass.__dict__.items():
             if method_matches(attr):
                 if ismethoddescriptor(func):
-                    wrappers[attr] = rewrap_method(func, klass, aspect)
+                    wrappers[attr] = _rewrap_method(func, klass, aspect)
 
         logger.debug(" * Creating subclass with attributes %r", wrappers)
         name = name or klass.__name__
@@ -504,7 +481,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
             if method_matches(attr):
                 if isroutine(func):
                     logger.debug(" * Patching attributes %r (original: %r).", attr, func)
-                    setattr(klass, attr, rewrap_method(func, klass, aspect))
+                    setattr(klass, attr, _rewrap_method(func, klass, aspect))
                 else:
                     continue
                 original[attr] = func
@@ -517,6 +494,17 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
 
 
 def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
+    """
+    Low-level attribute patcher.
+
+    :param module module: Object to patch.
+    :param str name: Attribute to patch
+    :param replacement: The replacement value.
+    :param original: The original value (in case the object beeing patched uses descriptors or is plain weird).
+    :param bool aliases: If ``True`` patch all the attributes that have the same original value.
+
+    :returns: An :obj:`aspectlib.Entanglement` object.
+    """
     rollback = Rollback()
     seen = False
     original = getattr(module, name) if original is UNSPECIFIED else original
@@ -553,15 +541,14 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
     return rollback
 
 
-def force_bind(func):
-    def bound(self, *args, **kwargs):  # pylint: disable=W0613
-        return func(*args, **kwargs)
-    bound.__name__ = func.__name__
-    bound.__doc__ = func.__doc__
-    return bound
+def weave_module_function(module, target, aspect, force_name=None, **options):
+    """
+    Low-level weaver for one function from a specified module.
 
+    .. warning:: You should not use this directly.
 
-def weave_module_function(mod, target, aspect, force_name=None, **options):
+    :returns: An :obj:`aspectlib.Entanglement` object.
+    """
     logger.debug("Weaving %r as plain function.", target)
     name = force_name or target.__name__
-    return patch_module(mod, name, checked_apply(aspect, target), original=target, **options)
+    return patch_module(module, name, _checked_apply(aspect, target), original=target, **options)

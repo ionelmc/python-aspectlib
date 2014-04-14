@@ -1081,7 +1081,7 @@ def test_unspecified_str():
 
 
 def test_sentinel():
-    assert repr(aspectlib._Sentinel('STUFF', "Means it's some stuff")) == "STUFF: Means it's some stuff"
+    assert repr(aspectlib.Sentinel('STUFF', "Means it's some stuff")) == "STUFF: Means it's some stuff"
 
 
 def _internal():

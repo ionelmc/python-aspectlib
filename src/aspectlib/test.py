@@ -45,16 +45,14 @@ try:
 except ImportError:
     from _dummy_thread import allocate_lock
 
+from .utils import qualname
+
 __all__ = 'mock', 'record', "Story"
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
 Result = namedtuple('Result', ('self', 'args', 'kwargs', 'result', 'exception'))
 ResultEx = namedtuple('ResultEx', ('self', 'name', 'args', 'kwargs', 'result', 'exception'))
-
-
-def qualname(obj):
-    return '%s.%s' % (obj.__module__, obj.__name__)
 
 
 def mock(return_value, call=False):
