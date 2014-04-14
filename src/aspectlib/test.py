@@ -94,7 +94,7 @@ class RecordingFunctionWrapper(object):
         self.__entanglement = None
         self.__iscalled = iscalled
         self.__binding__ = binding
-        self.__callback__ = callback
+        self.__callback = callback
         self.__extended = extended
         self.__results = results
         self.__recurse_lock = recurse_lock
@@ -124,8 +124,8 @@ class RecordingFunctionWrapper(object):
                 self.__recurse_lock.release()
 
     def __record(self, args, kwargs, *response):
-        if self.__callback__ is not None:
-            self.__callback__(self.__binding__, self.__name, args, kwargs, *response)
+        if self.__callback is not None:
+            self.__callback(self.__binding__, self.__name, args, kwargs, *response)
         if self.calls is not None:
             if self.__extended:
                 self.calls.append((ResultEx if response else CallEx)(
@@ -141,7 +141,7 @@ class RecordingFunctionWrapper(object):
             self.__wrapped.__get__(instance, owner),
             iscalled=self.__iscalled,
             calls=self.calls,
-            callback=self.__callback__,
+            callback=self.__callback,
             extended=self.__extended,
             results=self.__results,
             binding=instance,
@@ -233,10 +233,10 @@ class StoryFunctionWrapper(object):
         else:
             if self._name == '__init__':
                 pk = qualname(self._owner), args, frozenset(kwargs.items())
-                story.ids[self._binding] = self._save(story.calls, pk, {})
+                story._ids[self._binding] = self._save(story.calls, pk, {})
             else:
                 pk = self._name, args, frozenset(kwargs.items())
-                return StoryResultWrapper(partial(self._save, story.ids[self._binding], pk))
+                return StoryResultWrapper(partial(self._save, story._ids[self._binding], pk))
 
     def _save(self, calls, pk, response):
         assert pk not in calls, "Story creation inconsistency. There is already a call cache for %r and it's: %r." % (pk, calls[pk])
@@ -268,14 +268,14 @@ class ReplayFunctionWrapper(StoryFunctionWrapper):
                 pk = qualname(self._owner), args, frozenset(kwargs.items())
                 calls = story.calls
                 if pk in calls.expected:
-                    story.ids[self._binding] = ReplayPair(calls.expected[pk], calls.unexpected.setdefault(pk, {}))
+                    story._ids[self._binding] = ReplayPair(calls.expected[pk], calls.unexpected.setdefault(pk, {}))
                     return
-                elif story.isproxy:
-                    story.ids[self._binding] = ReplayPair({}, calls.unexpected.setdefault(pk, unexpected()))
+                elif story._proxy:
+                    story._ids[self._binding] = ReplayPair({}, calls.unexpected.setdefault(pk, unexpected()))
                     return self._wrapped(*args, **kwargs)
             else:
                 pk = self._name, args, frozenset(kwargs.items())
-                calls = story.ids[self._binding]
+                calls = story._ids[self._binding]
 
         if pk in calls.expected:
             result, exception = calls.expected[pk]
@@ -283,15 +283,22 @@ class ReplayFunctionWrapper(StoryFunctionWrapper):
                 return result
             else:
                 raise exception
-        elif story.isproxy:
+        elif story._proxy:
+            record = not story._recurse_lock or story._recurse_lock.acquire(False)
             try:
-                result = self._wrapped(*args, **kwargs)
-            except Exception as exc:
-                calls.unexpected[pk] = None, exc
-                raise
-            else:
-                calls.unexpected[pk] = result, None
-                return result
+                try:
+                    result = self._wrapped(*args, **kwargs)
+                except Exception as exc:
+                    if record:
+                        calls.unexpected[pk] = None, exc
+                    raise
+                else:
+                    if record:
+                        calls.unexpected[pk] = result, None
+                    return result
+            finally:
+                if record and story._recurse_lock:
+                    story._recurse_lock.release()
         else:
             raise AssertionError("Unexpected call to %s with args:%s kwargs:%s" % pk)
 
@@ -346,7 +353,7 @@ class Story(EntanglingBase):
     def __init__(self, target):
         self._target = target
         self.calls = {}  # if calls is None else calls
-        self.ids = {}
+        self._ids = {}
 
     def replay(self, **options):
         return Replay(self._target, self.calls, **options)
@@ -360,6 +367,6 @@ class Replay(EntanglingBase):
     def __init__(self, target, expected, proxy=False, recurse_lock_factory=allocate_lock):
         self._target = target
         self.calls = ReplayPair(expected, {})
-        self.ids = {}
-        self.isproxy = proxy
-        self.recurse_lock = recurse_lock_factory()
+        self._ids = {}
+        self._proxy = proxy
+        self._recurse_lock = recurse_lock_factory()

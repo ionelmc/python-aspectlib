@@ -12,4 +12,5 @@ class Stuff(object):
         pass
 
     def mix(self, *args):
+        self.meth()
         return self.args + args
