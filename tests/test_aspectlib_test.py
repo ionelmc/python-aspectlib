@@ -254,6 +254,8 @@ def test_story_empty_play_proxy_class_missing_report():
         obj.meth()
         obj.mix(10)
 
+    print(repr(replay.diff()))
+
     assert replay.diff() == """--- expected
 +++ actual
 @@ -0,0 +1,17 @@
@@ -274,7 +276,28 @@ def test_story_empty_play_proxy_class_missing_report():
 +that_long_stuf_2.mix(4) == (3, 4)  # returned
 +test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',))  # raised
 +test_pkg1.test_pkg2.test_mod.target() == None  # returned
+""" or replay.diff() == """--- expected """ """
++++ actual """ """
+@@ -1,0 +1,17 @@
++stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)  # was never called in the Story !
++stuff_1.mix('a', 'b') == (0, 1, 'a', 'b')  # returned
++stuff_1.mix(3, 4) == (0, 1, 3, 4)  # returned
++stuff_1.raises(123) ** ValueError((123,))  # raised
++stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)  # was never called in the Story !
++stuff_2.mix('a', 'b') == (1, 2, 'a', 'b')  # returned
++stuff_2.mix(3, 4) == (1, 2, 3, 4)  # returned
++stuff_2.raises(123) ** ValueError((123,))  # raised
++that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)  # was never called in the Story !
++that_long_stuf_1.meth() == None  # returned
++that_long_stuf_1.mix() == (1,)  # returned
++that_long_stuf_1.mix(10) == (1, 10)  # returned
++that_long_stuf_1.mix(2) == (1, 2)  # returned
++that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)  # was never called in the Story !
++that_long_stuf_2.mix(4) == (3, 4)  # returned
++test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',))  # raised
++test_pkg1.test_pkg2.test_mod.target() == None  # returned
 """
+
 
 def test_story_empty_play_proxy_class():
     assert test_mod.Stuff(1, 2).mix(3, 4) == (1, 2, 3, 4)
