@@ -30,12 +30,15 @@ from .utils import make_method_matcher
 from .utils import mimic
 from .utils import PY2
 from .utils import PY3
+from .utils import logf
 from .utils import Sentinel
 
 
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
 
 logger = getLogger(__name__)
+logdebug = logf(logger.debug)
+logexception = logf(logger.exception)
 
 
 UNSPECIFIED = Sentinel('UNSPECIFIED')
@@ -113,7 +116,7 @@ class Aspect(object):
                     try:
                         advice = next(advisor)
                         while True:
-                            logger.debug('Got advice %r from %s', advice, self.advising_function)
+                            logdebug('Got advice %r from %s', advice, self.advising_function)
                             if advice is Proceed or advice is None or isinstance(advice, Proceed):
                                 if isinstance(advice, Proceed):
                                     args = advice.args
@@ -123,22 +126,22 @@ class Aspect(object):
                                     try:
                                         generated = next(gen)
                                     except StopIteration as exc:
-                                        logger.exception("The cutpoint has been exhausted (early).")
+                                        logexception("The cutpoint has been exhausted (early).")
                                         result = exc.args and exc.args[0]
                                     else:
                                         while True:
                                             try:
                                                 sent = yield generated
                                             except GeneratorExit as exc:
-                                                logger.exception("Got GeneratorExit while consuming the cutpoint")
+                                                logexception("Got GeneratorExit while consuming the cutpoint")
                                                 gen.close()
                                                 raise exc
                                             except BaseException as exc:
-                                                logger.exception("Got exception %r. Throwing it the cutpoint", exc)
+                                                logexception("Got exception %r. Throwing it the cutpoint", exc)
                                                 try:
                                                     generated = gen.throw(*sys.exc_info())
                                                 except StopIteration as exc:
-                                                    logger.exception("The cutpoint has been exhausted.")
+                                                    logexception("The cutpoint has been exhausted.")
                                                     result = exc.args and exc.args[0]
                                                     break
                                             else:
@@ -148,7 +151,7 @@ class Aspect(object):
                                                     else:
                                                         generated = gen.send(sent)
                                                 except StopIteration as exc:
-                                                    logger.exception("The cutpoint has been exhausted.")
+                                                    logexception("The cutpoint has been exhausted.")
                                                     result = exc.args and exc.args[0]
                                                     break
                                 except BaseException as exc:
@@ -177,7 +180,7 @@ class Aspect(object):
                 try:
                     advice = next(advisor)
                     while True:
-                        logger.debug('Got advice %r from %s', advice, self.advising_function)
+                        logdebug('Got advice %r from %s', advice, self.advising_function)
                         if advice is Proceed or advice is None or isinstance(advice, Proceed):
                             if isinstance(advice, Proceed):
                                 args = advice.args
@@ -234,7 +237,7 @@ class Rollback(object):
 
 
 def _checked_apply(aspects, function):
-    logger.debug(' - Applying aspects %s to function %s.', aspects, function)
+    logdebug(' > applying aspects %s to function %s.', aspects, function)
     if callable(aspects):
         wrapper = aspects(function)
         assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspects, wrapper)
@@ -331,27 +334,28 @@ def weave(target, aspects, **options):
             while path:
                 owner = getattr(owner, path.popleft())
 
-        logger.debug("Patching %s from %s ...", name, owner)
+        logdebug(" ~ patching %s from %s ...", name, owner)
         obj = getattr(owner, name)
 
         if isinstance(obj, (type, ClassType)):
-            logger.debug(" .. as a class %r.", obj)
+            logdebug("   .. as a class %r.", obj)
             return weave_class(
                 obj, aspects,
                 owner=owner, name=name, **options
             )
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
-            logger.debug(" .. as a callable %r.", obj)
+            logdebug("   .. as a callable %r.", obj)
             return weave_module_function(owner, obj, aspects, force_name=name, **options)
         else:
             return weave(obj, aspects, **options)
     name = getattr(target, '__name__', None)
+    logdebug("weave (target=%s, aspects=%s, name=%s, **options=%s)", target, aspects, name, options)
     if name and getattr(__builtin__, name, None) is target:
         return weave_module_function(__builtin__, target, aspects, **options)
     elif PY3 and ismethod(target):
         inst = target.__self__
         name = target.__name__
-        logger.debug("Weaving %r (%s) as instance method.", target, name)
+        logdebug(" ~ patching %r (%s) as instance method.", target, name)
         assert not options, "keyword arguments are not supported when weaving instance methods."
         func = getattr(inst, name)
         setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
@@ -362,7 +366,7 @@ def weave(target, aspects, **options):
         while path:
             owner = getattr(owner, path.popleft())
         name = target.__name__
-        logger.debug("Weaving %r (%s) as a property.", target, name)
+        logdebug(" ~ patching %r (%s) as a property.", target, name)
         func = owner.__dict__[name]
         return patch_module(owner, name, _checked_apply(aspects, func), func, **options)
     elif PY2 and isfunction(target):
@@ -371,7 +375,7 @@ def weave(target, aspects, **options):
         if target.im_self:
             inst = target.im_self
             name = target.__name__
-            logger.debug("Weaving %r (%s) as instance method.", target, name)
+            logdebug(" ~ patching %r (%s) as instance method.", target, name)
             assert not options, "keyword arguments are not supported when weaving instance methods."
             func = getattr(inst, name)
             setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
@@ -413,6 +417,8 @@ def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
     """
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
+    logdebug("weave_module (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)",
+          module, aspect, methods, lazy, options)
 
     for attr in dir(module):
         func = getattr(module, attr)
@@ -445,9 +451,9 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         for sub_class in klass.__subclasses__():
             if not issubclass(sub_class, Fabric):
                 entanglement.merge(weave_class(sub_class, aspect, methods=methods, subclasses=subclasses, lazy=lazy))
+    logdebug("weave_class (klass=%r, methods=%s, subclasses=%s, lazy=%s, owner=%s, name=%s, aliases=%s)",
+          klass, methods, subclasses, lazy, owner, name, aliases)
     if lazy:
-        logger.debug("Weaving %r as class (on demand at __init__ time).", klass)
-
         def __init__(self, *args, **kwargs):
             super(SubClass, self).__init__(*args, **kwargs)
             for attr in dir(self):
@@ -463,19 +469,18 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
                 if ismethoddescriptor(func):
                     wrappers[attr] = _rewrap_method(func, klass, aspect)
 
-        logger.debug(" * Creating subclass with attributes %r", wrappers)
+        logdebug(" * creating subclass with attributes %r", wrappers)
         name = name or klass.__name__
         SubClass = type(name, (klass, Fabric), wrappers)
         SubClass.__module__ = klass.__module__
         module = owner or __import__(klass.__module__)
         entanglement.merge(patch_module(module, name, SubClass, original=klass, aliases=aliases))
     else:
-        logger.debug("Weaving %r as class.", klass)
         original = {}
         for attr, func in klass.__dict__.items():
             if method_matches(attr):
                 if isroutine(func):
-                    logger.debug(" * Patching attributes %r (original: %r).", attr, func)
+                    logdebug(" ~ patching attributes %r (original: %r).", attr, func)
                     setattr(klass, attr, _rewrap_method(func, klass, aspect))
                 else:
                     continue
@@ -513,14 +518,14 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
             obj = getattr(module, alias)
             if obj is original:
                 if aliases or alias == name:
-                    logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
+                    logdebug(" ~ saving %s on %s.%s ...", replacement, location, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))
                 if alias == name:
                     seen = True
             elif alias == name:
                 if ismethod(obj):
-                    logger.debug(" * Saving %s on %s.%s ...", replacement, location, alias)
+                    logdebug(" ~ saving %s on %s.%s ...", replacement, location, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))
                 else:
@@ -530,7 +535,7 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
         warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module.' % (
             location, name, replacement
         ))
-        logger.debug(" * Saving %s on %s.%s ...", replacement, location, name)
+        logdebug(" ~ saving %s on %s.%s ...", replacement, location, name)
         setattr(module, name, replacement)
         rollback.merge(lambda: setattr(module, name, original))
     return rollback
@@ -544,6 +549,7 @@ def weave_module_function(module, target, aspect, force_name=None, **options):
 
     :returns: An :obj:`aspectlib.Entanglement` object.
     """
-    logger.debug("Weaving %r as plain function.", target)
+    logdebug("weave_module_function (module=%s, target=%s, aspect=%s, force_name=%s, **options=%s",
+          module, target, aspect, force_name, options)
     name = force_name or target.__name__
     return patch_module(module, name, _checked_apply(aspect, target), original=target, **options)

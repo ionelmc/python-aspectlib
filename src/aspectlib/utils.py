@@ -18,6 +18,14 @@ else:
 FIRST_CAP_RE = re.compile('(.)([A-Z][a-z]+)')
 ALL_CAP_RE = re.compile('([a-z0-9])([A-Z])')
 
+DEBUG = False
+
+def logf(logger_func):
+    @wraps(logger_func)
+    def log_wrapper(*args):
+        if DEBUG:
+            return logger_func(*args)
+    return log_wrapper
 
 def camelcase_to_underscores(name):
     s1 = FIRST_CAP_RE.sub(r'\1_\2', name)
