@@ -1,6 +1,11 @@
 def target():
     return
 
+
+def func(*a):
+    pass
+
+
 def raises(*a):
     raise ValueError(a)
 

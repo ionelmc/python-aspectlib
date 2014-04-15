@@ -439,21 +439,35 @@ class Replay(EntanglingBase):
         self._dump = dump
         self._recurse_lock = recurse_lock_factory()
 
-    def unexpected(self):
+    def unexpected(self, _missing=False):
+        """
+        Returns a pretty text representation of just the unexpected calls.
+        """
         unexpected = {}
-        actual = self._calls.actual
-        expected = self._calls.expected
+        if _missing:
+            expected, actual = self._calls.actual, self._calls.expected
+        else:
+            actual, expected = self._calls.actual, self._calls.expected
+
         for pk, val in actual.items():
             expected_val = expected.get(pk, None)
             if pk not in expected or val != expected_val:
-                if isinstance(val, tuple) or expected_val is None:
+                if isinstance(val, tuple):
                     unexpected[pk] = val
+                elif expected_val is None:
+                    unexpected[pk] = Unexpected(val)
                 else:
-                    iunexpected = unexpected[pk] = type(val)()
+                    iunexpected = unexpected[pk] = {}
                     for pk, val in val.items():
                         if pk not in expected_val:
                             iunexpected[pk] = val
         return format_calls(unexpected)
+
+    def missing(self):
+        """
+        Returns a pretty text representation of just the missing calls.
+        """
+        return self.unexpected(_missing=True)
 
     def diff(self):
         """
@@ -489,7 +503,7 @@ def format_calls(calls):
                 instance_name = "%s_%s" % (instance_name, instances[instance_name])
                 out.write('%s = %s' % (instance_name, make_signature(name, args, kwargs)))
                 if isinstance(resp, Unexpected):
-                    out.write('  # was never called in the Story !')
+                    out.write('  # was never called !')
                 out.write('\n')
                 for pk in sorted(resp, key=repr):
                     name, args, kwargs = pk

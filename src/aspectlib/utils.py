@@ -128,12 +128,12 @@ def make_signature(name, args, kwargs, *resp):
     if resp:
         result, exception = resp
         if exception is None:
-            return '%s == %s  # returned\n' % (sig, repr_ex(result))
+            return '%s == %s  # returns\n' % (sig, repr_ex(result))
         else:
             if isclass(exception):
-                return '%s ** %s  # raised\n' % (sig, qualname(exception))
+                return '%s ** %s  # raises\n' % (sig, qualname(exception))
             else:
-                return '%s ** %s(%s)  # raised\n' % (
+                return '%s ** %s(%s)  # raises\n' % (
                     sig,
                     qualname(type(exception)),
                     ', '.join(repr(i) for i in exception.args)
