@@ -45,6 +45,7 @@ from aspectlib import mimic
 from aspectlib import weave
 
 from .utils import camelcase_to_underscores
+from .utils import make_signature
 from .utils import qualname
 
 try:
@@ -262,9 +263,9 @@ class StoryFunctionWrapper(object):
         ), self)
 
 
-class unexpected(dict):
+class Unexpected(dict):
     def __repr__(self):
-        return "unexpected(%s)" % super(unexpected, self).__repr__()
+        return "Unexpected(%s)" % super(Unexpected, self).__repr__()
 
 
 class ReplayFunctionWrapper(StoryFunctionWrapper):
@@ -281,7 +282,7 @@ class ReplayFunctionWrapper(StoryFunctionWrapper):
                     story._ids[self._binding] = ReplayPair(calls.expected[pk], calls.unexpected.setdefault(pk, {}))
                     return
                 elif story._proxy:
-                    story._ids[self._binding] = ReplayPair({}, calls.unexpected.setdefault(pk, unexpected()))
+                    story._ids[self._binding] = ReplayPair({}, calls.unexpected.setdefault(pk, Unexpected()))
                     return self._wrapped(*args, **kwargs)
             else:
                 pk = self._name, args, frozenset(kwargs.items())
@@ -344,12 +345,16 @@ class StoryResultWrapper(object):
 
 
 class EntanglingBase(object):
+    _target = None
+    _options = None
 
     def __enter__(self):
+        self._options.setdefault('methods', ALL_METHODS)
+
         self.__entanglement = weave(
             self._target,
             partial(self.FunctionWrapper, story=self),
-            methods=ALL_METHODS,
+            **self._options
         )
         return self
 
@@ -378,65 +383,8 @@ class Story(EntanglingBase):
             ...     mymod.func('some arg') == 'some result'
             ...     mymod.func('bad arg') ** ValueError("can't use this")
 
-    *   **The replay**: You run the code uses the interfaces mocked in the `story`. The `replay` always starts from a
-        `story` instance and it runs in two modes:
-
-        *   **stub mode**: The default. Unexpected uses of the mocked interfaces raise errors. Example:
-
-            ::
-
-                >>> with story.replay():
-                ...     assert mymod.func('some arg') == 'some result'
-                ...     try:
-                ...         mymod.func('bad arg')
-                ...     except ValueError as exc:
-                ...         print("Sucess: exception <%s> was raised." % exc) # test success
-                ...     else:
-                ...         raise AssertionError("The test expected MyException to be raised")
-                Sucess: exception <can't use this> was raised.
-
-            While in the **stub mode**, if you try to run ``mymod.function('unexpected arg')`` you will get an
-            ``AssertionError`` as that call wasn't specified in the **story**. Example:
-
-            ::
-
-                >>> with story.replay():
-                ...     mymod.func('unexpected arg')
-                Traceback (most recent call last):
-                  ...
-                  File "...aspectlib...test.py", line ..., in __call__
-                    raise AssertionError("Unexpected call to %s with args:%s kwargs:%s" % pk)
-                AssertionError: Unexpected call to mymod.func with args:('unexpected arg',) kwargs:frozenset(...)
-
-        *   `proxy mode`: Unexpected uses are allowed but they are collected for later inspection. Example:
-
-            ::
-
-                >>> with story.replay(proxy=True) as replay:
-                ...     assert mymod.func('some arg') == 'some result'
-                ...     try:
-                ...         mymod.func('bad arg')
-                ...     except ValueError as exc:
-                ...         print("Sucess: exception <%s> was raised." % exc) # test success
-                ...     else:
-                ...         raise AssertionError("The test expected MyException to be raised")
-                ...     mymod.func('unexpected arg')
-                Sucess: exception <can't use this> was raised.
-                Got unexpected arg in the real code !
-
-
-    One way to use this on existing code where it's not clear what needs to be written in the **story** is to start with
-    an empty **story**, run the test code, check the unexpected usage and write the story from that. Example:
-
-    ::
-
-        >>> print(replay.missing())
-        ### UNEXPECTED CALLS (add these in your story)
-        <BLANKLINE>
-        mymod.func('unexpected arg') == None  # returned
-        <BLANKLINE>
-
-    Now you can just copy that in your story.
+    *   **The replay**: You run the code uses the interfaces mocked in the `story`. The :obj:`replay
+        <aspectlib.test.Story.replay>` always starts from a `story` instance.
 
     :param target: Targets to weave in the `story`/`replay` transactions.
     :type target: Same as for :obj:`aspectlib.weave`.
@@ -449,66 +397,27 @@ class Story(EntanglingBase):
     """
     FunctionWrapper = StoryFunctionWrapper
 
-    def __init__(self, target):
+    def __init__(self, target, **options):
         self._target = target
+        self._options = options
         self.calls = {}  # if calls is None else calls
         self._ids = {}
 
     def replay(self, **options):
         """
-        :param bool proxy: If ``True`` the `replay` will work in `proxy mode`. Default: ``False`` (`stub mode`).
+        :param bool proxy:
+            If ``True`` then unexpected uses are allowed but they are collected for later use. Default: ``True`` (`stub
+            mode`).
+        :param bool check:
+            If ``True`` then an ``AssertionError`` is raised when there were unexpected calls. Default: ``True``.
+        :param bool dump:
+            If ``True`` then the unexpected calls will be printed (to ``sys.stdout``). Default: ``True``.
         :returns: A :obj:`aspectlib.test.Replay` object.
         """
+        options.update(self._options)
         return Replay(self._target, self.calls, **options)
 
 ReplayPair = namedtuple("ReplayPair", ('expected', 'unexpected'))
-
-
-def _output_signature(out, name, args, kwargs, *resp):
-
-    out.write('%s(%s%s%s)' % (
-        name,
-        ', '.join(repr(i) for i in args),
-        ', ' if kwargs else '',
-        ', '.join("%s=%r" % i for i in (kwargs.items() if isinstance(kwargs, dict) else kwargs)),
-    ))
-    if resp:
-        result, exception = resp
-        if exception is None:
-            out.write(' == %s  # returned\n' % repr(result))
-        else:
-            out.write(' ** %s(%s)  # raised\n' % (qualname(type(exception)), ', '.join(repr(i) for i in args)))
-
-
-def format_calls(calls, prefix=""):
-    if calls:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "comparing unequal types not supported", DeprecationWarning)
-            out = StringIO()
-            out.write("### %s\n\n" % prefix)
-            instances = defaultdict(int)
-            for pk in sorted(calls, key=repr):
-                name, args, kwargs = pk
-                resp = calls[pk]
-                if isinstance(resp, tuple):
-                    _output_signature(out, name, args, kwargs, *resp)
-                else:
-                    instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
-                    instances[instance_name] += 1
-                    instance_name = "%s_%s" % (instance_name, instances[instance_name])
-                    out.write('%s = ' % instance_name)
-                    _output_signature(out, name, args, kwargs)
-                    if isinstance(resp, unexpected):
-                        out.write('  # was never called in the Story !')
-                    out.write('\n')
-                    for pk in sorted(resp, key=repr):
-                        name, args, kwargs = pk
-                        iresp = resp[pk]
-                        out.write('%s.' % instance_name)
-                        _output_signature(out, name, args, kwargs, *iresp)
-            return out.getvalue()
-    else:
-        return ""
 
 
 class Replay(EntanglingBase):
@@ -517,15 +426,17 @@ class Replay(EntanglingBase):
 
     This object should be created by :obj:`Story <aspectlib.test.Story>`'s :obj:`replay <aspectlib.test.Story.replay>`
     method.
-
     """
     FunctionWrapper = ReplayFunctionWrapper
 
-    def __init__(self, target, expected, proxy=False, recurse_lock_factory=allocate_lock):
+    def __init__(self, target, expected, proxy=True, strict=True, dump=True, recurse_lock_factory=allocate_lock, **options):
         self._target = target
+        self._options = options
         self.calls = ReplayPair(expected, {})
         self._ids = {}
         self._proxy = proxy
+        self._strict = strict
+        self._dump = dump
         self._recurse_lock = recurse_lock_factory()
 
     def missing(self, prefix=True):
@@ -533,3 +444,44 @@ class Replay(EntanglingBase):
         Returns a pretty text representation of the unexpected calls (while the `replay` was run in `proxy mode`).
         """
         return format_calls(self.calls.unexpected, 'UNEXPECTED CALLS (add these in your story)' if prefix else '')
+
+    def __exit__(self, *args):
+        super(Replay, self).__exit__()
+        if self._strict or self._dump:
+            missing = format_calls(self.calls.unexpected)
+            if missing:
+                msg = "Missing calls from the story: \n### START ###\n%s### END ###\n" % missing
+                if self._dump:
+                    print(msg)
+                if self._strict:
+                    raise AssertionError(msg)
+
+
+def format_calls(calls, prefix=""):
+    if calls:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "comparing unequal types not supported", DeprecationWarning)
+            out = StringIO()
+            if prefix:
+                    out.write("### %s\n\n" % prefix)
+            instances = defaultdict(int)
+            for pk in sorted(calls, key=repr):
+                name, args, kwargs = pk
+                resp = calls[pk]
+                if isinstance(resp, tuple):
+                    out.write(make_signature(name, args, kwargs, *resp))
+                else:
+                    instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
+                    instances[instance_name] += 1
+                    instance_name = "%s_%s" % (instance_name, instances[instance_name])
+                    out.write('%s = %s' % (instance_name, make_signature(name, args, kwargs)))
+                    if isinstance(resp, Unexpected):
+                        out.write('  # was never called in the Story !')
+                    out.write('\n')
+                    for pk in sorted(resp, key=repr):
+                        name, args, kwargs = pk
+                        iresp = resp[pk]
+                        out.write('%s.%s' % (instance_name, make_signature(name, args, kwargs, *iresp)))
+            return out.getvalue()
+    else:
+        return ""

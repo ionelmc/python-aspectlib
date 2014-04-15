@@ -1,6 +1,9 @@
 def target():
     return
 
+def raises(*a):
+    raise ValueError(a)
+
 a = 1
 
 
@@ -15,6 +18,8 @@ class Stuff(object):
         self.meth()
         return self.args + args
 
+    def raises(self, *a):
+        raise ValueError(a)
 
 class ThatLONGStuf(Stuff):
     pass

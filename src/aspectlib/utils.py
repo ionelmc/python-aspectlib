@@ -86,3 +86,53 @@ def mimic(wrapper, func, module=None):
     except (TypeError, AttributeError):
         pass
     return wrapper
+
+
+def make_repr(repr=repr):
+    from collections import deque
+    representers = {
+        tuple: lambda o: "(%s%s)" % (', '.join(lookup(type(i), repr)(i) for i in o), ',' if len(o) == 1 else ''),
+        list: lambda o: "[%s]" % ', '.join(lookup(type(i), repr)(i) for i in o),
+        set: lambda o: "set([%s])" % ', '.join(lookup(type(i), repr)(i) for i in o),
+        frozenset: lambda o: "set([%s])" % ', '.join(lookup(type(i), repr)(i) for i in o),
+        deque: lambda o: "collections.deque([%s])" % ', '.join(lookup(type(i), repr)(i) for i in o),
+        dict: lambda o: "{%s}" % ', '.join(
+            "%s: %s" % (
+                lookup(type(k), repr_ex)(k),
+                lookup(type(v), repr_ex)(v),
+            ) for k, v in (o.items() if PY3 else o.iteritems())
+        ),
+    }
+    representers.update(
+        (getattr(__import__(mod), attr), lambda o, prefix=obj: "%s(%r)" % (prefix, o.__reduce__()[1][0]))
+        for obj in ('os.stat_result', 'grp.struct_group', 'pwd.struct_passwd')
+        for mod, attr in (obj.split('.'),)
+    )
+
+    lookup = representers.get
+    def repr_ex(o):
+        return lookup(type(o), repr)(o)
+    return repr_ex
+repr_ex = make_repr()
+
+
+def make_signature(name, args, kwargs, *resp):
+    sig = '%s(%s%s%s)' % (
+        name,
+        ', '.join(repr(i) for i in args),
+        ', ' if kwargs else '',
+        ', '.join("%s=%r" % i for i in (kwargs.items() if isinstance(kwargs, dict) else kwargs)),
+    )
+    if resp:
+        result, exception = resp
+        if exception is None:
+            return '%s == %s  # returned\n' % (sig, repr_ex(result))
+        else:
+            return '%s ** %s(%s)  # raised\n' % (
+                sig,
+                qualname(type(exception)),
+                ', '.join(repr(i) for i in exception.args)
+            )
+    else:
+        return sig
+
