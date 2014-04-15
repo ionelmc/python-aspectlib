@@ -32,7 +32,6 @@ With ``mock``::
     3
     >>> real.method.assert_called_with(3, 4, 5, key='value')
 """
-import warnings
 from collections import defaultdict
 from collections import namedtuple
 from functools import partial
@@ -475,31 +474,27 @@ class Replay(EntanglingBase):
                     raise AssertionError(diff)
 
 
-def format_calls(calls, prefix=""):
+def format_calls(calls):
     if calls:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "comparing unequal types not supported", DeprecationWarning)
-            out = StringIO()
-            if prefix:
-                    out.write("### %s\n\n" % prefix)
-            instances = defaultdict(int)
-            for pk in sorted(calls, key=repr):
-                name, args, kwargs = pk
-                resp = calls[pk]
-                if isinstance(resp, tuple):
-                    out.write(make_signature(name, args, kwargs, *resp))
-                else:
-                    instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
-                    instances[instance_name] += 1
-                    instance_name = "%s_%s" % (instance_name, instances[instance_name])
-                    out.write('%s = %s' % (instance_name, make_signature(name, args, kwargs)))
-                    if isinstance(resp, Unexpected):
-                        out.write('  # was never called in the Story !')
-                    out.write('\n')
-                    for pk in sorted(resp, key=repr):
-                        name, args, kwargs = pk
-                        iresp = resp[pk]
-                        out.write('%s.%s' % (instance_name, make_signature(name, args, kwargs, *iresp)))
-            return out.getvalue()
+        out = StringIO()
+        instances = defaultdict(int)
+        for pk in sorted(calls, key=repr):
+            name, args, kwargs = pk
+            resp = calls[pk]
+            if isinstance(resp, tuple):
+                out.write(make_signature(name, args, kwargs, *resp))
+            else:
+                instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
+                instances[instance_name] += 1
+                instance_name = "%s_%s" % (instance_name, instances[instance_name])
+                out.write('%s = %s' % (instance_name, make_signature(name, args, kwargs)))
+                if isinstance(resp, Unexpected):
+                    out.write('  # was never called in the Story !')
+                out.write('\n')
+                for pk in sorted(resp, key=repr):
+                    name, args, kwargs = pk
+                    iresp = resp[pk]
+                    out.write('%s.%s' % (instance_name, make_signature(name, args, kwargs, *iresp)))
+        return out.getvalue()
     else:
         return ""
