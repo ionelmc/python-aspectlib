@@ -366,7 +366,7 @@ class Story(EntanglingBase):
 
     The ``Story`` works in two of transactions:
 
-    *   **The story**: You describe what calls you want to mocked. Initially you don't need to write this. Eg:
+    *   **The story**: You describe what calls you want to mocked. Initially you don't need to write this. Example:
 
         ::
 
@@ -378,7 +378,7 @@ class Story(EntanglingBase):
     *   **The replay**: You run the code uses the interfaces mocked in the `story`. The `replay` always starts from a
         `story` instance and it runs in two modes:
 
-        *   **stub mode**: The default. Unexpected uses of the mocked interfaces raise errors. Eg:
+        *   **stub mode**: The default. Unexpected uses of the mocked interfaces raise errors. Example:
 
             ::
 
@@ -387,13 +387,13 @@ class Story(EntanglingBase):
                 ...     try:
                 ...         mymod.func('bad arg')
                 ...     except ValueError as exc:
-                ...         print("Sucess: exception", exc, "was raised.") # test success
+                ...         print("Sucess: exception <%s> was raised." % exc) # test success
                 ...     else:
                 ...         raise AssertionError("The test expected MyException to be raised")
-                Sucess: exception can't use this was raised.
+                Sucess: exception <can't use this> was raised.
 
             While in the **stub mode**, if you try to run ``mymod.function('unexpected arg')`` you will get an
-            ``AssertionError`` as that call wasn't specified in the **story**. Eg:
+            ``AssertionError`` as that call wasn't specified in the **story**. Example:
 
             ::
 
@@ -403,9 +403,9 @@ class Story(EntanglingBase):
                   ...
                   File "...aspectlib...test.py", line ..., in __call__
                     raise AssertionError("Unexpected call to %s with args:%s kwargs:%s" % pk)
-                AssertionError: Unexpected call to mymod.func with args:('unexpected arg',) kwargs:frozenset()
+                AssertionError: Unexpected call to mymod.func with args:('unexpected arg',) kwargs:frozenset(...)
 
-        *   `proxy mode`: Unexpected uses are allowed but they are collected for later inspection. Eg:
+        *   `proxy mode`: Unexpected uses are allowed but they are collected for later inspection. Example:
 
             ::
 
@@ -414,16 +414,16 @@ class Story(EntanglingBase):
                 ...     try:
                 ...         mymod.func('bad arg')
                 ...     except ValueError as exc:
-                ...         print("Sucess: exception", exc, "was raised.") # test success
+                ...         print("Sucess: exception <%s> was raised." % exc) # test success
                 ...     else:
                 ...         raise AssertionError("The test expected MyException to be raised")
                 ...     mymod.func('unexpected arg')
-                Sucess: exception can't use this was raised.
+                Sucess: exception <can't use this> was raised.
                 Got unexpected arg in the real code !
 
 
     One way to use this on existing code where it's not clear what needs to be written in the **story** is to start with
-    an empty **story**, run the test code, check the unexpected usage and write the story from that. Eg:
+    an empty **story**, run the test code, check the unexpected usage and write the story from that. Example:
 
     ::
 
