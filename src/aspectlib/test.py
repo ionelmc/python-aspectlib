@@ -416,13 +416,13 @@ class Story(EntanglingBase):
     def replay(self, **options):
         """
         :param bool proxy:
-            If ``True`` then unexpected uses are allowed but they are collected for later use. Default: ``True`` (`stub
-            mode`).
-        :param bool check:
+            If ``True`` then unexpected uses are allowed (will use the real functions) but they are collected for later
+            use. Default: ``True``.
+        :param bool strict:
             If ``True`` then an ``AssertionError`` is raised when there were unexpected calls or there were unused calls
             in the story. Default: ``True``.
         :param bool dump:
-            If ``True`` then the unexpected calls will be printed (to ``sys.stdout``). Default: ``True``.
+            If ``True`` then the unexpected/unused calls will be printed (to ``sys.stdout``). Default: ``True``.
         :returns: A :obj:`aspectlib.test.Replay` object.
 
         Example::
