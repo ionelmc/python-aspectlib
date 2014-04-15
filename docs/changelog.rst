@@ -12,6 +12,7 @@ Version 0.9.0
     * Added `extended` option.
 
 * Changed :obj:`aspectlib.weave` to allow weaving everything in a module.
+* Changed :obj:`aspectlib.test.Story` class for capture-replay and stub/mock testing.
 
 Version 0.8.1
 -------------
