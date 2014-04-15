@@ -13,6 +13,4 @@ aspectlib.test
     :members: record, mock, Story
 
 .. autoclass:: Replay(?)
-
-    .. automethod:: missing
-
+    :members:

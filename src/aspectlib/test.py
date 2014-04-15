@@ -366,6 +366,20 @@ class Story(EntanglingBase):
     This a simple yet flexible tool that can do "capture-replay mocking" or "test doubles" [1]_. It leverages
     ``aspectlib``'s powerful :obj:`weaver <aspectlib.weave>`.
 
+    :param target:
+        Targets to weave in the `story`/`replay` transactions.
+    :type target:
+        Same as for :obj:`aspectlib.weave`.
+    :param bool subclasses:
+        If ``True``, subclasses of target are weaved. *Only available for classes*
+    :param bool aliases:
+        If ``True``, aliases of target are replaced.
+    :param bool lazy:
+        If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
+        is called. *Only available for classes*.
+    :param methods: Methods from target to patch. *Only available for classes*
+    :type methods: list or regex or string
+
     The ``Story`` allows some testing patterns that are hard to do with other tools:
 
     * **Proxied mocks**: partially mock `objects` and `modules` so they are called normally if the request is unknown.
@@ -384,9 +398,6 @@ class Story(EntanglingBase):
 
     *   **The replay**: You run the code uses the interfaces mocked in the `story`. The :obj:`replay
         <aspectlib.test.Story.replay>` always starts from a `story` instance.
-
-    :param target: Targets to weave in the `story`/`replay` transactions.
-    :type target: Same as for :obj:`aspectlib.weave`.
 
     .. versionchanged:: 0.9.0
 
@@ -413,6 +424,26 @@ class Story(EntanglingBase):
         :param bool dump:
             If ``True`` then the unexpected calls will be printed (to ``sys.stdout``). Default: ``True``.
         :returns: A :obj:`aspectlib.test.Replay` object.
+
+        Example::
+
+            >>> import mymod
+            >>> with Story(mymod) as story:
+            ...     mymod.func('some arg') == 'some result'
+            ...     mymod.func('other arg') == 'other result'
+            >>> with story.replay(strict=False):
+            ...     print(mymod.func('some arg'))
+            ...     mymod.func('bogus arg')
+            some result
+            Got bogus arg in the real code !
+            STORY/REPLAY DIFF:
+                --- expected...
+                +++ actual...
+                @@ -1,2 +1,2 @@
+                -mymod.func('other arg') == 'other result'  # returns
+                +mymod.func('bogus arg') == None  # returns
+                 mymod.func('some arg') == 'some result'  # returns
+
         """
         options.update(self._options)
         return Replay(self._target, self._calls, **options)
@@ -483,7 +514,8 @@ class Replay(EntanglingBase):
             diff = self.diff()
             if diff:
                 if self._dump:
-                    print(diff)
+                    print('STORY/REPLAY DIFF:')
+                    print('    ' + '\n    '.join(diff.splitlines()))
                 if self._strict:
                     raise AssertionError(diff)
 
