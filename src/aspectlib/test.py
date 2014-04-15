@@ -38,7 +38,7 @@ from collections import namedtuple
 from functools import partial
 from functools import wraps
 from inspect import isclass
-from operator import itemgetter
+from difflib import unified_diff
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
@@ -101,7 +101,7 @@ class RecordingFunctionWrapper(object):
         self.__name = qualname(wrapped)
         self.__entanglement = None
         self.__iscalled = iscalled
-        self.__binding__ = binding
+        self.__binding = binding
         self.__callback = callback
         self.__extended = extended
         self.__results = results
@@ -133,15 +133,15 @@ class RecordingFunctionWrapper(object):
 
     def __record(self, args, kwargs, *response):
         if self.__callback is not None:
-            self.__callback(self.__binding__, self.__name, args, kwargs, *response)
+            self.__callback(self.__binding, self.__name, args, kwargs, *response)
         if self.calls is not None:
             if self.__extended:
                 self.calls.append((ResultEx if response else CallEx)(
-                    self.__binding__, self.__name, args, kwargs, *response
+                    self.__binding, self.__name, args, kwargs, *response
                 ))
             else:
                 self.calls.append((Result if response else Call)(
-                    self.__binding__, args, kwargs, *response
+                    self.__binding, args, kwargs, *response
                 ))
 
     def __get__(self, instance, owner):
@@ -240,11 +240,11 @@ class StoryFunctionWrapper(object):
         story = self._story
         if self._binding is None:
             pk = self._qualname, args, frozenset(kwargs.items())
-            return StoryResultWrapper(partial(self._save, story.calls, pk))
+            return StoryResultWrapper(partial(self._save, story._calls, pk))
         else:
             if self._name == '__init__':
                 pk = qualname(self._owner), args, frozenset(kwargs.items())
-                story._ids[self._binding] = self._save(story.calls, pk, {})
+                story._ids[self._binding] = self._save(story._calls, pk, {})
             else:
                 pk = self._name, args, frozenset(kwargs.items())
                 return StoryResultWrapper(partial(self._save, story._ids[self._binding], pk))
@@ -273,27 +273,27 @@ class ReplayFunctionWrapper(StoryFunctionWrapper):
         story = self._story
         if self._binding is None:
             pk = self._qualname, args, frozenset(kwargs.items())
-            calls = story.calls
+            calls = story._calls
         else:
             if self._name == '__init__':
                 pk = qualname(self._owner), args, frozenset(kwargs.items())
-                calls = story.calls
+                calls = story._calls
                 if pk in calls.expected:
-                    story._ids[self._binding] = ReplayPair(calls.expected[pk], calls.unexpected.setdefault(pk, {}))
+                    story._ids[self._binding] = ReplayPair(calls.expected[pk], calls.actual.setdefault(pk, {}))
                     return
                 elif story._proxy:
-                    story._ids[self._binding] = ReplayPair({}, calls.unexpected.setdefault(pk, Unexpected()))
+                    story._ids[self._binding] = ReplayPair({}, calls.actual.setdefault(pk, Unexpected()))
                     return self._wrapped(*args, **kwargs)
             else:
                 pk = self._name, args, frozenset(kwargs.items())
                 calls = story._ids[self._binding]
 
         if pk in calls.expected:
-            result, exception = calls.expected[pk]
+            result, exception = calls.actual[pk] = calls.expected[pk]
             if exception is None:
                 return result
             else:
-                raise exception
+                raise exception() if isclass(exception) else exception
         elif story._proxy:
             record = not story._recurse_lock or story._recurse_lock.acquire(False)
             try:
@@ -301,11 +301,11 @@ class ReplayFunctionWrapper(StoryFunctionWrapper):
                     result = self._wrapped(*args, **kwargs)
                 except Exception as exc:
                     if record:
-                        calls.unexpected[pk] = None, exc
+                        calls.actual[pk] = None, exc
                     raise
                 else:
                     if record:
-                        calls.unexpected[pk] = result, None
+                        calls.actual[pk] = result, None
                     return result
             finally:
                 if record and story._recurse_lock:
@@ -400,7 +400,7 @@ class Story(EntanglingBase):
     def __init__(self, target, **options):
         self._target = target
         self._options = options
-        self.calls = {}  # if calls is None else calls
+        self._calls = {}  # if calls is None else calls
         self._ids = {}
 
     def replay(self, **options):
@@ -409,15 +409,16 @@ class Story(EntanglingBase):
             If ``True`` then unexpected uses are allowed but they are collected for later use. Default: ``True`` (`stub
             mode`).
         :param bool check:
-            If ``True`` then an ``AssertionError`` is raised when there were unexpected calls. Default: ``True``.
+            If ``True`` then an ``AssertionError`` is raised when there were unexpected calls or there were unused calls
+            in the story. Default: ``True``.
         :param bool dump:
             If ``True`` then the unexpected calls will be printed (to ``sys.stdout``). Default: ``True``.
         :returns: A :obj:`aspectlib.test.Replay` object.
         """
         options.update(self._options)
-        return Replay(self._target, self.calls, **options)
+        return Replay(self._target, self._calls, **options)
 
-ReplayPair = namedtuple("ReplayPair", ('expected', 'unexpected'))
+ReplayPair = namedtuple("ReplayPair", ('expected', 'actual'))
 
 
 class Replay(EntanglingBase):
@@ -432,29 +433,46 @@ class Replay(EntanglingBase):
     def __init__(self, target, expected, proxy=True, strict=True, dump=True, recurse_lock_factory=allocate_lock, **options):
         self._target = target
         self._options = options
-        self.calls = ReplayPair(expected, {})
+        self._calls = ReplayPair(expected, {})
         self._ids = {}
         self._proxy = proxy
         self._strict = strict
         self._dump = dump
         self._recurse_lock = recurse_lock_factory()
 
-    def missing(self, prefix=True):
+    def unexpected(self):
+        unexpected = {}
+        actual = self._calls.actual
+        expected = self._calls.expected
+        for pk, val in actual.items():
+            expected_val = expected.get(pk, None)
+            if pk not in expected or val != expected_val:
+                if isinstance(val, tuple) or expected_val is None:
+                    unexpected[pk] = val
+                else:
+                    iunexpected = unexpected[pk] = type(val)()
+                    for pk, val in val.items():
+                        if pk not in expected_val:
+                            iunexpected[pk] = val
+        return format_calls(unexpected)
+
+    def diff(self):
         """
-        Returns a pretty text representation of the unexpected calls (while the `replay` was run in `proxy mode`).
+        Returns a pretty text representation of the unexpected and missing calls.
         """
-        return format_calls(self.calls.unexpected, 'UNEXPECTED CALLS (add these in your story)' if prefix else '')
+        actual = format_calls(self._calls.actual).splitlines(True)
+        expected = format_calls(self._calls.expected).splitlines(True)
+        return ''.join(unified_diff(expected, actual, fromfile='expected', tofile='actual'))
 
     def __exit__(self, *args):
         super(Replay, self).__exit__()
         if self._strict or self._dump:
-            missing = format_calls(self.calls.unexpected)
-            if missing:
-                msg = "Missing calls from the story: \n### START ###\n%s### END ###\n" % missing
+            diff = self.diff()
+            if diff:
                 if self._dump:
-                    print(msg)
+                    print(diff)
                 if self._strict:
-                    raise AssertionError(msg)
+                    raise AssertionError(diff)
 
 
 def format_calls(calls, prefix=""):

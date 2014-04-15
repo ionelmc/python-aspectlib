@@ -1,9 +1,11 @@
 from __future__ import print_function
 
+import platform
 import re
 import sys
-import platform
 from functools import wraps
+from inspect import isclass
+
 
 RegexType = type(re.compile(""))
 
@@ -128,11 +130,14 @@ def make_signature(name, args, kwargs, *resp):
         if exception is None:
             return '%s == %s  # returned\n' % (sig, repr_ex(result))
         else:
-            return '%s ** %s(%s)  # raised\n' % (
-                sig,
-                qualname(type(exception)),
-                ', '.join(repr(i) for i in exception.args)
-            )
+            if isclass(exception):
+                return '%s ** %s  # raised\n' % (sig, qualname(exception))
+            else:
+                return '%s ** %s(%s)  # raised\n' % (
+                    sig,
+                    qualname(type(exception)),
+                    ', '.join(repr(i) for i in exception.args)
+                )
     else:
         return sig
 

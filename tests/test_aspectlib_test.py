@@ -193,21 +193,21 @@ def test_record_not_iscalled_and_results():
 
 
 def test_story_empty_play_noproxy():
-    with Story(test_mod).replay(proxy=False, check=False) as replay:
+    with Story(test_mod).replay(proxy=False, strict=False) as replay:
         raises(AssertionError, test_mod.target)
 
-    assert replay.calls.unexpected == {}
+    assert replay._calls.actual == {}
 
 
 def test_story_empty_play_proxy():
     assert test_mod.target() is None
     raises(TypeError, test_mod.target, 123)
 
-    with Story(test_mod).replay(proxy=True, check=False) as replay:
+    with Story(test_mod).replay(proxy=True, strict=False) as replay:
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
-    assert replay.missing(prefix=False) == format_calls({
+    assert format_calls(replay._calls.actual) == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),
@@ -220,23 +220,23 @@ def test_story_empty_play_proxy():
 
 
 def test_story_empty_play_noproxy_class():
-    with Story(test_mod).replay(proxy=False, check=False) as replay:
+    with Story(test_mod).replay(proxy=False, strict=False) as replay:
         raises(AssertionError, test_mod.Stuff, 1, 2)
 
-    assert replay.calls.unexpected == {}
+    assert replay._calls.actual == {}
 
 
 def test_story_half_play_noproxy_class():
     with Story(test_mod) as story:
         obj = test_mod.Stuff(1, 2)
 
-    with story.replay(proxy=False, check=False):
+    with story.replay(proxy=False, strict=False):
         obj = test_mod.Stuff(1, 2)
         raises(AssertionError, obj.mix, 3, 4)
 
 
 def test_story_empty_play_proxy_class_missing_report():
-    with Story(test_mod).replay(proxy=True, check=False) as replay:
+    with Story(test_mod).replay(proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         obj.mix(3, 4)
         obj.mix('a', 'b')
@@ -254,31 +254,32 @@ def test_story_empty_play_proxy_class_missing_report():
         obj.meth()
         obj.mix(10)
 
-    assert replay.missing() == """### UNEXPECTED CALLS (add these in your story)
-
-stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)  # was never called in the Story !
-stuff_1.mix('a', 'b') == (0, 1, 'a', 'b')  # returned
-stuff_1.mix(3, 4) == (0, 1, 3, 4)  # returned
-stuff_1.raises(123) ** ValueError((123,))  # raised
-stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)  # was never called in the Story !
-stuff_2.mix('a', 'b') == (1, 2, 'a', 'b')  # returned
-stuff_2.mix(3, 4) == (1, 2, 3, 4)  # returned
-stuff_2.raises(123) ** ValueError((123,))  # raised
-that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)  # was never called in the Story !
-that_long_stuf_1.meth() == None  # returned
-that_long_stuf_1.mix() == (1,)  # returned
-that_long_stuf_1.mix(10) == (1, 10)  # returned
-that_long_stuf_1.mix(2) == (1, 2)  # returned
-that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)  # was never called in the Story !
-that_long_stuf_2.mix(4) == (3, 4)  # returned
-test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',))  # raised
-test_pkg1.test_pkg2.test_mod.target() == None  # returned
+    assert replay.diff() == """--- expected
++++ actual
+@@ -0,0 +1,17 @@
++stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)  # was never called in the Story !
++stuff_1.mix('a', 'b') == (0, 1, 'a', 'b')  # returned
++stuff_1.mix(3, 4) == (0, 1, 3, 4)  # returned
++stuff_1.raises(123) ** ValueError((123,))  # raised
++stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)  # was never called in the Story !
++stuff_2.mix('a', 'b') == (1, 2, 'a', 'b')  # returned
++stuff_2.mix(3, 4) == (1, 2, 3, 4)  # returned
++stuff_2.raises(123) ** ValueError((123,))  # raised
++that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)  # was never called in the Story !
++that_long_stuf_1.meth() == None  # returned
++that_long_stuf_1.mix() == (1,)  # returned
++that_long_stuf_1.mix(10) == (1, 10)  # returned
++that_long_stuf_1.mix(2) == (1, 2)  # returned
++that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)  # was never called in the Story !
++that_long_stuf_2.mix(4) == (3, 4)  # returned
++test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',))  # raised
++test_pkg1.test_pkg2.test_mod.target() == None  # returned
 """
 
 def test_story_empty_play_proxy_class():
     assert test_mod.Stuff(1, 2).mix(3, 4) == (1, 2, 3, 4)
 
-    with Story(test_mod).replay(proxy=True, check=False) as replay:
+    with Story(test_mod).replay(proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         assert obj.mix(3, 4) == (1, 2, 3, 4)
         assert obj.mix('a', 'b') == (1, 2, 'a', 'b')
@@ -291,7 +292,7 @@ def test_story_empty_play_proxy_class():
 
         raises(TypeError, obj.meth, 123)
 
-    assert replay.missing(prefix=False) == format_calls({
+    assert format_calls(replay._calls.actual) == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): Unexpected({
             ('mix', ('a', 'b'), frozenset([])): ((1, 2, 'a', 'b'), None),
             ('mix', (3, 4), frozenset([])): ((1, 2, 3, 4), None),
@@ -316,7 +317,7 @@ def test_story_half_play_proxy_class():
         obj = test_mod.Stuff(1, 2)
         obj.mix(3, 4) == (1, 2, 3, 4)
 
-    with story.replay(proxy=True, check=False) as replay:
+    with story.replay(proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         assert obj.mix(3, 4) == (1, 2, 3, 4)
         assert obj.meth() is None
@@ -328,7 +329,7 @@ def test_story_half_play_proxy_class():
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
         raises(TypeError, obj.meth, 123)
-    assert replay.missing(prefix=False) == format_calls({
+    assert replay.unexpected() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): {
             ('meth', (), frozenset([])): (None, None),
             ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
@@ -344,17 +345,31 @@ def test_story_half_play_proxy_class():
         })
     })
 
+
 def test_story_full_play_noproxy():
     with Story(test_mod) as story:
         test_mod.target(123) == 'foobar'
         test_mod.target(1234) ** ValueError
 
-    with story.replay(proxy=False, check=False) as replay:
+    with story.replay(proxy=False, strict=False, dump=False) as replay:
         raises(AssertionError, test_mod.target)
         assert test_mod.target(123) == 'foobar'
         raises(ValueError, test_mod.target, 1234)
 
-    assert replay.calls.unexpected == {}
+    assert replay.unexpected() == ""
+
+
+def test_story_full_play_noproxy_dump():
+    with Story(test_mod) as story:
+        test_mod.target(123) == 'foobar'
+        test_mod.target(1234) ** ValueError
+
+    with story.replay(proxy=False, strict=False, dump=True) as replay:
+        raises(AssertionError, test_mod.target)
+        assert test_mod.target(123) == 'foobar'
+        raises(ValueError, test_mod.target, 1234)
+
+    assert replay.unexpected() == ""
 
 
 def test_story_full_play_proxy():
@@ -362,13 +377,13 @@ def test_story_full_play_proxy():
         test_mod.target(123) == 'foobar'
         test_mod.target(1234) ** ValueError
 
-    with story.replay(proxy=True, check=False) as replay:
+    with story.replay(proxy=True, strict=False) as replay:
         assert test_mod.target() is None
         assert test_mod.target(123) == 'foobar'
         raises(ValueError, test_mod.target, 1234)
         raises(TypeError, test_mod.target, 'asdf')
 
-    assert replay.missing(prefix=False) == format_calls({
+    assert replay.unexpected() == format_calls({
         ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
             None, None
         ),
@@ -408,7 +423,7 @@ def test_story_create():
         obj.meth('other', 1, 2) == 123
         obj.mix('other') == 'mixymix'
 
-    assert story.calls == {
+    assert story._calls == {
         ('test_pkg1.test_pkg2.test_mod.Stuff', ('stuff',), frozenset()): {
             ('meth', ('other', 1, 2), frozenset()): (123, None),
             ('mix', ('other',), frozenset()): ('mixymix', None)
