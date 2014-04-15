@@ -227,10 +227,13 @@ class StoryFunctionWrapper(object):
     def __init__(self, wrapped, story, binding=None, owner=None):
         self._wrapped = wrapped
         self._name = wrapped.__name__
-        self._qualname = qualname(wrapped)
         self._story = story
         self._binding = binding
         self._owner = owner
+
+    @property
+    def _qualname(self):
+        return qualname(self)
 
     def __call__(self, *args, **kwargs):
         story = self._story
@@ -251,12 +254,12 @@ class StoryFunctionWrapper(object):
         return response
 
     def __get__(self, binding, owner):
-        return type(self)(
+        return mimic(type(self)(
             self._wrapped.__get__(binding, owner),
             story=self._story,
             binding=binding,
             owner=owner,
-        )
+        ), self)
 
 
 class unexpected(dict):

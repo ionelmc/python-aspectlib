@@ -3,6 +3,7 @@ from __future__ import print_function
 import re
 import sys
 import platform
+from functools import wraps
 
 RegexType = type(re.compile(""))
 
@@ -71,13 +72,13 @@ class Sentinel(object):
     __str__ = __repr__
 
 
-def mimic(wrapper, func):
+def mimic(wrapper, func, module=None):
     try:
         wrapper.__name__ = func.__name__
     except (TypeError, AttributeError):
         pass
     try:
-        wrapper.__module__ = func.__module__
+        wrapper.__module__ = module or func.__module__
     except (TypeError, AttributeError):
         pass
     try:

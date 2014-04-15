@@ -236,7 +236,7 @@ class Rollback(object):
     rollback = __call__ = __exit__
 
 
-def _checked_apply(aspects, function):
+def _checked_apply(aspects, function, module=None):
     logdebug(' > applying aspects %s to function %s.', aspects, function)
     if callable(aspects):
         wrapper = aspects(function)
@@ -246,7 +246,7 @@ def _checked_apply(aspects, function):
         for aspect in aspects:
             wrapper = aspect(wrapper)
             assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspect, wrapper)
-    return wrapper
+    return mimic(wrapper, function, module=module)
 
 
 def _check_name(name):
@@ -552,4 +552,4 @@ def weave_module_function(module, target, aspect, force_name=None, **options):
     logdebug("weave_module_function (module=%s, target=%s, aspect=%s, force_name=%s, **options=%s",
           module, target, aspect, force_name, options)
     name = force_name or target.__name__
-    return patch_module(module, name, _checked_apply(aspect, target), original=target, **options)
+    return patch_module(module, name, _checked_apply(aspect, target, module=module), original=target, **options)
