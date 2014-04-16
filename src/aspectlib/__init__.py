@@ -388,6 +388,8 @@ def weave(target, aspects, **options):
         return weave_class(target, aspects, **options)
     elif ismodule(target):
         return weave_module(target, aspects, **options)
+    elif type(target).__module__ not in ('builtins', '__builtin__'):
+        return weave_instance(target, aspects, **options)
     else:
         raise UnsupportedType("Can't weave object %s of type %s" % (target, type(target)))
 
@@ -407,6 +409,35 @@ def _rewrap_method(func, klass, aspect):
         return _checked_apply(aspect, func)
 
 
+def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, **options):
+    """
+    Low-level weaver for instances.
+
+    .. warning:: You should not use this directly.
+
+    :returns: An :obj:`aspectlib.Entanglement` object.
+    """
+    entanglement = Rollback()
+    method_matches = make_method_matcher(methods)
+    logdebug("weave_instance (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)",
+             instance, aspect, methods, lazy, options)
+    fixup = lambda func: func.__get__(instance, type(instance))
+    fixed_aspect = aspect + [fixup] if isinstance(aspect, (list, tuple)) else [aspect, fixup]
+
+    for attr in dir(instance):
+        func = getattr(instance, attr)
+        if method_matches(attr):
+            if ismethod(func):
+                logger.info("%s %s %s", attr, func, type(func))
+                if hasattr(func, '__func__'):
+                    realfunc = func.__func__
+                else:
+                    realfunc = func.im_func
+                entanglement.merge(
+                    patch_module(instance, attr, _checked_apply(fixed_aspect, realfunc, module=None), **options)
+                )
+    return entanglement
+
 def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
     """
     Low-level weaver for "whole module weaving".
@@ -418,7 +449,7 @@ def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
     logdebug("weave_module (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)",
-          module, aspect, methods, lazy, options)
+             module, aspect, methods, lazy, options)
 
     for attr in dir(module):
         func = getattr(module, attr)
@@ -493,7 +524,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
     return entanglement
 
 
-def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
+def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, location=None):
     """
     Low-level attribute patcher.
 
@@ -508,7 +539,7 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True):
     rollback = Rollback()
     seen = False
     original = getattr(module, name) if original is UNSPECIFIED else original
-    location = module.__name__
+    location = module.__name__ if hasattr(module, '__name__') else type(module).__module__
     try:
         replacement.__module__ = location
     except (TypeError, AttributeError):

@@ -481,7 +481,7 @@ def test_weave_instance_meth():
     assert inst.foo == 'stuff'
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif('aspectlib.PY2')
 def test_weave_legacy_instance():
     @aspectlib.Aspect
     def aspect(self):
@@ -497,7 +497,6 @@ def test_weave_legacy_instance():
     assert inst.foo == 'stuff'
 
 
-@pytest.mark.xfail
 def test_weave_instance():
     @aspectlib.Aspect
     def aspect(self):
