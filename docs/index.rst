@@ -9,6 +9,7 @@ behavior in existing code is desired.
 
     introduction
     installation
+    Testing <testing>
     rationale
     faq
     examples
