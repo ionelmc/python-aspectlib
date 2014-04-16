@@ -2,19 +2,19 @@
 python-aspectlib
 ================
 
-.. image:: https://secure.travis-ci.org/ionelmc/python-aspectlib.png
+.. image:: http://img.shields.io/travis/ionelmc/python-aspectlib.svg
     :alt: Build Status
     :target: https://travis-ci.org/ionelmc/python-aspectlib
 
-.. image:: https://coveralls.io/repos/ionelmc/python-aspectlib/badge.png?branch=master
+.. image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib.svg
     :alt: Coverage Status
     :target: https://coveralls.io/r/ionelmc/python-aspectlib
 
-.. image:: https://pypip.in/d/aspectlib/badge.png
+.. image:: http://img.shields.io/pypi/v/aspectlib.svg
     :alt: PYPI Package
     :target: https://pypi.python.org/pypi/aspectlib
 
-.. image:: https://pypip.in/v/aspectlib/badge.png
+.. image:: http://img.shields.io/pypi/dm/aspectlib.svg
     :alt: PYPI Package
     :target: https://pypi.python.org/pypi/aspectlib
 
