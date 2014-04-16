@@ -14,7 +14,7 @@ def read(*names, **kwargs):
 
 setup(
     name="aspectlib",
-    version="0.9.0a",
+    version="0.9.0",
     url='https://github.com/ionelmc/python-aspectlib',
     download_url='',
     license='BSD',

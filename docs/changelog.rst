@@ -11,7 +11,11 @@ Version 0.9.0
     * Added `callback` option.
     * Added `extended` option.
 
-* Changed :obj:`aspectlib.weave` to allow weaving everything in a module.
+* Changed :obj:`aspectlib.weave`:
+
+    * Allow weaving everything in a module.
+    * Allow weaving instances of new-style classes.
+
 * Changed :obj:`aspectlib.test.Story` class for capture-replay and stub/mock testing.
 
 Version 0.8.1
