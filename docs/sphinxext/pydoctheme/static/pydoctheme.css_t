@@ -342,3 +342,9 @@ div.related ul {
         display: none;
     }
 }
+.highlights {
+    font-size: 135%;
+    font-style: italic;
+    color: #999;
+    text-align: center;
+}

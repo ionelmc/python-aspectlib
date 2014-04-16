@@ -1,36 +1,5 @@
 """
-This module is designed to be a lightweight, orthogonal and easy to learn replacement for the popular `mock
-<https://pypi.python.org/pypi/mock>`_ framework.
 
-Example usage, suppose you want to test this class:
-
-    >>> class ProductionClass(object):
-    ...     def method(self):
-    ...         return 'stuff'
-    >>> real = ProductionClass()
-
-With :mod:`aspectlib.test`::
-
-    >>> from aspectlib import weave, test
-    >>> patch = weave(real.method, [test.mock(3), test.record])
-    >>> real.method(3, 4, 5, key='value')
-    3
-    >>> assert real.method.calls == [(real, (3, 4, 5), {'key': 'value'})]
-
-As a bonus, you have an easy way to rollback all the mess::
-
-    >>> patch.rollback()
-    >>> real.method()
-    'stuff'
-
-With ``mock``::
-
-    >>> from mock import Mock
-    >>> real = ProductionClass()
-    >>> real.method = Mock(return_value=3)
-    >>> real.method(3, 4, 5, key='value')
-    3
-    >>> real.method.assert_called_with(3, 4, 5, key='value')
 """
 from collections import defaultdict
 from collections import namedtuple
@@ -419,10 +388,10 @@ class Story(EntanglingBase):
             If ``True`` then unexpected uses are allowed (will use the real functions) but they are collected for later
             use. Default: ``True``.
         :param bool strict:
-            If ``True`` then an ``AssertionError`` is raised when there were unexpected calls or there were unused calls
-            in the story. Default: ``True``.
+            If ``True`` then an ``AssertionError`` is raised when there were `unexpected calls` or there were `missing
+            calls` (specified in the story but not called). Default: ``True``.
         :param bool dump:
-            If ``True`` then the unexpected/unused calls will be printed (to ``sys.stdout``). Default: ``True``.
+            If ``True`` then the `unexpected`/`missing calls` will be printed (to ``sys.stdout``). Default: ``True``.
         :returns: A :obj:`aspectlib.test.Replay` object.
 
         Example::
@@ -473,6 +442,39 @@ class Replay(EntanglingBase):
     def unexpected(self, _missing=False):
         """
         Returns a pretty text representation of just the unexpected calls.
+
+        The output should be usable directly in the story (just copy-paste it). Example::
+
+            >>> import mymod
+            >>> with Story(mymod) as story:
+            ...     pass
+            >>> with story.replay(strict=False, dump=False) as replay:
+            ...     mymod.func('some arg')
+            ...     try:
+            ...         mymod.badfunc()
+            ...     except ValueError as exc:
+            ...         print(exc)
+            Got some arg in the real code !
+            boom!
+            >>> print(replay.unexpected())
+            mymod.badfunc() ** ValueError('boom!')  # raises
+            mymod.func('some arg') == None  # returns
+            <BLANKLINE>
+
+        We can just take the output and paste in the story::
+
+            >>> import mymod
+            >>> with Story(mymod) as story:
+            ...     mymod.badfunc() ** ValueError('boom!')  # raises
+            ...     mymod.func('some arg') == None  # returns
+            >>> with story.replay():
+            ...     mymod.func('some arg')
+            ...     try:
+            ...         mymod.badfunc()
+            ...     except ValueError as exc:
+            ...         print(exc)
+            boom!
+
         """
         unexpected = {}
         if _missing:
@@ -503,6 +505,10 @@ class Replay(EntanglingBase):
     def diff(self):
         """
         Returns a pretty text representation of the unexpected and missing calls.
+
+        Most of the time you don't need to directly use this. This is useful when you run the `replay` in
+        ``strict=False`` mode and want to do custom assertions.
+
         """
         actual = format_calls(self._calls.actual).splitlines(True)
         expected = format_calls(self._calls.expected).splitlines(True)
