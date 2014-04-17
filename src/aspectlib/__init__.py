@@ -303,6 +303,7 @@ def weave(target, aspects, **options):
             if not callable(obj):
                 raise ExpectedAdvice('%s must be an `Aspect` instance or a callable.' % obj)
     assert target, "Can't weave falsy value %r." % target
+    logdebug("weave (target=%s, aspects=%s, **options=%s)", target, aspects, options)
     if isinstance(target, (list, tuple)):
         return Rollback([
             weave(item, aspects, **options) for item in target
@@ -349,7 +350,6 @@ def weave(target, aspects, **options):
         else:
             return weave(obj, aspects, **options)
     name = getattr(target, '__name__', None)
-    logdebug("weave (target=%s, aspects=%s, name=%s, **options=%s)", target, aspects, name, options)
     if name and getattr(__builtin__, name, None) is target:
         return weave_module_function(__builtin__, target, aspects, **options)
     elif PY3 and ismethod(target):
