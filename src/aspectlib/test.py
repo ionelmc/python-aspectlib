@@ -426,7 +426,7 @@ class Replay(EntanglingBase):
     """
     FunctionWrapper = ReplayFunctionWrapper
 
-    def __init__(self, target, expected, proxy=True, strict=True, dump=True, recurse_lock_factory=allocate_lock, **options):
+    def __init__(self, target, expected, proxy=True, strict=True, dump=True, recurse_lock=False, **options):
         self._target = target
         self._options = options
         self._calls = ReplayPair(expected, {})
@@ -434,7 +434,7 @@ class Replay(EntanglingBase):
         self._proxy = proxy
         self._strict = strict
         self._dump = dump
-        self._recurse_lock = recurse_lock_factory()
+        self._recurse_lock = allocate_lock() if recurse_lock is True else (recurse_lock and recurse_lock())
 
     def unexpected(self, _missing=False):
         """

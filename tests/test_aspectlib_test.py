@@ -193,7 +193,7 @@ def test_record_not_iscalled_and_results():
 
 
 def test_story_empty_play_noproxy():
-    with Story(test_mod).replay(proxy=False, strict=False) as replay:
+    with Story(test_mod).replay(recurse_lock=True, proxy=False, strict=False) as replay:
         raises(AssertionError, test_mod.target)
 
     assert replay._calls.actual == {}
@@ -203,7 +203,7 @@ def test_story_empty_play_proxy():
     assert test_mod.target() is None
     raises(TypeError, test_mod.target, 123)
 
-    with Story(test_mod).replay(proxy=True, strict=False) as replay:
+    with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
@@ -220,7 +220,7 @@ def test_story_empty_play_proxy():
 
 
 def test_story_empty_play_noproxy_class():
-    with Story(test_mod).replay(proxy=False, strict=False) as replay:
+    with Story(test_mod).replay(recurse_lock=True, proxy=False, strict=False) as replay:
         raises(AssertionError, test_mod.Stuff, 1, 2)
 
     assert replay._calls.actual == {}
@@ -230,7 +230,7 @@ def test_story_half_play_noproxy_class():
     with Story(test_mod) as story:
         obj = test_mod.Stuff(1, 2)
 
-    with story.replay(proxy=False, strict=False):
+    with story.replay(recurse_lock=True, proxy=False, strict=False):
         obj = test_mod.Stuff(1, 2)
         raises(AssertionError, obj.mix, 3, 4)
 
@@ -245,7 +245,7 @@ def test_story_text_helpers():
         obj = test_mod.Stuff(2, 3)
         obj.meth('c') == 'x'
 
-    with story.replay(strict=False) as replay:
+    with story.replay(recurse_lock=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         obj.meth('a')
         test_mod.target(1)
@@ -302,7 +302,7 @@ test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 
 
 def test_story_empty_play_proxy_class_missing_report():
-    with Story(test_mod).replay(proxy=True, strict=False) as replay:
+    with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         obj.mix(3, 4)
         obj.mix('a', 'b')
@@ -368,7 +368,7 @@ def test_story_empty_play_proxy_class_missing_report():
 def test_story_empty_play_proxy_class():
     assert test_mod.Stuff(1, 2).mix(3, 4) == (1, 2, 3, 4)
 
-    with Story(test_mod).replay(proxy=True, strict=False) as replay:
+    with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         assert obj.mix(3, 4) == (1, 2, 3, 4)
         assert obj.mix('a', 'b') == (1, 2, 'a', 'b')
@@ -406,7 +406,7 @@ def test_story_half_play_proxy_class():
         obj = test_mod.Stuff(1, 2)
         obj.mix(3, 4) == (1, 2, 3, 4)
 
-    with story.replay(proxy=True, strict=False) as replay:
+    with story.replay(recurse_lock=True, proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         assert obj.mix(3, 4) == (1, 2, 3, 4)
         assert obj.meth() is None
@@ -440,7 +440,7 @@ def test_story_full_play_noproxy():
         test_mod.target(123) == 'foobar'
         test_mod.target(1234) ** ValueError
 
-    with story.replay(proxy=False, strict=False, dump=False) as replay:
+    with story.replay(recurse_lock=True, proxy=False, strict=False, dump=False) as replay:
         raises(AssertionError, test_mod.target)
         assert test_mod.target(123) == 'foobar'
         raises(ValueError, test_mod.target, 1234)
@@ -453,7 +453,7 @@ def test_story_full_play_noproxy_dump():
         test_mod.target(123) == 'foobar'
         test_mod.target(1234) ** ValueError
 
-    with story.replay(proxy=False, strict=False, dump=True) as replay:
+    with story.replay(recurse_lock=True, proxy=False, strict=False, dump=True) as replay:
         raises(AssertionError, test_mod.target)
         assert test_mod.target(123) == 'foobar'
         raises(ValueError, test_mod.target, 1234)
@@ -466,7 +466,7 @@ def test_story_full_play_proxy():
         test_mod.target(123) == 'foobar'
         test_mod.target(1234) ** ValueError
 
-    with story.replay(proxy=True, strict=False) as replay:
+    with story.replay(recurse_lock=True, proxy=True, strict=False) as replay:
         assert test_mod.target() is None
         assert test_mod.target(123) == 'foobar'
         raises(ValueError, test_mod.target, 1234)
@@ -521,3 +521,18 @@ def test_story_create():
         ('test_pkg1.test_pkg2.test_mod.target', (1, 2, 3), frozenset()): ('foobar', None),
         ('test_pkg1.test_pkg2.test_mod.target', ('a', 'b', 'c'), frozenset()): ('abc', None)
     }
+
+def xtest_story_empty_play_proxy_class_dependencies():
+    with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:
+        obj = test_mod.Stuff(1, 2)
+        other = obj.other('x')
+        raises(ValueError, other.raises, 'badarg')
+        other.mix(3, 4)
+        obj = test_mod.Stuff(0, 1)
+        obj.mix(3, 4)
+        other = obj.other(2)
+        other.mix(3, 4)
+
+    print(repr(replay.diff()))
+
+    assert replay.diff() == ""
