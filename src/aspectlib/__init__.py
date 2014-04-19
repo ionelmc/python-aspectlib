@@ -524,7 +524,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
     return entanglement
 
 
-def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, location=None):
+def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, location=None, **bogus_options):
     """
     Low-level attribute patcher.
 
@@ -536,6 +536,7 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
 
     :returns: An :obj:`aspectlib.Entanglement` object.
     """
+
     rollback = Rollback()
     seen = False
     original = getattr(module, name) if original is UNSPECIFIED else original
