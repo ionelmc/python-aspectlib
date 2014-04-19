@@ -59,12 +59,31 @@ adequate:
 The :obj:`Story <aspectlib.test.Story>` is the middleground, bringing those two types of testing closer. It allows you
 to start with `integration tests` and later `mock`/`stub` with great ease all the dependencies.
 
-An example: mocking out a file-system
--------------------------------------
+An example: mocking out an external system
+------------------------------------------
 
-Lets assume you have some code that uses a file-system. Due to permission issues you cannot recreate all the scenarios
-in your tests (you don't have superuser privileges).
+TODO
 
-::
-
-    >>>
+#::
+#
+#    >>> import logging; logging.basicConfig(level="DEBUG")
+#    >>> from aspectlib import utils
+#    >>> utils.DEBUG = 1
+#    >>> from aspectlib.test import Story
+#    >>> from aspectlib import ALL_METHODS
+#    >>> import MySQLdb, MySQLdb.connections, MySQLdb.cursors
+#
+#::
+#
+#    >>> with Story(['MySQLdb.connections.Connection', 'MySQLdb.cursors.BaseCursor'], methods=ALL_METHODS) as story:
+#    ...     pass
+#
+#    >>> with story.replay(strict=False):
+#    ...     con = MySQLdb.connections.Connection('localhost', 'root', '')
+#    ...     con.select_db('mysql')
+#    ...     cursor = con.cursor()
+#    ...     cursor.execute('show tables')
+#    ...     print(cursor.fetchall())
+#
+#                                                                                                                                                        #
+#

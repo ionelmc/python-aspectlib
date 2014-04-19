@@ -3,6 +3,7 @@ from __future__ import print_function
 import platform
 import re
 import sys
+from collections import deque
 from functools import wraps
 from inspect import isclass
 
@@ -21,7 +22,7 @@ else:
 FIRST_CAP_RE = re.compile('(.)([A-Z][a-z]+)')
 ALL_CAP_RE = re.compile('([a-z0-9])([A-Z])')
 
-DEBUG = False
+DEBUG = 1
 
 def logf(logger_func):
     @wraps(logger_func)
@@ -74,6 +75,18 @@ class Sentinel(object):
     __str__ = __repr__
 
 
+def container(name):
+    def __init__(self, value):
+        self.value = value
+
+    return type(name, (object,), {
+        '__slots__': 'value',
+        '__init__': __init__,
+        '__str__': lambda self: "%s(%s)" % (name, self.value),
+        '__repr__': lambda self: "%s(%r)" % (name, self.value),
+    })
+
+
 def mimic(wrapper, func, module=None):
     try:
         wrapper.__name__ = func.__name__
@@ -90,32 +103,31 @@ def mimic(wrapper, func, module=None):
     return wrapper
 
 
-def make_repr(repr=repr):
-    from collections import deque
-    representers = {
-        tuple: lambda o: "(%s%s)" % (', '.join(lookup(type(i), repr)(i) for i in o), ',' if len(o) == 1 else ''),
-        list: lambda o: "[%s]" % ', '.join(lookup(type(i), repr)(i) for i in o),
-        set: lambda o: "set([%s])" % ', '.join(lookup(type(i), repr)(i) for i in o),
-        frozenset: lambda o: "set([%s])" % ', '.join(lookup(type(i), repr)(i) for i in o),
-        deque: lambda o: "collections.deque([%s])" % ', '.join(lookup(type(i), repr)(i) for i in o),
-        dict: lambda o: "{%s}" % ', '.join(
-            "%s: %s" % (
-                lookup(type(k), repr_ex)(k),
-                lookup(type(v), repr_ex)(v),
-            ) for k, v in (o.items() if PY3 else o.iteritems())
-        ),
-    }
-    representers.update(
-        (getattr(__import__(mod), attr), lambda o, prefix=obj: "%s(%r)" % (prefix, o.__reduce__()[1][0]))
-        for obj in ('os.stat_result', 'grp.struct_group', 'pwd.struct_passwd')
-        for mod, attr in (obj.split('.'),)
-    )
+representers = {
+    tuple: lambda obj, aliases: "(%s%s)" % (', '.join(repr_ex(i) for i in obj), ',' if len(obj) == 1 else ''),
+    list: lambda obj, aliases: "[%s]" % ', '.join(repr_ex(i) for i in obj),
+    set: lambda obj, aliases: "set([%s])" % ', '.join(repr_ex(i) for i in obj),
+    frozenset: lambda obj, aliases: "set([%s])" % ', '.join(repr_ex(i) for i in obj),
+    deque: lambda obj, aliases: "collections.deque([%s])" % ', '.join(repr_ex(i) for i in obj),
+    dict: lambda obj, aliases: "{%s}" % ', '.join(
+        "%s: %s" % (repr_ex(k), repr_ex(v)) for k, v in (obj.items() if PY3 else obj.iteritems())
+    ),
+}
+representers.update(
+    (getattr(__import__(mod), attr), lambda obj, aliases, prefix=obj: "%s(%r)" % (prefix, obj.__reduce__()[1][0]))
+    for obj in ('os.stat_result', 'grp.struct_group', 'pwd.struct_passwd')
+    for mod, attr in (obj.split('.'),)
+)
 
-    lookup = representers.get
-    def repr_ex(o):
-        return lookup(type(o), repr)(o)
-    return repr_ex
-repr_ex = make_repr()
+
+def repr_ex(obj, aliases=()):
+    kind, ident = type(obj), id(obj)
+    if kind in representers:
+        return representers[kind](obj, aliases)
+    elif ident in aliases:
+        return aliases[ident][0]
+    else:
+        return repr(obj)
 
 
 def make_signature(name, args, kwargs, *resp):
@@ -140,4 +152,3 @@ def make_signature(name, args, kwargs, *resp):
                 )
     else:
         return sig
-

@@ -8,7 +8,7 @@ import asyncio
 from tornado import gen
 from tornado import ioloop
 
-from aspectlib import debug
+from aspectlib import debug, weave, ALL_METHODS
 
 
 def test_decorate_asyncio_coroutine():
@@ -39,3 +39,17 @@ def test_decorate_tornado_coroutine():
     loop.run_sync(coro)
     output = buf.getvalue()
     assert 'coro => %r' % 'result' in output
+
+#def test_mysql():
+#    buf = StringIO()
+#
+#    with weave(
+#        ['MySQLdb.connections.Connection', 'MySQLdb.cursors.BaseCursor'],
+#        debug.log(print_to=buf, module=False, stacktrace=2, result_repr=repr),
+#        methods=ALL_METHODS
+#    ):
+#        con = MySQLdb.connections.Connection('localhost', 'root', '')
+#        con.select_db('mysql')
+#        cursor = con.cursor()
+#        cursor.execute('show tables')
+#        print(cursor.fetchall())

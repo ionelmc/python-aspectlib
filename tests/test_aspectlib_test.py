@@ -226,6 +226,13 @@ def test_story_empty_play_noproxy_class():
     assert replay._calls.actual == {}
 
 
+def test_story_empty_play_error_on_init():
+    with Story(test_mod).replay() as replay:
+        raises(ValueError, test_mod.Stuff, "error")
+
+    assert replay._calls.actual == {}
+
+
 def test_story_half_play_noproxy_class():
     with Story(test_mod) as story:
         obj = test_mod.Stuff(1, 2)
@@ -234,6 +241,23 @@ def test_story_half_play_noproxy_class():
         obj = test_mod.Stuff(1, 2)
         raises(AssertionError, obj.mix, 3, 4)
 
+
+def test_xxx():
+    with Story(test_mod) as story:
+        obj = test_mod.Stuff(1, 2)
+        test_mod.target(1) == 2
+        test_mod.target(2) == 3
+        test_mod.target(3) ** ValueError
+        other = test_mod.Stuff(2, 2)
+        obj.other('a') == other
+        obj.meth('b') == 'x'
+        obj = test_mod.Stuff(2, 3)
+        obj.meth() ** ValueError('crappo')
+        obj.meth('c') == 'x'
+    for k, v in story._calls.items():
+        print(k, "=>", v)
+
+    fail
 
 def test_story_text_helpers():
     with Story(test_mod) as story:

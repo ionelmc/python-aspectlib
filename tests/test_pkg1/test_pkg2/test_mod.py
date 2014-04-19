@@ -14,6 +14,8 @@ a = 1
 
 class Stuff(object):
     def __init__(self, *args):
+        if args == ('error',):
+            raise ValueError
         self.args = args
 
     def meth(self):
@@ -25,6 +27,10 @@ class Stuff(object):
 
     def raises(self, *a):
         raise ValueError(a)
+
+    def other(self, *args):
+        return ThatLONGStuf(*self.args + args)
+
 
 class ThatLONGStuf(Stuff):
     pass
