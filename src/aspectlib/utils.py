@@ -113,11 +113,19 @@ representers = {
         "%s: %s" % (repr_ex(k), repr_ex(v)) for k, v in (obj.items() if PY3 else obj.iteritems())
     ),
 }
-representers.update(
-    (getattr(__import__(mod), attr), lambda obj, aliases, prefix=obj: "%s(%r)" % (prefix, obj.__reduce__()[1][0]))
-    for obj in ('os.stat_result', 'grp.struct_group', 'pwd.struct_passwd')
-    for mod, attr in (obj.split('.'),)
-)
+
+
+def _make_fixups():
+    for obj in ('os.stat_result', 'grp.struct_group', 'pwd.struct_passwd'):
+        mod, attr = obj.split('.')
+        try:
+            yield getattr(__import__(mod), attr), lambda obj, aliases, prefix=obj: "%s(%r)" % (
+                prefix,
+                obj.__reduce__()[1][0]
+            )
+        except ImportError:
+            continue
+representers.update(_make_fixups())
 
 
 def repr_ex(obj, aliases=()):
