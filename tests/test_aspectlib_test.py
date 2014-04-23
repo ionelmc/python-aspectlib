@@ -233,7 +233,7 @@ def test_story_empty_play_noproxy_class():
 
 
 def test_story_empty_play_error_on_init():
-    with Story(test_mod).replay() as replay:
+    with Story(test_mod).replay(strict=False) as replay:
         raises(ValueError, test_mod.Stuff, "error")
         print(replay._actual)
     assert replay._actual == OrderedDict([
