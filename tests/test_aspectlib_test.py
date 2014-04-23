@@ -235,8 +235,10 @@ def test_story_empty_play_noproxy_class():
 def test_story_empty_play_error_on_init():
     with Story(test_mod).replay() as replay:
         raises(ValueError, test_mod.Stuff, "error")
-
-    assert replay._actual == {}
+        print(replay._actual)
+    assert replay._actual == OrderedDict([
+        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "'error'", ''), _Raises('ValueError()'))
+    ])
 
 
 def test_story_half_play_noproxy_class():
