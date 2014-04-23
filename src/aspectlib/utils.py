@@ -84,6 +84,7 @@ def container(name):
         '__init__': __init__,
         '__str__': lambda self: "%s(%s)" % (name, self.value),
         '__repr__': lambda self: "%s(%r)" % (name, self.value),
+        '__eq__': lambda self, other: type(self) is type(other) and self.value == other.value,
     })
 
 
@@ -130,33 +131,13 @@ representers.update(_make_fixups())
 
 def repr_ex(obj, aliases=()):
     kind, ident = type(obj), id(obj)
-    if kind in representers:
+    if isinstance(kind, BaseException):
+        return "%s(%s)" % (qualname(type(obj)), ', '.join(repr_ex(i, aliases) for i in obj.args))
+    elif isclass(obj):
+        return qualname(obj)
+    elif kind in representers:
         return representers[kind](obj, aliases)
     elif ident in aliases:
         return aliases[ident][0]
     else:
         return repr(obj)
-
-
-def make_signature(name, args, kwargs, *resp):
-    sig = '%s(%s%s%s)' % (
-        name,
-        ', '.join(repr(i) for i in args),
-        ', ' if kwargs else '',
-        ', '.join("%s=%r" % i for i in (kwargs.items() if isinstance(kwargs, dict) else kwargs)),
-    )
-    if resp:
-        result, exception = resp
-        if exception is None:
-            return '%s == %s  # returns\n' % (sig, repr_ex(result))
-        else:
-            if isclass(exception):
-                return '%s ** %s  # raises\n' % (sig, qualname(exception))
-            else:
-                return '%s ** %s(%s)  # raises\n' % (
-                    sig,
-                    qualname(type(exception)),
-                    ', '.join(repr(i) for i in exception.args)
-                )
-    else:
-        return sig

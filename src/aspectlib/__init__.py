@@ -10,9 +10,18 @@ from inspect import isgenerator
 from inspect import isgeneratorfunction
 from inspect import ismethod
 from inspect import ismethoddescriptor
-from inspect import isroutine
 from inspect import ismodule
+from inspect import isroutine
 from logging import getLogger
+
+from .utils import basestring
+from .utils import force_bind
+from .utils import logf
+from .utils import make_method_matcher
+from .utils import mimic
+from .utils import PY2
+from .utils import PY3
+from .utils import Sentinel
 
 try:
     import __builtin__
@@ -23,15 +32,6 @@ try:
     from types import ClassType
 except ImportError:
     ClassType = type
-
-from .utils import basestring
-from .utils import force_bind
-from .utils import make_method_matcher
-from .utils import mimic
-from .utils import PY2
-from .utils import PY3
-from .utils import logf
-from .utils import Sentinel
 
 
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'

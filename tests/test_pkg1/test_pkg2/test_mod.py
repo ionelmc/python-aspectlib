@@ -23,7 +23,7 @@ class Stuff(object):
 
     def mix(self, *args):
         self.meth()
-        return self.args + args
+        return getattr(self, 'args', ()) + args
 
     def raises(self, *a):
         raise ValueError(a)

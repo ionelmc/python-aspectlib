@@ -3,14 +3,20 @@ from __future__ import print_function
 from pytest import raises
 
 from aspectlib import PY2
-from aspectlib.test import format_calls
+from aspectlib.test import _Binds
+from aspectlib.test import OrderedDict
+from aspectlib.test import _format_calls
+from aspectlib.test import _Raises
+from aspectlib.test import _Returns
 from aspectlib.test import mock
 from aspectlib.test import record
 from aspectlib.test import Story
 from aspectlib.test import StoryResultWrapper
 from aspectlib.test import Unexpected
-
+from aspectlib.utils import repr_ex
 from test_pkg1.test_pkg2 import test_mod
+
+format_calls = lambda calls: ''.join(_format_calls(calls))
 
 
 def module_fun(a, b=2):
@@ -196,7 +202,7 @@ def test_story_empty_play_noproxy():
     with Story(test_mod).replay(recurse_lock=True, proxy=False, strict=False) as replay:
         raises(AssertionError, test_mod.target)
 
-    assert replay._calls.actual == {}
+    assert replay._actual == {}
 
 
 def test_story_empty_play_proxy():
@@ -207,11 +213,11 @@ def test_story_empty_play_proxy():
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
-    assert format_calls(replay._calls.actual) == format_calls({
-        ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
+    assert format_calls(replay._actual) == format_calls({
+        ('test_pkg1.test_pkg2.test_mod.target', (), ''): (
             None, None
         ),
-        ('test_pkg1.test_pkg2.test_mod.target', (123,), frozenset([])): (
+        ('test_pkg1.test_pkg2.test_mod.target', (123,), ''): (
             None, TypeError('target() takes no arguments (1 given)'
                             if PY2
                             else 'target() takes 0 positional arguments but 1 was given',)
@@ -223,14 +229,14 @@ def test_story_empty_play_noproxy_class():
     with Story(test_mod).replay(recurse_lock=True, proxy=False, strict=False) as replay:
         raises(AssertionError, test_mod.Stuff, 1, 2)
 
-    assert replay._calls.actual == {}
+    assert replay._actual == {}
 
 
 def test_story_empty_play_error_on_init():
     with Story(test_mod).replay() as replay:
         raises(ValueError, test_mod.Stuff, "error")
 
-    assert replay._calls.actual == {}
+    assert replay._actual == {}
 
 
 def test_story_half_play_noproxy_class():
@@ -250,23 +256,9 @@ def test_xxx():
         test_mod.target(3) ** ValueError
         other = test_mod.Stuff(2, 2)
         obj.other('a') == other
-        obj.meth('b') == 'x'
+        obj.meth('a') == 'x'
         obj = test_mod.Stuff(2, 3)
         obj.meth() ** ValueError('crappo')
-        obj.meth('c') == 'x'
-    for k, v in story._calls.items():
-        print(k, "=>", v)
-
-    fail
-
-def test_story_text_helpers():
-    with Story(test_mod) as story:
-        obj = test_mod.Stuff(1, 2)
-        test_mod.target(1) == 2
-        test_mod.target(2) == 3
-        obj.meth('a') == 'x'
-        obj.meth('b') == 'x'
-        obj = test_mod.Stuff(2, 3)
         obj.meth('c') == 'x'
 
     with story.replay(recurse_lock=True, strict=False) as replay:
@@ -279,17 +271,42 @@ def test_story_text_helpers():
         obj = test_mod.Stuff(4, 4)
         obj.meth()
 
+    for k, v in story._calls.items():
+        print(k, "=>", v)
+    print("############## UNEXPECTED ##############")
+    for k, v in replay._actual.items():
+        print(k, "=>", v)
+
+    # TODO
+
+def test_story_text_helpers():
+    with Story(test_mod) as story:
+        obj = test_mod.Stuff(1, 2)
+        obj.meth('a') == 'x'
+        obj.meth('b') == 'y'
+        obj = test_mod.Stuff(2, 3)
+        obj.meth('c') == 'z'
+        test_mod.target(1) == 2
+        test_mod.target(2) == 3
+
+    with story.replay(recurse_lock=True, strict=False) as replay:
+        obj = test_mod.Stuff(1, 2)
+        obj.meth('a')
+        obj.meth()
+        obj = test_mod.Stuff(4, 4)
+        obj.meth()
+        test_mod.func(5)
+        test_mod.target(1)
+
     print (replay.missing())
-    assert replay.missing() == """stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
-stuff_1.meth('b') == 'x'  # returns
-stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(2, 3)  # was never called !
-stuff_2.meth('c') == 'x'  # returns
+    assert replay.missing() == """stuff_1.meth('b') == 'y'  # returns
+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(2, 3)
+stuff_2.meth('c') == 'z'  # returns
 test_pkg1.test_pkg2.test_mod.target(2) == 3  # returns
 """
     print (replay.unexpected())
-    assert replay.unexpected() == """stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
-stuff_1.meth() == None  # returns
-stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)  # was never called !
+    assert replay.unexpected() == """stuff_1.meth() == None  # returns
+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)
 stuff_2.meth() == None  # returns
 test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 """
@@ -299,11 +316,11 @@ test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 @@ -1,7 +1,7 @@
  stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
  stuff_1.meth('a') == 'x'  # returns
--stuff_1.meth('b') == 'x'  # returns
+-stuff_1.meth('b') == 'y'  # returns
 -stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(2, 3)
--stuff_2.meth('c') == 'x'  # returns
+-stuff_2.meth('c') == 'z'  # returns
 +stuff_1.meth() == None  # returns
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)  # was never called !
++stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)
 +stuff_2.meth() == None  # returns
 +test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
  test_pkg1.test_pkg2.test_mod.target(1) == 2  # returns
@@ -313,11 +330,11 @@ test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 @@ -1,7 +1,7 @@
  stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
  stuff_1.meth('a') == 'x'  # returns
--stuff_1.meth('b') == 'x'  # returns
+-stuff_1.meth('b') == 'y'  # returns
 -stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(2, 3)
--stuff_2.meth('c') == 'x'  # returns
+-stuff_2.meth('c') == 'z'  # returns
 +stuff_1.meth() == None  # returns
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)  # was never called !
++stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)
 +stuff_2.meth() == None  # returns
 +test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
  test_pkg1.test_pkg2.test_mod.target(1) == 2  # returns
@@ -349,43 +366,43 @@ def test_story_empty_play_proxy_class_missing_report():
     assert replay.diff() == """--- expected
 +++ actual
 @@ -0,0 +1,17 @@
-+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)  # was never called !
-+stuff_1.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
-+stuff_1.mix(3, 4) == (0, 1, 3, 4)  # returns
-+stuff_1.raises(123) ** ValueError((123,))  # raises
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)  # was never called !
-+stuff_2.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
-+stuff_2.mix(3, 4) == (1, 2, 3, 4)  # returns
-+stuff_2.raises(123) ** ValueError((123,))  # raises
-+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)  # was never called !
-+that_long_stuf_1.meth() == None  # returns
-+that_long_stuf_1.mix() == (1,)  # returns
-+that_long_stuf_1.mix(10) == (1, 10)  # returns
-+that_long_stuf_1.mix(2) == (1, 2)  # returns
-+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)  # was never called !
-+that_long_stuf_2.mix(4) == (3, 4)  # returns
-+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',))  # raises
++stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
++stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns
++stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
++stuff_1.raises(123) ** ValueError((123,),)  # raises
++stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)
++stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
++stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns
 +test_pkg1.test_pkg2.test_mod.target() == None  # returns
++test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',),)  # raises
++stuff_2.raises(123) ** ValueError((123,),)  # raises
++that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)
++that_long_stuf_1.mix(2) == (1, 2)  # returns
++that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)
++that_long_stuf_2.mix(4) == (3, 4)  # returns
++that_long_stuf_3.mix() == ()  # returns
++that_long_stuf_3.meth() == None  # returns
++that_long_stuf_3.mix(10) == (10,)  # returns
 """ or replay.diff() == """--- expected """ """
 +++ actual """ """
 @@ -1,0 +1,17 @@
-+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)  # was never called !
-+stuff_1.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
-+stuff_1.mix(3, 4) == (0, 1, 3, 4)  # returns
-+stuff_1.raises(123) ** ValueError((123,))  # raises
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)  # was never called !
-+stuff_2.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
-+stuff_2.mix(3, 4) == (1, 2, 3, 4)  # returns
-+stuff_2.raises(123) ** ValueError((123,))  # raises
-+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)  # was never called !
-+that_long_stuf_1.meth() == None  # returns
-+that_long_stuf_1.mix() == (1,)  # returns
-+that_long_stuf_1.mix(10) == (1, 10)  # returns
-+that_long_stuf_1.mix(2) == (1, 2)  # returns
-+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)  # was never called !
-+that_long_stuf_2.mix(4) == (3, 4)  # returns
-+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',))  # raises
++stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
++stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns
++stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
++stuff_1.raises(123) ** ValueError((123,),)  # raises
++stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)
++stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
++stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns
 +test_pkg1.test_pkg2.test_mod.target() == None  # returns
++test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',),)  # raises
++stuff_2.raises(123) ** ValueError((123,),)  # raises
++that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)
++that_long_stuf_1.mix(2) == (1, 2)  # returns
++that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)
++that_long_stuf_2.mix(4) == (3, 4)  # returns
++that_long_stuf_3.mix() == ()  # returns
++that_long_stuf_3.meth() == None  # returns
++that_long_stuf_3.mix(10) == (10,)  # returns
 """
 
 
@@ -405,22 +422,22 @@ def test_story_empty_play_proxy_class():
 
         raises(TypeError, obj.meth, 123)
 
-    assert format_calls(replay._calls.actual) == format_calls({
-        ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): Unexpected({
-            ('mix', ('a', 'b'), frozenset([])): ((1, 2, 'a', 'b'), None),
-            ('mix', (3, 4), frozenset([])): ((1, 2, 3, 4), None),
-            ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
-                                                              if PY2
-                                                              else 'meth() takes 1 positional argument but 2 were given',))
-        }),
-        ('test_pkg1.test_pkg2.test_mod.Stuff', (0, 1), frozenset([])): Unexpected({
-            ('mix', ('a', 'b'), frozenset([])): ((0, 1, 'a', 'b'), None),
-            ('mix', (3, 4), frozenset([])): ((0, 1, 3, 4), None),
-            ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
-                                                              if PY2
-                                                              else 'meth() takes 1 positional argument but 2 were given',))
-        })
-    })
+    assert format_calls(replay._actual) == format_calls(OrderedDict([
+        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "1, 2", ''), _Binds('stuff_1')),
+        (('stuff_1', 'mix', "3, 4", ''), _Returns("(1, 2, 3, 4)")),
+        (('stuff_1', 'mix', "'a', 'b'", ''), _Returns("(1, 2, 'a', 'b')")),
+        (('stuff_1', 'meth', "123", ''), _Raises(repr_ex(TypeError(
+            'meth() takes exactly 1 argument (2 given)' if PY2 else
+            'meth() takes 1 positional argument but 2 were given'
+        )))),
+        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "0, 1", ''), _Binds('stuff_2')),
+        (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
+        (('stuff_2', 'mix', "3, 4", ''), _Returns("(0, 1, 3, 4)")),
+        (('stuff_2', 'meth', "123", ''), _Raises(repr_ex(TypeError(
+            'meth() takes exactly 1 argument (2 given)' if PY2 else
+            'meth() takes 1 positional argument but 2 were given'
+        ))))
+    ]))
 
 
 def test_story_half_play_proxy_class():
@@ -442,21 +459,20 @@ def test_story_half_play_proxy_class():
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
         raises(TypeError, obj.meth, 123)
-    assert replay.unexpected() == format_calls({
-        ('test_pkg1.test_pkg2.test_mod.Stuff', (1, 2), frozenset([])): {
-            ('meth', (), frozenset([])): (None, None),
-            ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
-                                                              if PY2
-                                                              else 'meth() takes 1 positional argument but 2 were given',))
-        },
-        ('test_pkg1.test_pkg2.test_mod.Stuff', (0, 1), frozenset([])): Unexpected({
-            ('mix', ('a', 'b'), frozenset([])): ((0, 1, 'a', 'b'), None),
-            ('mix', (3, 4), frozenset([])): ((0, 1, 3, 4), None),
-            ('meth', (123,), frozenset([])): (None, TypeError('meth() takes exactly 1 argument (2 given)'
-                                                              if PY2
-                                                              else 'meth() takes 1 positional argument but 2 were given',))
-        })
-    })
+    assert replay.unexpected() == format_calls(OrderedDict([
+        (('stuff_1', 'meth', '', ''), _Returns('None')),
+        (('stuff_1', 'meth', '123', ''), _Raises(repr_ex(TypeError(
+            'meth() takes exactly 1 argument (2 given)' if PY2 else
+            'meth() takes 1 positional argument but 2 were given'
+        )))),
+        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '0, 1', ''), _Binds("stuff_2")),
+        (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
+        (('stuff_2', 'mix',  '3, 4', ''), _Returns('(0, 1, 3, 4)')),
+        (('stuff_2', 'meth', '123', ''), _Raises(repr_ex(TypeError(
+            'meth() takes exactly 1 argument (2 given)' if PY2 else
+            'meth() takes 1 positional argument but 2 were given'
+        ))))
+    ]))
 
 
 def test_story_full_play_noproxy():
@@ -496,16 +512,14 @@ def test_story_full_play_proxy():
         raises(ValueError, test_mod.target, 1234)
         raises(TypeError, test_mod.target, 'asdf')
 
-    assert replay.unexpected() == format_calls({
-        ('test_pkg1.test_pkg2.test_mod.target', (), frozenset([])): (
-            None, None
-        ),
-        ('test_pkg1.test_pkg2.test_mod.target', ('asdf',), frozenset([])): (
-            None, TypeError('target() takes no arguments (1 given)'
-                            if PY2
-                            else 'target() takes 0 positional arguments but 1 was given',)
-        )
-    })
+    assert replay.unexpected() == format_calls(OrderedDict([
+        ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
+        ((None, 'test_pkg1.test_pkg2.test_mod.target', "'asdf'", ''), _Raises(repr_ex(TypeError(
+            'target() takes no arguments (1 given)'
+            if PY2
+            else 'target() takes 0 positional arguments but 1 was given',)
+        )))
+    ]))
 
 
 def test_story_result_wrapper():
@@ -535,15 +549,15 @@ def test_story_create():
         assert isinstance(obj, test_mod.Stuff)
         obj.meth('other', 1, 2) == 123
         obj.mix('other') == 'mixymix'
-
-    assert story._calls == {
-        ('test_pkg1.test_pkg2.test_mod.Stuff', ('stuff',), frozenset()): {
-            ('meth', ('other', 1, 2), frozenset()): (123, None),
-            ('mix', ('other',), frozenset()): ('mixymix', None)
-        },
-        ('test_pkg1.test_pkg2.test_mod.target', (), frozenset()): (None, Exception),
-        ('test_pkg1.test_pkg2.test_mod.target', (1, 2, 3), frozenset()): ('foobar', None),
-        ('test_pkg1.test_pkg2.test_mod.target', ('a', 'b', 'c'), frozenset()): ('abc', None)
+    #from pprint import pprint as print
+    #print (dict(story._calls))
+    assert dict(story._calls) == {
+        (None, 'test_pkg1.test_pkg2.test_mod.Stuff',  "'stuff'", ''): _Binds('stuff_1'),
+        ('stuff_1', 'meth', "'other', 1, 2", ''): _Returns("123"),
+        ('stuff_1', 'mix', "'other'", ''): _Returns("'mixymix'"),
+        (None, 'test_pkg1.test_pkg2.test_mod.target', '', ''): _Raises("Exception"),
+        (None, 'test_pkg1.test_pkg2.test_mod.target', "1, 2, 3", ''): _Returns("'foobar'"),
+        (None, 'test_pkg1.test_pkg2.test_mod.target', "'a', 'b', 'c'", ''): _Returns("'abc'"),
     }
 
 def xtest_story_empty_play_proxy_class_dependencies():
