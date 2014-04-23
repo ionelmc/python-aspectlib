@@ -213,16 +213,13 @@ def test_story_empty_play_proxy():
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
-    assert format_calls(replay._actual) == format_calls({
-        ('test_pkg1.test_pkg2.test_mod.target', (), ''): (
-            None, None
-        ),
-        ('test_pkg1.test_pkg2.test_mod.target', (123,), ''): (
-            None, TypeError('target() takes no arguments (1 given)'
-                            if PY2
-                            else 'target() takes 0 positional arguments but 1 was given',)
-        )
-    })
+    assert format_calls(replay._actual) == format_calls(OrderedDict([
+        ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
+        ((None, 'test_pkg1.test_pkg2.test_mod.target', '123', ''), _Raises(repr_ex(TypeError(
+            'target() takes no arguments (1 given)' if PY2 else
+            'target() takes 0 positional arguments but 1 was given',
+        ))))
+    ]))
 
 
 def test_story_empty_play_noproxy_class():

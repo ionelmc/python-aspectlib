@@ -409,9 +409,9 @@ class Story(_RecordingBase):
                 --- expected...
                 +++ actual...
                 @@ -1,2 +1,2 @@
+                 mymod.func('some arg') == 'some result'  # returns
                 -mymod.func('other arg') == 'other result'  # returns
                 +mymod.func('bogus arg') == None  # returns
-                 mymod.func('some arg') == 'some result'  # returns
 
         """
         options.update(self._options)
@@ -488,16 +488,16 @@ class Replay(_RecordingBase):
             Got some arg in the real code !
             boom!
             >>> print(replay.unexpected())
-            mymod.badfunc() ** ValueError('boom!')  # raises
             mymod.func('some arg') == None  # returns
+            mymod.badfunc() ** ValueError('boom!',)  # raises
             <BLANKLINE>
 
         We can just take the output and paste in the story::
 
             >>> import mymod
             >>> with Story(mymod) as story:
-            ...     mymod.badfunc() ** ValueError('boom!')  # raises
             ...     mymod.func('some arg') == None  # returns
+            ...     mymod.badfunc() ** ValueError('boom!')  # raises
             >>> with story.replay():
             ...     mymod.func('some arg')
             ...     try:
