@@ -26,11 +26,11 @@ except ImportError:
 try:
     from collections import OrderedDict
 except ImportError:
-    from .ordereddict import OrderedDict
+    from .py2ordereddict import OrderedDict
 try:
     from collections import ChainMap
 except ImportError:
-    from .chainmap import ChainMap
+    from .py2chainmap import ChainMap
 
 __all__ = 'mock', 'record', "Story"
 
