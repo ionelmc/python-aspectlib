@@ -455,6 +455,8 @@ class Replay(_RecordingBase):
                 shouldrecord = not self._recurse_lock or self._recurse_lock.acquire(False)
                 try:
                     try:
+                        if bind:
+                            bind = self._tag_result(name, bind)
                         result = wrapped(*args, **kwargs)
                     except Exception as exc:
                         if shouldrecord:
@@ -462,7 +464,7 @@ class Replay(_RecordingBase):
                         raise
                     else:
                         if shouldrecord:
-                            self._calls[pk] = self._tag_result(name, bind or _Returns(result))
+                            self._calls[pk] = bind or self._tag_result(name, _Returns(result))
                         return result
                 finally:
                     if shouldrecord and self._recurse_lock:
