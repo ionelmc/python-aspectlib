@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 1.0
+-------------
+
+* Reworked the internals :obj:`aspectlib.test.Story` to keep call ordering, to allow dependencies and improved the serialization (used in the diffs and the missing/unexpected lists).
+
+
 Version 0.9.0
 -------------
 
@@ -16,7 +22,7 @@ Version 0.9.0
     * Allow weaving everything in a module.
     * Allow weaving instances of new-style classes.
 
-* Changed :obj:`aspectlib.test.Story` class for capture-replay and stub/mock testing.
+* Added :obj:`aspectlib.test.Story` class for capture-replay and stub/mock testing.
 
 Version 0.8.1
 -------------
