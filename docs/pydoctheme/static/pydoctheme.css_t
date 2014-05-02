@@ -1,5 +1,7 @@
 @import url("default.css");
-
+a tt {
+    font-weight: normal;
+}
 body {
     background-color: white;
     margin-left: 1em;
@@ -110,7 +112,13 @@ div.body .section:target > h1,
 div.body .section:target > h2,
 div.body .section:target > h3,
 div.body .section:target > h4,
-div.body .section:target > h5 {
+div.body .section:target > h5,
+
+div.body span:target + h1,
+div.body span:target + h2,
+div.body span:target + h3,
+div.body span:target + h4,
+div.body span:target + h5 {
     color: #000;
     background: #f1c40f;
     border-radius: 4px;
@@ -216,8 +224,6 @@ pre {
 div.viewcode-block:target {
     background-color: #FFF4E6 !important;
 }
-.sphinxsidebar li {
-}
 .toctree-l1 {
     font-size: 115%;
     padding: 3px 5px;
@@ -229,13 +235,20 @@ div.viewcode-block:target {
 }
 .toctree-l1.current * {
 }
-.toctree-l2 {
+.toctree-l1 li {
     list-style: circle;
 }
-.toctree-l2.current {
+.toctree-l1.current > a:first-child,
+.toctree-l2.current > a:first-child,
+.toctree-l3.current > a:first-child {
+    font-weight: bold;
+}
+.toctree-l2.current,
+.toctree-l3.current {
     list-style: disc;
 }
-.toctree-l2.current, .toctree-l2.current * {
+.toctree-l2.current,
+.toctree-l2.current * {
     color: #000;
 }
 pre, table, img {
@@ -244,10 +257,14 @@ pre, table, img {
 .sphinxsidebar {
     box-shadow: 0px 0px 2px #999;
 }
-img, img, div.figure {
+img, div.figure {
     box-shadow: 1px 1px 6px #ccc;
     margin: 5px auto 7px auto;
     display: block;
+    max-width: 100%;
+}
+img:active {
+    max-width: inherit;
 }
 div.figure p.caption {
     text-align: center;
@@ -341,6 +358,10 @@ div.related ul {
     #sidebarbutton {
         display: none;
     }
+}
+.odd-headings .row-odd td, .odd-headings .row-odd th {
+    font-weight: bold;
+    background: #eee;
 }
 .highlights {
     font-size: 135%;

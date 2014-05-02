@@ -41,13 +41,12 @@ project = u'aspectlib'
 #add_module_names = True
 
 html_theme = 'pydoctheme'
-html_theme_path = ['sphinxext']
+html_theme_path = ['.']
 pygments_style = 'trac'
-templates_path = ['sphinxext']
-#html_static_path = ['sphinxext/static']
+templates_path = ['.']
 html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
-exclude_trees = ['sphinxext']
+exclude_trees = ['pydoctheme']
 html_split_index = True
 html_sidebars = {
    '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
