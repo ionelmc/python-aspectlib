@@ -4,15 +4,15 @@ from pytest import raises
 
 from aspectlib import PY2
 from aspectlib.test import _Binds
-from aspectlib.test import OrderedDict
 from aspectlib.test import _format_calls
 from aspectlib.test import _Raises
 from aspectlib.test import _Returns
 from aspectlib.test import mock
+from aspectlib.test import OrderedDict
 from aspectlib.test import record
 from aspectlib.test import Story
 from aspectlib.test import StoryResultWrapper
-from aspectlib.test import Unexpected
+from aspectlib.utils import PY26
 from aspectlib.utils import repr_ex
 from test_pkg1.test_pkg2 import test_mod
 
@@ -310,8 +310,9 @@ stuff_2.meth() == None  # returns
 test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 """
     print (replay.diff())
-    assert replay.diff() == """--- expected
-+++ actual
+    if PY26:
+        assert replay.diff() == """--- expected """ """
++++ actual """ """
 @@ -1,7 +1,7 @@
  stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
  stuff_1.meth('a') == 'x'  # returns
@@ -324,8 +325,10 @@ test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 +test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
  test_pkg1.test_pkg2.test_mod.target(1) == 2  # returns
 -test_pkg1.test_pkg2.test_mod.target(2) == 3  # returns
-""" or replay.diff() == """--- expected """ """
-+++ actual """ """
+"""
+    else:
+        assert replay.diff() == """--- expected
++++ actual
 @@ -1,7 +1,7 @@
  stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
  stuff_1.meth('a') == 'x'  # returns
@@ -355,36 +358,17 @@ def test_story_empty_play_proxy_class_missing_report():
         raises(ValueError, obj.raises, 123)
         test_mod.ThatLONGStuf(1).mix(2)
         test_mod.ThatLONGStuf(3).mix(4)
-        obj = test_mod.ThatLONGStuf(1)
+        obj = test_mod.ThatLONGStuf(2)
         obj.mix()
         obj.meth()
         obj.mix(10)
 
     print(repr(replay.diff()))
 
-    assert replay.diff() == """--- expected
-+++ actual
-@@ -0,0 +1,17 @@
-+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
-+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns
-+stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
-+stuff_1.raises(123) ** ValueError((123,),)  # raises
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)
-+stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
-+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns
-+test_pkg1.test_pkg2.test_mod.target() == None  # returns
-+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',),)  # raises
-+stuff_2.raises(123) ** ValueError((123,),)  # raises
-+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)
-+that_long_stuf_1.mix(2) == (1, 2)  # returns
-+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)
-+that_long_stuf_2.mix(4) == (3, 4)  # returns
-+that_long_stuf_3.mix() == ()  # returns
-+that_long_stuf_3.meth() == None  # returns
-+that_long_stuf_3.mix(10) == (10,)  # returns
-""" or replay.diff() == """--- expected """ """
+    if PY26:
+        assert replay.diff() == """--- expected """ """
 +++ actual """ """
-@@ -1,0 +1,17 @@
+@@ -1,0 +1,18 @@
 +stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
 +stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns
 +stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
@@ -399,9 +383,33 @@ def test_story_empty_play_proxy_class_missing_report():
 +that_long_stuf_1.mix(2) == (1, 2)  # returns
 +that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)
 +that_long_stuf_2.mix(4) == (3, 4)  # returns
-+that_long_stuf_3.mix() == ()  # returns
++that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)
++that_long_stuf_3.mix() == (2,)  # returns
 +that_long_stuf_3.meth() == None  # returns
-+that_long_stuf_3.mix(10) == (10,)  # returns
++that_long_stuf_3.mix(10) == (2, 10)  # returns
+"""
+    else:
+        assert replay.diff() == """--- expected
++++ actual
+@@ -0,0 +1,18 @@
++stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
++stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns
++stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
++stuff_1.raises(123) ** ValueError((123,),)  # raises
++stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)
++stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
++stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns
++test_pkg1.test_pkg2.test_mod.target() == None  # returns
++test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',),)  # raises
++stuff_2.raises(123) ** ValueError((123,),)  # raises
++that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)
++that_long_stuf_1.mix(2) == (1, 2)  # returns
++that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)
++that_long_stuf_2.mix(4) == (3, 4)  # returns
++that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)
++that_long_stuf_3.mix() == (2,)  # returns
++that_long_stuf_3.meth() == None  # returns
++that_long_stuf_3.mix(10) == (2, 10)  # returns
 """
 
 

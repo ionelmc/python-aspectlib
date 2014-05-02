@@ -4,6 +4,9 @@ from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
+from logging import getLogger
+from traceback import format_stack
+import sys
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
@@ -33,6 +36,8 @@ except ImportError:
     from .py2chainmap import ChainMap
 
 __all__ = 'mock', 'record', "Story"
+
+logger = getLogger(__name__)
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
@@ -199,9 +204,6 @@ def record(func=None, recurse_lock_factory=allocate_lock, **options):
     else:
         return partial(record, **options)
 
-class Unexpected(dict):
-    def __repr__(self):
-        return "Unexpected(%s)" % super(Unexpected, self).__repr__()
 
 class StoryResultWrapper(object):
     __slots__ = '__recorder__'
@@ -420,6 +422,17 @@ class Story(_RecordingBase):
 ReplayPair = namedtuple("ReplayPair", ('expected', 'actual'))
 
 
+def logged_eval(value):
+    try:
+        return eval(value)
+    except:
+        logger.exception("Failed to evaluare %r.\nContext:\n%s", value, ''.join(format_stack(
+            f=sys._getframe(1),
+            limit=15
+        )))
+        raise
+
+
 class Replay(_RecordingBase):
     """
     Object implementing the `replay transaction`.
@@ -440,14 +453,14 @@ class Replay(_RecordingBase):
 
     def _handle(self, binding, name, args, kwargs, wrapped, bind=None):
         pk = self._make_key(binding, name, args, kwargs)
-        if pk in self._calls:
-            result = self._actual[pk] = self._calls[pk]
+        if pk in self._expected:
+            result = self._actual[pk] = self._expected[pk]
             if isinstance(result, _Binds):
                 self._tag_result(name, bind)
             elif isinstance(result, _Returns):
-                return eval(result.value)
+                return logged_eval(result.value)
             elif isinstance(result, _Raises):
-                raise eval(result.value)
+                raise logged_eval(result.value)
             else:
                 raise RuntimeError('Internal failure - unknown resultt: %r' % result)  # pragma: no cover
         else:
