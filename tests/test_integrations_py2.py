@@ -54,10 +54,3 @@ def test_mysql():
         cursor.execute('show tables')
         rows.extend(cursor.fetchall())
     assert '== (%s)' % ', '.join(repr(row) for row in rows) in replay.unexpected()
-
-def test_requests():
-    import requests
-    from aspectlib.test import Story
-    with Story(requests, subclasses=False).replay(strict=False) as replay:
-        requests.get('http://example.com')
-    fail
