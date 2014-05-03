@@ -116,8 +116,9 @@ With dependency-injection tree would look like this::
     def tree(root, prefix='', basename=os.path.basename, listdir=os.listdir, join=os.path.join, isdir=os.path.isdir):
         ...
 
-This is very ugly, the function's design is damaged by testing concerns. What if we need to check for permissions ? We'd
-have to extend the signature. And what if we forget to do that ?
+One could argue that this is overly explicit, and the function's design is damaged by testing concerns. What if we need
+to check for permissions ? We'd have to extend the signature. And what if we forget to do that ? In some situations one
+cannot afford all this (re-)engineering (e.g: legacy code, simplicity goals etc).
 
 The :obj:`aspectlib.test.Story` is designed to solve this problem in a neat way.
 
