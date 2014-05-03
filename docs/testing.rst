@@ -59,6 +59,16 @@ adequate:
 The :obj:`Story <aspectlib.test.Story>` is the middle-ground, bringing those two types of testing closer. It allows you
 to start with `integration tests` and later `mock`/`stub` with great ease all the dependencies.
 
+.. warning::
+
+    The :obj:`Story <aspectlib.test.Story>` is not intended to patch and mock complex libraries that keep state around.
+    E.g.: `requests <https://pypi.python.org/pypi/requests>`_ keeps a connection pool around - there are `better
+    <https://pypi.python.org/pypi/httmock>`_ `choices <https://pypi.python.org/pypi/requests-testadapter>`_.
+
+.. note::
+
+    Using the :obj:`Story <aspectlib.test.Story>` on imperative, stateles interfaces is best.
+
 An example: mocking out an external system
 ------------------------------------------
 
