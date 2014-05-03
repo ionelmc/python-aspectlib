@@ -562,7 +562,7 @@ class Replay(_RecordingBase):
 
 def _format_calls(calls):
     for (binding, name, args, kwargs), result in calls.items():
-        sig = '%s(%s%s%s)' % (name, args, ', ' if kwargs else '', kwargs)
+        sig = '%s(%s%s%s)' % (name, args, ', ' if kwargs and args else '', kwargs)
 
         if isinstance(result, _Binds):
             yield '%s = %s\n' % (result.value, sig)
