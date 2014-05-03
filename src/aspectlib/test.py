@@ -6,6 +6,7 @@ from functools import wraps
 from inspect import isclass
 from logging import getLogger
 from traceback import format_stack
+import ast
 import sys
 
 from aspectlib import ALL_METHODS
@@ -424,9 +425,20 @@ ReplayPair = namedtuple("ReplayPair", ('expected', 'actual'))
 
 def logged_eval(value):
     try:
+        _node = ast.parse(value)
+        try:
+            _attr = _node.body[0].value.func
+            if isinstance(_attr, ast.Attribute):
+                _code = "import %s" % _attr.value.id
+                try:
+                    exec(_code)
+                except ImportError:
+                    logger.error("Failed to %r for %r", _code, value)
+        except AttributeError:
+            pass
         return eval(value)
     except:
-        logger.exception("Failed to evaluare %r.\nContext:\n%s", value, ''.join(format_stack(
+        logger.exception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(
             f=sys._getframe(1),
             limit=15
         )))
