@@ -147,7 +147,7 @@ Write an empty story and examine the output::
             +os.getpid() == ...  # returns
             +os.listdir('some') == ['test']  # returns
             +os.stat('some/test') == os.stat_result((...))  # returns
-            +os.listdir('some/test') == ['empty', 'dir']  # returns
+            +os.listdir('some/test') == [...'dir'...]  # returns
             +os.stat('some/test/dir') == os.stat_result((...))  # returns
             +os.listdir('some/test/dir') == ['file.txt']  # returns
             +os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
@@ -162,7 +162,7 @@ Write an empty story and examine the output::
         os.getpid() == ...  # returns
         os.listdir('some') == ['test']  # returns
         os.stat('some/test') == os.stat_result((...))  # returns
-        os.listdir('some/test') == ['empty', 'dir']  # returns
+        os.listdir('some/test') == [...'dir'...]  # returns
         os.stat('some/test/dir') == os.stat_result((...))  # returns
         os.listdir('some/test/dir') == ['file.txt']  # returns
         os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
@@ -226,6 +226,6 @@ like this::
      os.listdir('some') == ['test']  # returns
     -os.listdir('bogus') == ['some bogus directory']  # returns
      os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))  # returns
-     os.listdir('some/test') == ['empty', 'dir']  # returns
+     os.listdir('some/test') == [...'dir'...]  # returns
      os.stat('some/test/dir') == os.stat_result((16893, 6691876, 2049, 2, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))  # returns
     <BLANKLINE>
