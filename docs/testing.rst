@@ -62,4 +62,160 @@ to start with `integration tests` and later `mock`/`stub` with great ease all th
 An example: mocking out an external system
 ------------------------------------------
 
-TODO
+Suppose we implement this simple GNU ``tree`` clone::
+
+    >>> import os
+    >>> def tree(root, prefix=''):
+    ...     if not prefix:
+    ...         print("%s%s" % (prefix, os.path.basename(root)))
+    ...     for pos, name in reversed(list(enumerate(sorted(os.listdir(root), reverse=True)))):
+    ...         print("%s%s%s" % (prefix, "├── " if pos else "└── ", name))
+    ...         absname = os.path.join(root, name)
+    ...         if os.path.isdir(absname):
+    ...             tree(absname, prefix + ("│   " if pos else "    "))
+
+Lets suppose we would make up some directories and files for our tests::
+
+    >>> os.makedirs('some/test/dir')
+    >>> os.makedirs('some/test/empty')
+    >>> with open('some/test/dir/file.txt', 'w') as fh:
+    ...     pass
+
+And we'll assert that ``tree`` has this output::
+
+    >>> tree('some')
+    some
+    └── test
+        ├── dir
+        │   └── file.txt
+        └── empty
+
+But now we're left with some garbage and have to clean it up::
+
+    >>> import shutil
+    >>> shutil.rmtree('some')
+
+This is not very practical - we'll need to create many scenarios, and some are not easy to create automatically (e.g:
+tests for permissions issues - not easy to change permissions from within a test).
+
+Normally, to handle this we'd have have to manually monkey-patch the ``os`` module with various mocks or add
+dependency-injection in the ``tree`` function and inject mocks. Either approach we'll leave us with very ugly code.
+
+With dependency-injection tree would look like this::
+
+    def tree(root, prefix='', basename=os.path.basename, listdir=os.listdir, join=os.path.join, isdir=os.path.isdir):
+        ...
+
+This is very ugly, the function's design is damaged by testing concerns. What if we need to check for permissions ? We'd
+have to extend the signature. And what if we forget to do that ?
+
+The :obj:`aspectlib.test.Story` is designed to solve this problem in a neat way.
+
+We can start with some existing test data in the filesystem::
+
+    >>> os.makedirs('some/test/dir')
+    >>> os.makedirs('some/test/empty')
+    >>> with open('some/test/dir/file.txt', 'w') as fh:
+    ...     pass
+
+Write an empty story and examine the output::
+
+        >>> from aspectlib.test import Story
+        >>> with Story(os   , methods="^(?!error)[a-z]+$") as story:
+        ...     pass
+        >>> with story.replay(strict=False) as replay:
+        ...     tree('some')
+        some
+        └── test
+            ├── dir
+            │   └── file.txt
+            └── empty
+        STORY/REPLAY DIFF:
+            --- expected...
+            +++ actual...
+            @@ -...,0 +1,9 @@
+            +os.getpid() == ...  # returns
+            +os.listdir('some') == ['test']  # returns
+            +os.stat('some/test') == os.stat_result((...))  # returns
+            +os.listdir('some/test') == ['empty', 'dir']  # returns
+            +os.stat('some/test/dir') == os.stat_result((...))  # returns
+            +os.listdir('some/test/dir') == ['file.txt']  # returns
+            +os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
+            +os.stat('some/test/empty') == os.stat_result((...))  # returns
+            +os.listdir('some/test/empty') == []  # returns
+
+..
+
+    We can quickly get whatever we would need to put in the story with :obj:`aspectlib.test.Replay.unexpected`::
+
+        >>> print(replay.unexpected())
+        os.getpid() == ...  # returns
+        os.listdir('some') == ['test']  # returns
+        os.stat('some/test') == os.stat_result((...))  # returns
+        os.listdir('some/test') == ['empty', 'dir']  # returns
+        os.stat('some/test/dir') == os.stat_result((...))  # returns
+        os.listdir('some/test/dir') == ['file.txt']  # returns
+        os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
+        os.stat('some/test/empty') == os.stat_result((...))  # returns
+        os.listdir('some/test/empty') == []  # returns
+        <BLANKLINE>
+
+Now we can remove the test directories and fill the story::
+
+    >>> import shutil
+    >>> shutil.rmtree('some')
+
+..
+
+    The story::
+
+        >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
+        ...     os.getpid() == 13030
+        ...     os.listdir('some') == ['test']
+        ...     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
+        ...     os.listdir('some/test') == ['empty', 'dir']  # returns
+        ...     os.stat('some/test/dir') == os.stat_result((16893, 6691876, 2049, 2, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
+        ...     os.listdir('some/test/dir') == ['file.txt']
+        ...     os.stat('some/test/dir/file.txt') == os.stat_result((33204, 6691877, 2049, 1, 1000, 1000, 9, 1399131539, 1399131539, 1399131539))
+        ...     os.stat('some/test/empty') == os.stat_result((16893, 6691877, 2049, 2, 1000, 1000, 4096, 1399132977, 1399132977, 1399132977))  # returns
+        ...     os.listdir('some/test/empty') == []  # returns
+
+    And the `strict` :obj:`replay <aspectlib.test.Story.replay>`::
+
+        >>> with story.replay(proxy=False) as replay:
+        ...     tree('some')
+        some
+        └── test
+            ├── dir
+            │   └── file.txt
+            └── empty
+
+
+If we diverge a bit from the story (or we'd have some unexpected change in the ``tree`` function) we'd get something
+like this::
+
+    >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
+    ...     os.getpid() == 13030
+    ...     os.listdir('some') == ['test']
+    ...     os.listdir('bogus') == ['some bogus directory']
+    ...     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
+    ...     os.listdir('some/test') == ['empty', 'dir']  # returns
+    ...     os.stat('some/test/dir') == os.stat_result((16893, 6691876, 2049, 2, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
+    ...     os.listdir('some/test/dir') == ['file.txt']
+    ...     os.stat('some/test/dir/file.txt') == os.stat_result((33204, 6691877, 2049, 1, 1000, 1000, 9, 1399131539, 1399131539, 1399131539))
+    ...     os.stat('some/test/empty') == os.stat_result((16893, 6691877, 2049, 2, 1000, 1000, 4096, 1399132977, 1399132977, 1399132977))  # returns
+    ...     os.listdir('some/test/empty') == []  # returns
+    >>> with story.replay(proxy=False) as replay:
+    ...     tree('some')
+    Traceback (most recent call last):
+    ...
+    AssertionError: --- expected...
+    +++ actual...
+    @@ -...,6 +1,5 @@
+     os.getpid() == 13030  # returns
+     os.listdir('some') == ['test']  # returns
+    -os.listdir('bogus') == ['some bogus directory']  # returns
+     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))  # returns
+     os.listdir('some/test') == ['empty', 'dir']  # returns
+     os.stat('some/test/dir') == os.stat_result((16893, 6691876, 2049, 2, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))  # returns
+    <BLANKLINE>
