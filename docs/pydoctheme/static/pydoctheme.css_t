@@ -11,17 +11,17 @@ body {
 div.related {
     margin-bottom: 1.2em;
     padding: 0.5em 0;
-    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
     margin-top: 0.5em;
+    overflow: auto;
+	width: 100%
+}
+div.related:first-child {
+    border-bottom: 0;
 }
 
 div.related a:hover {
     color: #0095C4;
-}
-
-div.related:first-child {
-    border-top: 0;
-    border-bottom: 1px solid #ccc;
 }
 
 div.sphinxsidebar {
@@ -369,3 +369,33 @@ div.related ul {
     color: #999;
     text-align: center;
 }
+div.badge a {
+    overflow: hidden;
+    text-indent: -100px;
+    position: absolute;
+    right: -50px;
+    top: 40px;
+    display: block;
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+    width: 230px;
+    height: 33px;
+}
+div.badge img {
+    box-shadow: none; 
+    margin: 0; 
+    border: 0; 
+    width: 149px; 
+    height: 149px;
+}
+.badge {
+    overflow: hidden;
+    position: absolute; 
+    top: 0; 
+    right: 0; 
+    width: 149px; 
+    height: 149px;
+}    
