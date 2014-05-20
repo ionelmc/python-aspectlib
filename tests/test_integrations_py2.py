@@ -3,7 +3,7 @@ try:
 except ImportError:
     from io import StringIO
 from datetime import timedelta
-
+import pytest
 import asyncio
 from tornado import gen
 from tornado import ioloop
@@ -41,7 +41,7 @@ def test_decorate_tornado_coroutine():
     output = buf.getvalue()
     assert 'coro => %r' % 'result' in output
 
-
+@pytest.mark.skipif(sys.platform.startswith('win'), reason="crappy windows")
 def test_mysql():
     with Story(['MySQLdb.cursors.BaseCursor', 'MySQLdb.connections.Connection']) as story:
         pass
