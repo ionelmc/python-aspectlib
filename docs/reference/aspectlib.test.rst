@@ -13,10 +13,7 @@ framework and more.
     aspectlib.test.Replay
 
 .. automodule:: aspectlib.test
-    :members: record, mock
-
-.. automodule:: aspectlib.test
-    :members: Story
+    :members: record, mock, Story
 
 .. autoclass:: Replay(?)
     :members:

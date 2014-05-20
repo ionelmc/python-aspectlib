@@ -64,8 +64,9 @@ $(function() {
     // adjust the scrolling of the sidebar
     scroll_sidebar();
   }
-
+  var is_collapsed;
   function collapse_sidebar() {
+    is_collapsed = true;
     sidebarwrapper.hide();
     sidebar.css('width', ssb_width_collapsed);
     bodywrapper.css('margin-left', bw_margin_collapsed);
@@ -78,8 +79,8 @@ $(function() {
     sidebarbutton.attr('title', _('Expand sidebar'));
     document.cookie = 'sidebar=collapsed';
   }
-
   function expand_sidebar() {
+    is_collapsed = false;
     bodywrapper.css('margin-left', bw_margin_expanded);
     sidebar.css('width', ssb_width_expanded);
     sidebarwrapper.show();
@@ -159,8 +160,9 @@ $(function() {
 
   add_sidebar_button();
   var sidebarbutton = $('#sidebarbutton');
-  set_position_from_cookie();
-
+  if (jwindow.width() > 768) {
+    set_position_from_cookie();
+  }
 
   /* intelligent scrolling */
   function scroll_sidebar() {
@@ -190,4 +192,22 @@ $(function() {
     }
   }
   jwindow.scroll(scroll_sidebar);
+  function resize_sidebar() {
+    ssb_width_expanded = sidebar.css('width', '').width();
+    sidebarwrapper.css('width', ssb_width_expanded - 28);
+    sidebarbutton.css('margin-left', ssb_width_expanded-12);
+
+    if (jwindow.width() < 768) {
+      bodywrapper.css('margin-left', '');
+      sidebarwrapper.show();
+    } else {
+      sidebar.css('width', is_collapsed?ssb_width_collapsed:'').width();
+      if (is_collapsed) {
+        collapse_sidebar()
+      } else {
+        sidebarwrapper.show();
+      }
+    }
+  }
+  jwindow.resize(resize_sidebar);
 });

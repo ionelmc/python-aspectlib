@@ -9,6 +9,7 @@ from tornado import gen
 from tornado import ioloop
 
 from aspectlib import debug, weave, ALL_METHODS
+from aspectlib.test import Story
 
 
 def test_decorate_asyncio_coroutine():
@@ -40,16 +41,16 @@ def test_decorate_tornado_coroutine():
     output = buf.getvalue()
     assert 'coro => %r' % 'result' in output
 
-#def test_mysql():
-#    buf = StringIO()
-#
-#    with weave(
-#        ['MySQLdb.connections.Connection', 'MySQLdb.cursors.BaseCursor'],
-#        debug.log(print_to=buf, module=False, stacktrace=2, result_repr=repr),
-#        methods=ALL_METHODS
-#    ):
-#        con = MySQLdb.connections.Connection('localhost', 'root', '')
-#        con.select_db('mysql')
-#        cursor = con.cursor()
-#        cursor.execute('show tables')
-#        print(cursor.fetchall())
+
+def test_mysql():
+    with Story(['MySQLdb.cursors.BaseCursor', 'MySQLdb.connections.Connection']) as story:
+        pass
+    rows = []
+    with story.replay(strict=False) as replay:
+        import MySQLdb
+        con = MySQLdb.connect('localhost', 'root', '')
+        con.select_db('mysql')
+        cursor = con.cursor()
+        cursor.execute('show tables')
+        rows.extend(cursor.fetchall())
+    assert '== (%s)' % ', '.join(repr(row) for row in rows) in replay.unexpected()

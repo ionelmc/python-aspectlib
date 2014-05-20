@@ -1,5 +1,7 @@
 @import url("default.css");
-
+a tt {
+    font-weight: normal;
+}
 body {
     background-color: white;
     margin-left: 1em;
@@ -9,17 +11,17 @@ body {
 div.related {
     margin-bottom: 1.2em;
     padding: 0.5em 0;
-    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
     margin-top: 0.5em;
+    overflow: auto;
+	width: 100%
+}
+div.related:first-child {
+    border-bottom: 0;
 }
 
 div.related a:hover {
     color: #0095C4;
-}
-
-div.related:first-child {
-    border-top: 0;
-    border-bottom: 1px solid #ccc;
 }
 
 div.sphinxsidebar {
@@ -110,7 +112,13 @@ div.body .section:target > h1,
 div.body .section:target > h2,
 div.body .section:target > h3,
 div.body .section:target > h4,
-div.body .section:target > h5 {
+div.body .section:target > h5,
+
+div.body span:target + h1,
+div.body span:target + h2,
+div.body span:target + h3,
+div.body span:target + h4,
+div.body span:target + h5 {
     color: #000;
     background: #f1c40f;
     border-radius: 4px;
@@ -216,8 +224,6 @@ pre {
 div.viewcode-block:target {
     background-color: #FFF4E6 !important;
 }
-.sphinxsidebar li {
-}
 .toctree-l1 {
     font-size: 115%;
     padding: 3px 5px;
@@ -229,13 +235,20 @@ div.viewcode-block:target {
 }
 .toctree-l1.current * {
 }
-.toctree-l2 {
+.toctree-l1 li {
     list-style: circle;
 }
-.toctree-l2.current {
+.toctree-l1.current > a:first-child,
+.toctree-l2.current > a:first-child,
+.toctree-l3.current > a:first-child {
+    font-weight: bold;
+}
+.toctree-l2.current,
+.toctree-l3.current {
     list-style: disc;
 }
-.toctree-l2.current, .toctree-l2.current * {
+.toctree-l2.current,
+.toctree-l2.current * {
     color: #000;
 }
 pre, table, img {
@@ -244,10 +257,14 @@ pre, table, img {
 .sphinxsidebar {
     box-shadow: 0px 0px 2px #999;
 }
-img, img, div.figure {
+img, div.figure {
     box-shadow: 1px 1px 6px #ccc;
     margin: 5px auto 7px auto;
     display: block;
+    max-width: 100%;
+}
+img:active {
+    max-width: inherit;
 }
 div.figure p.caption {
     text-align: center;
@@ -342,9 +359,43 @@ div.related ul {
         display: none;
     }
 }
+.odd-headings .row-odd td, .odd-headings .row-odd th {
+    font-weight: bold;
+    background: #eee;
+}
 .highlights {
     font-size: 135%;
     font-style: italic;
     color: #999;
     text-align: center;
 }
+div.badge a {
+    overflow: hidden;
+    text-indent: -100px;
+    position: absolute;
+    right: -50px;
+    top: 40px;
+    display: block;
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+    width: 230px;
+    height: 33px;
+}
+div.badge img {
+    box-shadow: none; 
+    margin: 0; 
+    border: 0; 
+    width: 149px; 
+    height: 149px;
+}
+.badge {
+    overflow: hidden;
+    position: absolute; 
+    top: 0; 
+    right: 0; 
+    width: 149px; 
+    height: 149px;
+}    

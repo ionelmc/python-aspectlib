@@ -1,17 +1,23 @@
 from collections import defaultdict
 from collections import namedtuple
+from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
-from difflib import unified_diff
+from logging import getLogger
+from traceback import format_stack
+import ast
+import sys
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
 from aspectlib import weave
 
 from .utils import camelcase_to_underscores
-from .utils import make_signature
-from .utils import qualname, Sentinel, container
+from .utils import container
+from .utils import qualname
+from .utils import repr_ex
+from .utils import Sentinel
 
 try:
     from dummy_thread import allocate_lock
@@ -24,9 +30,15 @@ except ImportError:
 try:
     from collections import OrderedDict
 except ImportError:
-    from .ordereddict import OrderedDict
+    from .py2ordereddict import OrderedDict
+try:
+    from collections import ChainMap
+except ImportError:
+    from .py2chainmap import ChainMap
 
 __all__ = 'mock', 'record', "Story"
+
+logger = getLogger(__name__)
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
@@ -194,86 +206,6 @@ def record(func=None, recurse_lock_factory=allocate_lock, **options):
         return partial(record, **options)
 
 
-class StoryFunctionWrapper(object):
-    def __init__(self, wrapped, add, binding=None, owner=None):
-        self._wrapped = wrapped
-        self._name = wrapped.__name__
-        self._add = add
-        self._binding = binding
-        self._owner = owner
-
-    @property
-    def _qualname(self):
-        return qualname(self)
-
-    def __call__(self, *args, **kwargs):
-        if self._binding is None:
-            return StoryResultWrapper(partial(self._add, None, self._qualname, args, kwargs))
-        else:
-            if self._name == '__init__':
-                self._add(None, qualname(self._owner), args, kwargs, _Binds(self._binding))
-            else:
-                return StoryResultWrapper(partial(self._add, self._binding, self._name, args, kwargs))
-
-    def __get__(self, binding, owner):
-        return mimic(type(self)(
-            self._wrapped.__get__(binding, owner),
-            add=self._add,
-            binding=binding,
-            owner=owner,
-        ), self)
-
-
-class Unexpected(dict):
-    def __repr__(self):
-        return "Unexpected(%s)" % super(Unexpected, self).__repr__()
-
-
-class ReplayFunctionWrapper(StoryFunctionWrapper):
-    def __call__(self, *args, **kwargs):
-        story = self._story
-        if self._binding is None:
-            pk = self._qualname, args, kwargs
-            calls = story._calls
-        else:
-            if self._name == '__init__':
-                pk = qualname(self._owner), args, kwargs
-                calls = story._calls
-                if pk in calls.expected:
-                    story._ids[self._binding] = ReplayPair(calls.expected[pk], calls.actual.setdefault(pk, {}))
-                    return
-                elif story._proxy:
-                    story._ids[self._binding] = ReplayPair({}, calls.actual.setdefault(pk, Unexpected()))
-                    return self._wrapped(*args, **kwargs)
-            else:
-                pk = self._name, args, kwargs
-                calls = story._ids[self._binding]
-
-        if pk in calls.expected:
-            result, exception = calls.actual[pk] = calls.expected[pk]
-            if exception is None:
-                return result
-            else:
-                raise exception() if isclass(exception) else exception
-        elif story._proxy:
-            record = not story._recurse_lock or story._recurse_lock.acquire(False)
-            try:
-                try:
-                    result = self._wrapped(*args, **kwargs)
-                except Exception as exc:
-                    if record:
-                        calls.actual[pk] = None, exc
-                    raise
-                else:
-                    if record:
-                        calls.actual[pk] = result, None
-                    return result
-            finally:
-                if record and story._recurse_lock:
-                    story._recurse_lock.release()
-        else:
-            raise AssertionError("Unexpected call to %s with args:%s kwargs:%s" % pk)
-
 class StoryResultWrapper(object):
     __slots__ = '__recorder__'
 
@@ -304,17 +236,95 @@ class StoryResultWrapper(object):
     ):
         exec ("%s = __unsupported__" % mm)
 
+class StoryFunctionWrapper(object):
+    def __init__(self, wrapped, handle, binding=None, owner=None):
+        self._wrapped = wrapped
+        self._name = wrapped.__name__
+        self._handle = handle
+        self._binding = binding
+        self._owner = owner
 
-class EntanglingBase(object):
+    @property
+    def _qualname(self):
+        return qualname(self)
+
+    def __call__(self, *args, **kwargs):
+        if self._binding is None:
+            return StoryResultWrapper(partial(self._handle, None, self._qualname, args, kwargs))
+        else:
+            if self._name == '__init__':
+                self._handle(None, qualname(self._owner), args, kwargs, _Binds(self._binding))
+            else:
+                return StoryResultWrapper(partial(self._handle, self._binding, self._name, args, kwargs))
+
+    def __get__(self, binding, owner):
+        return mimic(type(self)(
+            self._wrapped.__get__(binding, owner),
+            handle=self._handle,
+            binding=binding,
+            owner=owner,
+        ), self)
+
+
+class ReplayFunctionWrapper(StoryFunctionWrapper):
+    def __call__(self, *args, **kwargs):
+        if self._binding is None:
+            return self._handle(None, self._qualname, args, kwargs, self._wrapped)
+        else:
+            if self._name == '__init__':
+                self._handle(None, qualname(self._owner), args, kwargs, self._wrapped, _Binds(self._binding))
+            else:
+                return self._handle(self._binding, self._name, args, kwargs, self._wrapped)
+
+
+class _RecordingBase(object):
     _target = None
     _options = None
 
+    def __init__(self, target, **options):
+        self._target = target
+        self._options = options
+        self._calls = OrderedDict()
+        self._ids = {}
+        self._instances = defaultdict(int)
+
+    def _make_key(self, binding, name, args, kwargs):
+        if binding is not None:
+            binding, _ = self._ids[id(binding)]
+        return (
+            binding,
+            name,
+            ', '.join(repr_ex(i) for i in args),
+            ', '.join("%s=%s" % (k, repr_ex(v)) for k, v in kwargs.items())
+        )
+
+    def _tag_result(self, name, result):
+        if isinstance(result, _Binds):
+            instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
+            self._instances[instance_name] += 1
+            instance_name = "%s_%s" % (instance_name, self._instances[instance_name])
+            self._ids[id(result.value)] = instance_name, result.value
+            result.value = instance_name
+        else:
+            result.value = repr_ex(result.value, self._ids)
+        return result
+
+    def _handle(self, binding, name, args, kwargs, result):
+        pk = self._make_key(binding, name, args, kwargs)
+        result = self._tag_result(name, result)
+        assert pk not in self._calls or self._calls[pk] == result, (
+            "Story creation inconsistency. There is already a result cached for "
+            "binding:%r name:%r args:%r kwargs:%r and it's: %r." % (
+                binding, name, args, kwargs, self._calls[pk]
+            )
+        )
+        self._calls[pk] = result
+
     def __enter__(self):
         self._options.setdefault('methods', ALL_METHODS)
-
         self.__entanglement = weave(
             self._target,
-            partial(self.FunctionWrapper, add=self._add),
+            partial(self.FunctionWrapper, handle=self._handle),
             **self._options
         )
         return self
@@ -329,81 +339,51 @@ _Returns = container("Returns")
 _Binds = container("Binds")
 
 
-class Story(EntanglingBase):
+class Story(_RecordingBase):
     """
-    This a simple yet flexible tool that can do "capture-replay mocking" or "test doubles" [1]_. It leverages
-    ``aspectlib``'s powerful :obj:`weaver <aspectlib.weave>`.
+        This a simple yet flexible tool that can do "capture-replay mocking" or "test doubles" [1]_. It leverages
+        ``aspectlib``'s powerful :obj:`weaver <aspectlib.weave>`.
 
-    :param target:
-        Targets to weave in the `story`/`replay` transactions.
-    :type target:
-        Same as for :obj:`aspectlib.weave`.
-    :param bool subclasses:
-        If ``True``, subclasses of target are weaved. *Only available for classes*
-    :param bool aliases:
-        If ``True``, aliases of target are replaced.
-    :param bool lazy:
-        If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
-        is called. *Only available for classes*.
-    :param methods: Methods from target to patch. *Only available for classes*
-    :type methods: list or regex or string
+        :param target:
+            Targets to weave in the `story`/`replay` transactions.
+        :type target:
+            Same as for :obj:`aspectlib.weave`.
+        :param bool subclasses:
+            If ``True``, subclasses of target are weaved. *Only available for classes*
+        :param bool aliases:
+            If ``True``, aliases of target are replaced.
+        :param bool lazy:
+            If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
+            is called. *Only available for classes*.
+        :param methods: Methods from target to patch. *Only available for classes*
+        :type methods: list or regex or string
 
-    The ``Story`` allows some testing patterns that are hard to do with other tools:
+        The ``Story`` allows some testing patterns that are hard to do with other tools:
 
-    * **Proxied mocks**: partially mock `objects` and `modules` so they are called normally if the request is unknown.
-    * **Stubs**: completely mock `objects` and `modules`. Raise errors if the request is unknown.
+        * **Proxied mocks**: partially mock `objects` and `modules` so they are called normally if the request is unknown.
+        * **Stubs**: completely mock `objects` and `modules`. Raise errors if the request is unknown.
 
-    The ``Story`` works in two of transactions:
+        The ``Story`` works in two of transactions:
 
-    *   **The story**: You describe what calls you want to mocked. Initially you don't need to write this. Example:
+        *   **The story**: You describe what calls you want to mocked. Initially you don't need to write this. Example:
 
-        ::
+            ::
 
-            >>> import mymod
-            >>> with Story(mymod) as story:
-            ...     mymod.func('some arg') == 'some result'
-            ...     mymod.func('bad arg') ** ValueError("can't use this")
+                >>> import mymod
+                >>> with Story(mymod) as story:
+                ...     mymod.func('some arg') == 'some result'
+                ...     mymod.func('bad arg') ** ValueError("can't use this")
 
-    *   **The replay**: You run the code uses the interfaces mocked in the `story`. The :obj:`replay
-        <aspectlib.test.Story.replay>` always starts from a `story` instance.
+        *   **The replay**: You run the code uses the interfaces mocked in the `story`. The :obj:`replay
+            <aspectlib.test.Story.replay>` always starts from a `story` instance.
 
-    .. versionchanged:: 0.9.0
+        .. versionchanged:: 0.9.0
 
-        Added in.
+            Added in.
 
-    .. [1] http://www.martinfowler.com/bliki/TestDouble.html
+        .. [1] http://www.martinfowler.com/bliki/TestDouble.html
     """
     FunctionWrapper = StoryFunctionWrapper
-
-    def __init__(self, target, **options):
-        self._target = target
-        self._options = options
-        self._calls = OrderedDict()
-        self._ids = {}
-        self._instances = defaultdict(int)
-
-    def _add(self, binding, name, args, kwargs, result):
-        from .utils import repr_ex
-        if binding is not None:
-            binding, _ = self._ids[id(binding)]
-        pk = (
-            binding,
-            name,
-            ', '.join(repr_ex(i) for i in args),
-            ', '.join("%s=%s" % (k, repr_ex(v)) for k, v in kwargs.items())
-        )
-        assert pk not in self._calls or self._calls[pk] == result, "Story creation inconsistency. There is already a result cached for binding:%r name:%r args:%r kwargs:%r and it's: %r." % (
-            binding, name, args, kwargs, self._calls[pk]
-        )
-        if isinstance(result, _Binds):
-            instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
-            self._instances[instance_name] += 1
-            instance_name = "%s_%s" % (instance_name, self._instances[instance_name])
-            self._ids[id(result.value)] = instance_name, result.value
-            result.value = instance_name
-        else:
-            result.value = repr_ex(result.value, self._ids)
-        self._calls[pk] = result
 
     def replay(self, **options):
         """
@@ -432,18 +412,40 @@ class Story(EntanglingBase):
                 --- expected...
                 +++ actual...
                 @@ -1,2 +1,2 @@
+                 mymod.func('some arg') == 'some result'  # returns
                 -mymod.func('other arg') == 'other result'  # returns
                 +mymod.func('bogus arg') == None  # returns
-                 mymod.func('some arg') == 'some result'  # returns
 
         """
         options.update(self._options)
-        return Replay(self._target, self._calls, **options)
+        return Replay(self, **options)
 
 ReplayPair = namedtuple("ReplayPair", ('expected', 'actual'))
 
 
-class Replay(EntanglingBase):
+def logged_eval(value):
+    try:
+        _node = ast.parse(value)
+        try:
+            _attr = _node.body[0].value.func
+            if isinstance(_attr, ast.Attribute):
+                _code = "import %s" % _attr.value.id
+                try:
+                    exec(_code)
+                except ImportError:
+                    logger.error("Failed to %r for %r", _code, value)
+        except AttributeError:
+            pass
+        return eval(value)
+    except:
+        logger.exception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(
+            f=sys._getframe(1),
+            limit=15
+        )))
+        raise
+
+
+class Replay(_RecordingBase):
     """
     Object implementing the `replay transaction`.
 
@@ -452,15 +454,48 @@ class Replay(EntanglingBase):
     """
     FunctionWrapper = ReplayFunctionWrapper
 
-    def __init__(self, target, expected, proxy=True, strict=True, dump=True, recurse_lock=False, **options):
-        self._target = target
-        self._options = options
-        self._calls = ReplayPair(expected, {})
-        self._ids = {}
+    def __init__(self, play, proxy=True, strict=True, dump=True, recurse_lock=False, **options):
+        super(Replay, self).__init__(play._target, **options)
+        self._calls, self._expected, self._actual = ChainMap(self._calls, play._calls), play._calls, self._calls
+
         self._proxy = proxy
         self._strict = strict
         self._dump = dump
         self._recurse_lock = allocate_lock() if recurse_lock is True else (recurse_lock and recurse_lock())
+
+    def _handle(self, binding, name, args, kwargs, wrapped, bind=None):
+        pk = self._make_key(binding, name, args, kwargs)
+        if pk in self._expected:
+            result = self._actual[pk] = self._expected[pk]
+            if isinstance(result, _Binds):
+                self._tag_result(name, bind)
+            elif isinstance(result, _Returns):
+                return logged_eval(result.value)
+            elif isinstance(result, _Raises):
+                raise logged_eval(result.value)
+            else:
+                raise RuntimeError('Internal failure - unknown resultt: %r' % result)  # pragma: no cover
+        else:
+            if self._proxy:
+                shouldrecord = not self._recurse_lock or self._recurse_lock.acquire(False)
+                try:
+                    try:
+                        if bind:
+                            bind = self._tag_result(name, bind)
+                        result = wrapped(*args, **kwargs)
+                    except Exception as exc:
+                        if shouldrecord:
+                            self._calls[pk] = self._tag_result(name, _Raises(exc))
+                        raise
+                    else:
+                        if shouldrecord:
+                            self._calls[pk] = bind or self._tag_result(name, _Returns(result))
+                        return result
+                finally:
+                    if shouldrecord and self._recurse_lock:
+                        self._recurse_lock.release()
+            else:
+                raise AssertionError("Unexpected call to %s/%s with args:%s kwargs:%s" % pk)
 
     def unexpected(self, _missing=False):
         """
@@ -480,16 +515,16 @@ class Replay(EntanglingBase):
             Got some arg in the real code !
             boom!
             >>> print(replay.unexpected())
-            mymod.badfunc() ** ValueError('boom!')  # raises
             mymod.func('some arg') == None  # returns
+            mymod.badfunc() ** ValueError('boom!',)  # raises
             <BLANKLINE>
 
         We can just take the output and paste in the story::
 
             >>> import mymod
             >>> with Story(mymod) as story:
-            ...     mymod.badfunc() ** ValueError('boom!')  # raises
             ...     mymod.func('some arg') == None  # returns
+            ...     mymod.badfunc() ** ValueError('boom!')  # raises
             >>> with story.replay():
             ...     mymod.func('some arg')
             ...     try:
@@ -499,25 +534,14 @@ class Replay(EntanglingBase):
             boom!
 
         """
-        unexpected = {}
         if _missing:
-            expected, actual = self._calls.actual, self._calls.expected
+            expected, actual = self._actual, self._expected
         else:
-            actual, expected = self._calls.actual, self._calls.expected
-
-        for pk, val in actual.items():
-            expected_val = expected.get(pk, None)
-            if pk not in expected or val != expected_val:
-                if isinstance(val, tuple):
-                    unexpected[pk] = val
-                elif expected_val is None:
-                    unexpected[pk] = Unexpected(val)
-                else:
-                    iunexpected = unexpected[pk] = {}
-                    for pk, val in val.items():
-                        if pk not in expected_val:
-                            iunexpected[pk] = val
-        return format_calls(unexpected)
+            actual, expected = self._actual, self._expected
+        return ''.join(_format_calls(OrderedDict(
+            (pk, val) for pk, val in actual.items()
+            if pk not in expected or val != expected.get(pk)
+        )))
 
     def missing(self):
         """
@@ -533,8 +557,8 @@ class Replay(EntanglingBase):
         ``strict=False`` mode and want to do custom assertions.
 
         """
-        actual = format_calls(self._calls.actual,).splitlines(True)
-        expected = format_calls(self._calls.expected).splitlines(True)
+        actual = list(_format_calls(self._actual))
+        expected = list(_format_calls(self._expected))
         return ''.join(unified_diff(expected, actual, fromfile='expected', tofile='actual'))
 
     def __exit__(self, *args):
@@ -548,28 +572,19 @@ class Replay(EntanglingBase):
                 if self._strict:
                     raise AssertionError(diff)
 
+def _format_calls(calls):
+    for (binding, name, args, kwargs), result in calls.items():
+        sig = '%s(%s%s%s)' % (name, args, ', ' if kwargs and args else '', kwargs)
 
-def format_calls(calls, instance_mapping={}):
-    if calls:
-        out = StringIO()
-        instances = defaultdict(int)
-        for pk in sorted(calls, key=repr):
-            name, args, kwargs = pk
-            resp = calls[pk]
-            if isinstance(resp, tuple):
-                out.write(make_signature(name, args, kwargs, *resp))
+        if isinstance(result, _Binds):
+            yield '%s = %s\n' % (result.value, sig)
+        elif isinstance(result, _Returns):
+            if binding is None:
+                yield '%s == %s  # returns\n' % (sig, result.value)
             else:
-                instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
-                instances[instance_name] += 1
-                instance_name = "%s_%s" % (instance_name, instances[instance_name])
-                out.write('%s = %s' % (instance_name, make_signature(name, args, kwargs)))
-                if isinstance(resp, Unexpected):
-                    out.write('  # was never called !')
-                out.write('\n')
-                for pk in sorted(resp, key=repr):
-                    name, args, kwargs = pk
-                    iresp = resp[pk]
-                    out.write('%s.%s' % (instance_name, make_signature(name, args, kwargs, *iresp)))
-        return out.getvalue()
-    else:
-        return ""
+                yield '%s.%s == %s  # returns\n' % (binding, sig, result.value)
+        elif isinstance(result, _Raises):
+            if binding is None:
+                yield '%s ** %s  # raises\n' % (sig, result.value)
+            else:
+                yield '%s.%s ** %s  # raises\n' % (binding, sig, result.value)
