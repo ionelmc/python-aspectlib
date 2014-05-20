@@ -130,7 +130,7 @@ Works as expected with generators:
 
 * **This presentation**:
 
-    https://github.com/ionelmc/python-aspectlib/blob/master/tests/decorators.rst
+    https://github.com/ionelmc/python-aspectlib/blob/master/docs/presentations/pycon.se-lightningtalk.rst
 
     generated using restview and converted to pdf using Google Chome (pagination by css)
 
