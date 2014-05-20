@@ -4,6 +4,7 @@ except ImportError:
     from io import StringIO
 from datetime import timedelta
 import pytest
+import sys
 import asyncio
 from tornado import gen
 from tornado import ioloop
