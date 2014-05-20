@@ -14,6 +14,7 @@ class Base(object):
         return 'base'
 Base2 = Base
 
+
 class Sub(Base):
     pass
 
