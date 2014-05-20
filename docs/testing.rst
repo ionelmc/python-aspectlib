@@ -132,7 +132,7 @@ We can start with some existing test data in the filesystem::
 Write an empty story and examine the output::
 
         >>> from aspectlib.test import Story
-        >>> with Story(os   , methods="^(?!error)[a-z]+$") as story:
+        >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
         ...     pass
         >>> with story.replay(strict=False) as replay:
         ...     tree('some')
