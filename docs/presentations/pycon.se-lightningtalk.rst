@@ -130,10 +130,10 @@ Works as expected with generators:
 
 * **This presentation**:
 
-    https://github.com/ionelmc/python-aspectlib/blob/master/docs/presentations/pycon.se-lightningtalk.rst
+    https://github.com/ionelmc/python-aspectlib/tree/master/docs/presentations
 
-    generated using restview and converted to pdf using Google Chome (pagination by css)
+    Generated using restview and converted to pdf using Google Chome (pagination by css)
 
-* ``aspectlib`` does many more things, check it out:
+* ``aspectlib`` **does many more things, check it out**:
 
     http://python-aspectlib.readthedocs.org/en/latest/
