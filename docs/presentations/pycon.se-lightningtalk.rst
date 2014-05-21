@@ -33,13 +33,7 @@ Does this look familiar ?
 Not very nice
 =============
 
-* Having to write the wrapper boiler plate
-
-    * Tendious
-    * Same stuff every time
-    * Confusing if you don't understand closures
-    * Ever forgot to return the wrapper ?
-
+* Boiler plate
 * What if you use it on a generator ?
 
 What if you use it on a generator ?
@@ -94,6 +88,8 @@ Now it works:
     >>> t = raises(RuntimeError, list, broken_generator())
     Raised RuntimeError() for ()/{}
 
+**Note:** Doesn't actually work for coroutines ... it would involve more code to handle edge cases.
+
 The alternative, use ``aspectlib``
 ==================================
 
@@ -131,8 +127,6 @@ Works as expected with generators:
 * **This presentation**:
 
     https://github.com/ionelmc/python-aspectlib/tree/master/docs/presentations
-
-    Generated using restview and converted to pdf using Google Chome (pagination by css)
 
 * ``aspectlib`` **does many more things, check it out**:
 
