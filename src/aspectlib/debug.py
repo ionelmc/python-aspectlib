@@ -157,6 +157,10 @@ def log(func=None,
             logger.critical('Failed to log a message: %s', exc, exc_info=True)
 
     class __logged__(Aspect):
+        __slots__ = 'cutpoint_function', 'final_function', 'binding'
+
+        bind = False
+
         def __init__(self, cutpoint_function, binding=None):
             mimic(self, cutpoint_function)
             self.cutpoint_function = cutpoint_function
