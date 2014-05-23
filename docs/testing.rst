@@ -67,7 +67,7 @@ to start with `integration tests` and later `mock`/`stub` with great ease all th
 
 .. note::
 
-    Using the :obj:`Story <aspectlib.test.Story>` on imperative, stateles interfaces is best.
+    Using the :obj:`Story <aspectlib.test.Story>` on imperative, stateless interfaces is best.
 
 An example: mocking out an external system
 ------------------------------------------
