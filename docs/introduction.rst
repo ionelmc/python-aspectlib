@@ -27,6 +27,8 @@ Example:
     def read(name):
         return open(name).read()
 
+.. _advices:
+
 You can use these *advices*:
 
 * :obj:`~aspectlib.Proceed` or ``None`` - Calls the wrapped function with the default arguments. The *yield* returns
