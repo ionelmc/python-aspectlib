@@ -220,6 +220,40 @@ def test_aspect_bad():
     raises(aspectlib.ExpectedGenerator, func)
 
 
+def test_aspect_gen_bind():
+    called = []
+
+    @aspectlib.Aspect(bind=True)
+    def aspect(cutpoint):
+        assert cutpoint.__name__ == 'func_g'
+        yield
+        called.append(True)
+
+    @aspect
+    def func_g():
+        yield 1
+
+    assert list(func_g()) == [1]
+    assert called == [True]
+
+
+def test_aspect_bind():
+    called = []
+
+    @aspectlib.Aspect(bind=True)
+    def aspect(cutpoint):
+        assert cutpoint.__name__ == 'func_g'
+        yield
+        called.append(True)
+
+    @aspect
+    def func_g():
+        return 'foobar'
+
+    assert func_g() == 'foobar'
+    assert called == [True]
+
+
 def test_aspect_bad_gen():
     @aspectlib.Aspect
     def aspect():
