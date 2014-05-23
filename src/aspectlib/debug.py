@@ -157,7 +157,7 @@ def log(func=None,
             logger.critical('Failed to log a message: %s', exc, exc_info=True)
 
     class __logged__(Aspect):
-        __slots__ = 'cutpoint_function', 'final_function', 'binding'
+        __slots__ = 'cutpoint_function', 'final_function', 'binding', '__name__'
 
         bind = False
 
