@@ -12,6 +12,7 @@ from inspect import ismethod
 from inspect import ismethoddescriptor
 from inspect import ismodule
 from inspect import isroutine
+from functools import partial
 from logging import getLogger
 
 from .utils import basestring
@@ -95,13 +96,59 @@ class Aspect(object):
     """
     Container for the advice yielding generator. Can be used as a decorator on other function to change behavior
     according to the advices yielded from the generator.
-    """
-    __slots__ = 'advising_function'
 
-    def __init__(self, advising_function):
+    Args:
+        advising_function (generator function): A generator function that yields :ref:`advices`.
+        bind (bool): A convenience flag so you can access the cutpoint function (you'll get it as an argument).
+
+    Usage::
+
+        >>> @Aspect
+        ... def my_decorator(*args, **kwargs):
+        ...     print("Got called with args: %s kwargs: %s" % (args, kwargs))
+        ...     result = yield
+        ...     print(" ... and the result is: %s" % (result,))
+        >>> @my_decorator
+        ... def foo(a, b, c=1):
+        ...     print((a, b, c))
+        >>> foo(1, 2, c=3)
+        Got called with args: (1, 2) kwargs: {'c': 3}
+        (1, 2, 3)
+         ... and the result is: None
+
+    Normally you don't have access to the cutpoints (the functions you're going to use the aspect/decorator on) because
+    you don't and should not call them directly. There are situations where you'd want to get the name or other data
+    from the function. This is where you use the ``bind=True`` option::
+
+        >>> @Aspect(bind=True)
+        ... def my_decorator(cutpoint, *args, **kwargs):
+        ...     print("`%s` got called with args: %s kwargs: %s" % (cutpoint.__name__, args, kwargs))
+        ...     result = yield
+        ...     print(" ... and the result is: %s" % (result,))
+        >>> @my_decorator
+        ... def foo(a, b, c=1):
+        ...     print((a, b, c))
+        >>> foo(1, 2, c=3)
+        `foo` got called with args: (1, 2) kwargs: {'c': 3}
+        (1, 2, 3)
+         ... and the result is: None
+
+    """
+    __slots__ = 'advising_function', 'bind'
+
+    def __new__(cls, advising_function=UNSPECIFIED, bind=False):
+        if advising_function is UNSPECIFIED:
+            return partial(cls, bind=bind)
+        else:
+            self = super(Aspect, cls).__new__(cls)
+            self.__init__(advising_function, bind)
+            return self
+
+    def __init__(self, advising_function, bind=False):
         if not isgeneratorfunction(advising_function):
             raise ExpectedGeneratorFunction("advising_function %s must be a generator function." % advising_function)
         self.advising_function = advising_function
+        self.bind = bind
 
     def __call__(self, cutpoint_function):
         if isgeneratorfunction(cutpoint_function):
@@ -110,7 +157,10 @@ class Aspect(object):
                 return decorate_advising_generator_py3(self.advising_function, cutpoint_function)
             else:
                 def advising_generator_wrapper(*args, **kwargs):
-                    advisor = self.advising_function(*args, **kwargs)
+                    if self.bind:
+                        advisor = self.advising_function(cutpoint_function, *args, **kwargs)
+                    else:
+                        advisor = self.advising_function(*args, **kwargs)
                     if not isgenerator(advisor):
                         raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
                     try:
@@ -174,7 +224,10 @@ class Aspect(object):
                 return mimic(advising_generator_wrapper, cutpoint_function)
         else:
             def advising_function_wrapper(*args, **kwargs):
-                advisor = self.advising_function(*args, **kwargs)
+                if self.bind:
+                    advisor = self.advising_function(cutpoint_function, *args, **kwargs)
+                else:
+                    advisor = self.advising_function(*args, **kwargs)
                 if not isgenerator(advisor):
                     raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
                 try:
