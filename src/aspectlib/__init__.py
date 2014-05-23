@@ -154,7 +154,7 @@ class Aspect(object):
         if isgeneratorfunction(cutpoint_function):
             if PY3:
                 from aspectlib.py3support import decorate_advising_generator_py3
-                return decorate_advising_generator_py3(self.advising_function, cutpoint_function)
+                return decorate_advising_generator_py3(self.advising_function, cutpoint_function, self.bind)
             else:
                 def advising_generator_wrapper(*args, **kwargs):
                     if self.bind:

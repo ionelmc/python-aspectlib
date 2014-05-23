@@ -16,11 +16,14 @@ from aspectlib import UnacceptableAdvice
 logger = getLogger(__name__)
 
 
-def decorate_advising_generator_py3(advising_function, cutpoint_function):
+def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
     assert isgeneratorfunction(cutpoint_function)
 
     def advising_generator_wrapper_py3(*args, **kwargs):
-        advisor = advising_function(*args, **kwargs)
+        if bind:
+            advisor = advising_function(cutpoint_function, *args, **kwargs)
+        else:
+            advisor = advising_function(*args, **kwargs)
         if not isgenerator(advisor):
             raise ExpectedGenerator("advising_function %s did not return a generator." % advising_function)
         try:
