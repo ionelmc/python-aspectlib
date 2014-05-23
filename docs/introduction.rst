@@ -29,6 +29,9 @@ Example:
 
 .. _advices:
 
+Advices
+-------
+
 You can use these *advices*:
 
 * :obj:`~aspectlib.Proceed` or ``None`` - Calls the wrapped function with the default arguments. The *yield* returns
