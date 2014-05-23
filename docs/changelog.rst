@@ -1,10 +1,16 @@
 Changelog
 =========
 
+Version 1.1
+-----------
+
+* Add a `bind` option to :obj:`aspectlib.Aspect` so you can access the cutpoint from the advisor.
+
 Version 1.0
 -------------
 
-* Reworked the internals :obj:`aspectlib.test.Story` to keep call ordering, to allow dependencies and improved the serialization (used in the diffs and the missing/unexpected lists).
+* Reworked the internals :obj:`aspectlib.test.Story` to keep call ordering, to allow dependencies and improved the
+  serialization (used in the diffs and the missing/unexpected lists).
 
 
 Version 0.9.0
