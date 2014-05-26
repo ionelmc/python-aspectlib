@@ -5,7 +5,7 @@ except ImportError:
 from datetime import timedelta
 import pytest
 import sys
-import asyncio
+import trollius as asyncio
 from tornado import gen
 from tornado import ioloop
 
