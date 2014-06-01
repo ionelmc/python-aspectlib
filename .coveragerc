@@ -1,11 +1,11 @@
 [paths]
-source =
-    src/aspectlib
-    */aspectlib
+source = src
 
 [run]
-source = */aspectlib
+source = src
 parallel = true
+omit = *migrations*
+
 [report]
 show_missing = true
 precision = 2

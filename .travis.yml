@@ -1,51 +1,25 @@
 language: python
-os:
-  - linux
-  - osx
 python: 2.7
 env:
   global:
-    PYTHONPATH=src:tests
-    PYTHONUNBUFFERED=yes
-  matrix:
-    - TOXENV=2.6 WITH_COVERAGE=no
-    - TOXENV=2.6 WITH_COVERAGE=yes
-    - TOXENV=2.7 WITH_COVERAGE=no
-    - TOXENV=2.7 WITH_COVERAGE=yes
-    - TOXENV=3.3 WITH_COVERAGE=no
-    - TOXENV=3.3 WITH_COVERAGE=yes
-    - TOXENV=3.4 WITH_COVERAGE=no
-    - TOXENV=3.4 WITH_COVERAGE=yes
-    - TOXENV=pypy WITH_COVERAGE=no
-    - TOXENV=pypy WITH_COVERAGE=yes
+    LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
+  tox_environments:
+    - TOXENV=2.6-trollius-MySQL-python,coveralls
+    - TOXENV=2.6-trollius-MySQL-python-nocover
+    - TOXENV=2.7-trollius-MySQL-python,coveralls
+    - TOXENV=2.7-trollius-MySQL-python-nocover
+    - TOXENV=3.3-asyncio,coveralls
+    - TOXENV=3.3-asyncio-nocover
+    - TOXENV=pypy-trollius-MySQL-python,coveralls
+    - TOXENV=pypy-trollius-MySQL-python-nocover
 before_install:
-  - |
-    if [[ $TOXENV = pypy ]]; then
-      deactivate
-      sudo apt-add-repository --yes ppa:pypy/ppa
-      sudo apt-get update
-      sudo apt-get install pypy
-      source ~/virtualenv/pypy/bin/activate
-    fi
-    python --version
-    uname -a
-    lsb_release -a
+  - python --version
+  - uname -a
+  - lsb_release -a
 install:
   - pip install tox
 script:
-  - |
-    if [[ $WITH_COVERAGE == yes ]]; then
-      tox -v -- py.test --cov aspectlib -vv
-    else
-      tox -v -- py.test -vv
-    fi
-after_success:
-  - |
-    if [[ $WITH_COVERAGE == yes ]]; then
-      .tox/$TOXENV/bin/coverage combine
-      .tox/$TOXENV/bin/coverage report
-      .tox/$TOXENV/bin/coveralls
-    fi
+  - tox -v
 notifications:
   email:
     on_success: never
