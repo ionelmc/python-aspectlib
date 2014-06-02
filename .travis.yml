@@ -3,7 +3,7 @@ python: 2.7
 env:
   global:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
-  tox_environments:
+  matrix:
     - TOXENV=2.6-trollius-MySQL-python,coveralls
     - TOXENV=2.6-trollius-MySQL-python-nocover
     - TOXENV=2.7-trollius-MySQL-python,coveralls
