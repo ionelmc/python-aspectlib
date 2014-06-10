@@ -4,14 +4,16 @@ env:
   global:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
-    - TOXENV=2.6-trollius-MySQL-python,coveralls
-    - TOXENV=2.6-trollius-MySQL-python-nocover
-    - TOXENV=2.7-trollius-MySQL-python,coveralls
-    - TOXENV=2.7-trollius-MySQL-python-nocover
-    - TOXENV=3.3-asyncio,coveralls
-    - TOXENV=3.3-asyncio-nocover
-    - TOXENV=pypy-trollius-MySQL-python,coveralls
-    - TOXENV=pypy-trollius-MySQL-python-nocover
+    - TOXENV=py2-2.6,coveralls
+    - TOXENV=py2-2.6-nocover
+    - TOXENV=py2-2.7,coveralls
+    - TOXENV=py2-2.7-nocover
+    - TOXENV=py2-pypy,coveralls
+    - TOXENV=py2-pypy-nocover
+    - TOXENV=py3-3.3,coveralls
+    - TOXENV=py3-3.3-nocover
+    - TOXENV=py3-3.4,coveralls
+    - TOXENV=py3-3.4-nocover
 before_install:
   - python --version
   - uname -a
