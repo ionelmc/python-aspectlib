@@ -23,7 +23,8 @@ else:
 FIRST_CAP_RE = re.compile('(.)([A-Z][a-z]+)')
 ALL_CAP_RE = re.compile('([a-z0-9])([A-Z])')
 
-DEBUG = 1
+DEBUG = os.getenv('ASPECTLIB_DEBUG')
+
 
 def logf(logger_func):
     @wraps(logger_func)

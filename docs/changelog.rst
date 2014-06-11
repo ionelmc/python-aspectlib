@@ -11,6 +11,7 @@ Version 1.1
 * All the methods on the replay are now properties: :obj:`aspectlib.test.Story.diff`,
   :obj:`aspectlib.test.Story.unexpected` and :obj:`aspectlib.test.Story.missing`.
 * Added :obj:`aspectlib.test.Story.actual` and :obj:`aspectlib.test.Story.expected`.
+* Added an ``ASPECTLIB_DEBUG`` environment variable option to switch on debug logging in ``aspectlib``'s internals.
 
 Version 1.0
 -------------
