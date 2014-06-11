@@ -5,6 +5,12 @@ Version 1.1
 -----------
 
 * Add a `bind` option to :obj:`aspectlib.Aspect` so you can access the cutpoint from the advisor.
+* Replaced automatic importing in :obj:`aspectlib.test.Replay` with extraction of context variables (locals and globals
+  from the calling :obj:`aspectlib.test.Story`). Works better than the previous inference of module from AST of the
+  result.
+* All the methods on the replay are now properties: :obj:`aspectlib.test.Story.diff`,
+  :obj:`aspectlib.test.Story.unexpected` and :obj:`aspectlib.test.Story.missing`.
+* Added :obj:`aspectlib.test.Story.actual` and :obj:`aspectlib.test.Story.expected`.
 
 Version 1.0
 -------------

@@ -86,8 +86,8 @@ Suppose we implement this simple GNU ``tree`` clone::
 
 Lets suppose we would make up some directories and files for our tests::
 
-    >>> os.makedirs('some/test/dir')
-    >>> os.makedirs('some/test/empty')
+    >>> if not os.path.exists('some/test/dir'):   os.makedirs('some/test/dir')
+    >>> if not os.path.exists('some/test/empty'): os.makedirs('some/test/empty')
     >>> with open('some/test/dir/file.txt', 'w') as fh:
     ...     pass
 
@@ -154,12 +154,23 @@ Write an empty story and examine the output::
             +os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
             +os.stat('some/test/empty') == os.stat_result((...))  # returns
             +os.listdir('some/test/empty') == []  # returns
+        ACTUAL:
+            os.getpid() == ...  # returns
+            os.listdir('some') == ['test']  # returns
+            os.stat('some/test') == os.stat_result((...))  # returns
+            os.listdir('some/test') == [...'dir'...]  # returns
+            os.stat('some/test/dir') == os.stat_result((...))  # returns
+            os.listdir('some/test/dir') == ['file.txt']  # returns
+            os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
+            os.stat('some/test/empty') == os.stat_result((...))  # returns
+            os.listdir('some/test/empty') == []  # returns
+        <BLANKLINE>
 
 ..
 
     We can quickly get whatever we would need to put in the story with :obj:`aspectlib.test.Replay.unexpected`::
 
-        >>> print(replay.unexpected())
+        >>> print(replay.unexpected)
         os.getpid() == ...  # returns
         os.listdir('some') == ['test']  # returns
         os.stat('some/test') == os.stat_result((...))  # returns

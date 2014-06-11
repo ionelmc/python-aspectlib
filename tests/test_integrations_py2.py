@@ -54,4 +54,4 @@ def test_mysql():
         cursor = con.cursor()
         cursor.execute('show tables')
         rows.extend(cursor.fetchall())
-    assert '== (%s)' % ', '.join(repr(row) for row in rows) in replay.unexpected()
+    assert '== (%s)' % ', '.join(repr(row) for row in rows) in replay.unexpected

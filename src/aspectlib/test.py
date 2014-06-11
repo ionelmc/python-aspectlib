@@ -1,10 +1,10 @@
+import logging
 from collections import defaultdict
 from collections import namedtuple
 from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
-from logging import getLogger
 from traceback import format_stack
 import ast
 import sys
@@ -38,7 +38,7 @@ except ImportError:
 
 __all__ = 'mock', 'record', "Story"
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
@@ -384,6 +384,10 @@ class Story(_RecordingBase):
         .. [1] http://www.martinfowler.com/bliki/TestDouble.html
     """
     FunctionWrapper = StoryFunctionWrapper
+    def __init__(self, *args, **kwargs):
+        super(Story, self).__init__(*args, **kwargs)
+        frame = sys._getframe(1)
+        self._context = frame.f_globals, frame.f_locals
 
     def replay(self, **options):
         """
@@ -415,7 +419,10 @@ class Story(_RecordingBase):
                  mymod.func('some arg') == 'some result'  # returns
                 -mymod.func('other arg') == 'other result'  # returns
                 +mymod.func('bogus arg') == None  # returns
-
+            ACTUAL:
+                mymod.func('some arg') == 'some result'  # returns
+                mymod.func('bogus arg') == None  # returns
+            <BLANKLINE>
         """
         options.update(self._options)
         return Replay(self, **options)
@@ -423,25 +430,17 @@ class Story(_RecordingBase):
 ReplayPair = namedtuple("ReplayPair", ('expected', 'actual'))
 
 
-def logged_eval(value):
+def logged_eval(value, context):
     try:
-        _node = ast.parse(value)
-        try:
-            _attr = _node.body[0].value.func
-            if isinstance(_attr, ast.Attribute):
-                _code = "import %s" % _attr.value.id
-                try:
-                    exec(_code)
-                except ImportError:
-                    logger.error("Failed to %r for %r", _code, value)
-        except AttributeError:
-            pass
-        return eval(value)
+        return eval(value, *context)
     except:
+        value = getattr(logging, 'logProcesses', 1)
+        logging.logProcesses = 0
         logger.exception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(
             f=sys._getframe(1),
             limit=15
         )))
+        logging.logProcesses = value
         raise
 
 
@@ -461,6 +460,7 @@ class Replay(_RecordingBase):
         self._proxy = proxy
         self._strict = strict
         self._dump = dump
+        self._context = play._context
         self._recurse_lock = allocate_lock() if recurse_lock is True else (recurse_lock and recurse_lock())
 
     def _handle(self, binding, name, args, kwargs, wrapped, bind=None):
@@ -470,11 +470,11 @@ class Replay(_RecordingBase):
             if isinstance(result, _Binds):
                 self._tag_result(name, bind)
             elif isinstance(result, _Returns):
-                return logged_eval(result.value)
+                return logged_eval(result.value, self._context)
             elif isinstance(result, _Raises):
-                raise logged_eval(result.value)
+                raise logged_eval(result.value, self._context)
             else:
-                raise RuntimeError('Internal failure - unknown resultt: %r' % result)  # pragma: no cover
+                raise RuntimeError('Internal failure - unknown result: %r' % result)  # pragma: no cover
         else:
             if self._proxy:
                 shouldrecord = not self._recurse_lock or self._recurse_lock.acquire(False)
@@ -497,7 +497,18 @@ class Replay(_RecordingBase):
             else:
                 raise AssertionError("Unexpected call to %s/%s with args:%s kwargs:%s" % pk)
 
-    def unexpected(self, _missing=False):
+    def _unexpected(self, _missing=False):
+        if _missing:
+            expected, actual = self._actual, self._expected
+        else:
+            actual, expected = self._actual, self._expected
+        return ''.join(_format_calls(OrderedDict(
+            (pk, val) for pk, val in actual.items()
+            if pk not in expected or val != expected.get(pk)
+        )))
+
+    @property
+    def unexpected(self):
         """
         Returns a pretty text representation of just the unexpected calls.
 
@@ -514,7 +525,7 @@ class Replay(_RecordingBase):
             ...         print(exc)
             Got some arg in the real code !
             boom!
-            >>> print(replay.unexpected())
+            >>> print(replay.unexpected)
             mymod.func('some arg') == None  # returns
             mymod.badfunc() ** ValueError('boom!',)  # raises
             <BLANKLINE>
@@ -534,21 +545,16 @@ class Replay(_RecordingBase):
             boom!
 
         """
-        if _missing:
-            expected, actual = self._actual, self._expected
-        else:
-            actual, expected = self._actual, self._expected
-        return ''.join(_format_calls(OrderedDict(
-            (pk, val) for pk, val in actual.items()
-            if pk not in expected or val != expected.get(pk)
-        )))
+        return self._unexpected()
 
+    @property
     def missing(self):
         """
         Returns a pretty text representation of just the missing calls.
         """
-        return self.unexpected(_missing=True)
+        return self._unexpected(_missing=True)
 
+    @property
     def diff(self):
         """
         Returns a pretty text representation of the unexpected and missing calls.
@@ -561,14 +567,25 @@ class Replay(_RecordingBase):
         expected = list(_format_calls(self._expected))
         return ''.join(unified_diff(expected, actual, fromfile='expected', tofile='actual'))
 
+    @property
+    def actual(self):
+        return ''.join(_format_calls(self._actual))
+
+    @property
+    def expected(self):
+        return ''.join(_format_calls(self._expected))
+
+
     def __exit__(self, *args):
         super(Replay, self).__exit__()
         if self._strict or self._dump:
-            diff = self.diff()
+            diff = self.diff
             if diff:
                 if self._dump:
                     print('STORY/REPLAY DIFF:')
                     print('    ' + '\n    '.join(diff.splitlines()))
+                    print('ACTUAL:')
+                    print('    ' + '    '.join(_format_calls(self._actual)))
                 if self._strict:
                     raise AssertionError(diff)
 
