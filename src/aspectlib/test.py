@@ -1,10 +1,10 @@
-import logging
 from collections import defaultdict
 from collections import namedtuple
 from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
+from logging import getLogger
 from traceback import format_stack
 import ast
 import sys
@@ -15,6 +15,7 @@ from aspectlib import weave
 
 from .utils import camelcase_to_underscores
 from .utils import container
+from .utils import logf
 from .utils import qualname
 from .utils import repr_ex
 from .utils import Sentinel
@@ -38,7 +39,8 @@ except ImportError:
 
 __all__ = 'mock', 'record', "Story"
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
+logexception = logf(logger.exception)
 
 Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
@@ -434,13 +436,10 @@ def logged_eval(value, context):
     try:
         return eval(value, *context)
     except:
-        value = getattr(logging, 'logProcesses', 1)
-        logging.logProcesses = 0
-        logger.exception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(
-            f=sys._getframe(1),
+        logexception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(
+            f=_getframe(1),
             limit=15
         )))
-        logging.logProcesses = value
         raise
 
 

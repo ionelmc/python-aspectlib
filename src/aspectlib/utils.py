@@ -1,7 +1,9 @@
 from __future__ import print_function
 
 import platform
+import logging
 import re
+import os
 import sys
 from collections import deque
 from functools import wraps
@@ -30,8 +32,16 @@ def logf(logger_func):
     @wraps(logger_func)
     def log_wrapper(*args):
         if DEBUG:
-            return logger_func(*args)
+            logProcesses = logging.logProcesses
+            logThreads = logging.logThreads
+            logging.logThreads = logging.logProcesses = False
+            try:
+                return logger_func(*args)
+            finally:
+                logging.logProcesses = logProcesses
+                logging.logThreads = logThreads
     return log_wrapper
+
 
 def camelcase_to_underscores(name):
     s1 = FIRST_CAP_RE.sub(r'\1_\2', name)
