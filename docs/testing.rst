@@ -144,8 +144,7 @@ Write an empty story and examine the output::
         STORY/REPLAY DIFF:
             --- expected...
             +++ actual...
-            @@ -...,0 +1,9 @@
-            +os.getpid() == ...  # returns
+            @@ ... @@
             +os.listdir('some') == ['test']  # returns
             +os.stat('some/test') == os.stat_result((...))  # returns
             +os.listdir('some/test') == [...'dir'...]  # returns
@@ -155,7 +154,6 @@ Write an empty story and examine the output::
             +os.stat('some/test/empty') == os.stat_result((...))  # returns
             +os.listdir('some/test/empty') == []  # returns
         ACTUAL:
-            os.getpid() == ...  # returns
             os.listdir('some') == ['test']  # returns
             os.stat('some/test') == os.stat_result((...))  # returns
             os.listdir('some/test') == [...'dir'...]  # returns
@@ -171,7 +169,6 @@ Write an empty story and examine the output::
     We can quickly get whatever we would need to put in the story with :obj:`aspectlib.test.Replay.unexpected`::
 
         >>> print(replay.unexpected)
-        os.getpid() == ...  # returns
         os.listdir('some') == ['test']  # returns
         os.stat('some/test') == os.stat_result((...))  # returns
         os.listdir('some/test') == [...'dir'...]  # returns
@@ -192,7 +189,6 @@ Now we can remove the test directories and fill the story::
     The story::
 
         >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
-        ...     os.getpid() == 13030
         ...     os.listdir('some') == ['test']
         ...     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
         ...     os.listdir('some/test') == ['empty', 'dir']  # returns
@@ -217,7 +213,6 @@ If we diverge a bit from the story (or we'd have some unexpected change in the `
 like this::
 
     >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
-    ...     os.getpid() == 13030
     ...     os.listdir('some') == ['test']
     ...     os.listdir('bogus') == ['some bogus directory']
     ...     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
@@ -233,8 +228,7 @@ like this::
     ...
     AssertionError: --- expected...
     +++ actual...
-    @@ -...,6 +1,5 @@
-     os.getpid() == 13030  # returns
+    @@ ... @@
      os.listdir('some') == ['test']  # returns
     -os.listdir('bogus') == ['some bogus directory']  # returns
      os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))  # returns
