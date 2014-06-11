@@ -2,6 +2,7 @@ from collections import MutableMapping
 
 __all__ = 'ChainMap',
 
+
 class ChainMap(MutableMapping):
     ''' A ChainMap groups multiple dicts (or other mappings) together
     to create a single, updateable view.

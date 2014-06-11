@@ -44,6 +44,7 @@ def strip_non_ascii(val):
     """
     return str(val).translate(ASCII_ONLY)
 
+
 def log(func=None,
         stacktrace=10,
         stacktrace_align=60,

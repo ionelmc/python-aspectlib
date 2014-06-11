@@ -20,7 +20,7 @@ PYPY = platform.python_implementation() == 'PyPy'
 if PY3:
     basestring = str
 else:
-    basestring = str, unicode
+    basestring = str, unicode  # flake8: noqa
 
 FIRST_CAP_RE = re.compile('(.)([A-Z][a-z]+)')
 ALL_CAP_RE = re.compile('([a-z0-9])([A-Z])')

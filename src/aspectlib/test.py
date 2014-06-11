@@ -1,3 +1,4 @@
+from sys import _getframe
 from collections import defaultdict
 from collections import namedtuple
 from difflib import unified_diff
@@ -6,8 +7,6 @@ from functools import wraps
 from inspect import isclass
 from logging import getLogger
 from traceback import format_stack
-import ast
-import sys
 
 from aspectlib import ALL_METHODS
 from aspectlib import mimic
@@ -24,10 +23,6 @@ try:
     from dummy_thread import allocate_lock
 except ImportError:
     from _dummy_thread import allocate_lock
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 try:
     from collections import OrderedDict
 except ImportError:
@@ -236,7 +231,8 @@ class StoryResultWrapper(object):
         '__contains__', '__call__', '__lt__', '__le__', '__ne__', '__gt__', '__ge__', '__cmp__', '__rcmp__',
         '__nonzero__',
     ):
-        exec ("%s = __unsupported__" % mm)
+        exec("%s = __unsupported__" % mm)
+
 
 class StoryFunctionWrapper(object):
     def __init__(self, wrapped, handle, binding=None, owner=None):
@@ -386,9 +382,10 @@ class Story(_RecordingBase):
         .. [1] http://www.martinfowler.com/bliki/TestDouble.html
     """
     FunctionWrapper = StoryFunctionWrapper
+
     def __init__(self, *args, **kwargs):
         super(Story, self).__init__(*args, **kwargs)
-        frame = sys._getframe(1)
+        frame = _getframe(1)
         self._context = frame.f_globals, frame.f_locals
 
     def replay(self, **options):
@@ -574,7 +571,6 @@ class Replay(_RecordingBase):
     def expected(self):
         return ''.join(_format_calls(self._expected))
 
-
     def __exit__(self, *args):
         super(Replay, self).__exit__()
         if self._strict or self._dump:
@@ -587,6 +583,7 @@ class Replay(_RecordingBase):
                     print('    ' + '    '.join(_format_calls(self._actual)))
                 if self._strict:
                     raise AssertionError(diff)
+
 
 def _format_calls(calls):
     for (binding, name, args, kwargs), result in calls.items():

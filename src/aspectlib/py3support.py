@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import sys
-from functools import wraps
 from inspect import isgenerator
 from inspect import isgeneratorfunction
 from logging import getLogger
@@ -9,7 +8,6 @@ from logging import getLogger
 from aspectlib import ExpectedGenerator
 from aspectlib import mimic
 from aspectlib import Proceed
-from aspectlib import PY3
 from aspectlib import Return
 from aspectlib import UnacceptableAdvice
 
@@ -37,7 +35,7 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
                     gen = cutpoint_function(*args, **kwargs)
                     try:
                         result = yield from gen
-                    except BaseException as exc:
+                    except BaseException:
                         advice = advisor.throw(*sys.exc_info())
                     else:
                         try:

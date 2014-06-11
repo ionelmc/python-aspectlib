@@ -492,6 +492,7 @@ def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, **optio
                 )
     return entanglement
 
+
 def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
     """
     Low-level weaver for "whole module weaving".
@@ -515,7 +516,7 @@ def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
                     weave_class(func, aspect, owner=module, name=attr, methods=methods, lazy=lazy, **options),
                     #  it's not consistent with the other ways of weaving a class (it's never weaved as a routine).
                     #  therefore it's disabled until it's considered useful.
-                    #weave_module_function(module, getattr(module, attr), aspect, force_name=attr, **options),
+                    #  #weave_module_function(module, getattr(module, attr), aspect, force_name=attr, **options),
                 )
     return entanglement
 
@@ -537,7 +538,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
             if not issubclass(sub_class, Fabric):
                 entanglement.merge(weave_class(sub_class, aspect, methods=methods, subclasses=subclasses, lazy=lazy))
     logdebug("weave_class (klass=%r, methods=%s, subclasses=%s, lazy=%s, owner=%s, name=%s, aliases=%s)",
-          klass, methods, subclasses, lazy, owner, name, aliases)
+             klass, methods, subclasses, lazy, owner, name, aliases)
     if lazy:
         def __init__(self, *args, **kwargs):
             super(SubClass, self).__init__(*args, **kwargs)
@@ -578,7 +579,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
     return entanglement
 
 
-def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, location=None, **bogus_options):
+def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, location=None, **_bogus_options):
     """
     Low-level attribute patcher.
 
@@ -636,6 +637,6 @@ def weave_module_function(module, target, aspect, force_name=None, **options):
     :returns: An :obj:`aspectlib.Entanglement` object.
     """
     logdebug("weave_module_function (module=%s, target=%s, aspect=%s, force_name=%s, **options=%s",
-          module, target, aspect, force_name, options)
+             module, target, aspect, force_name, options)
     name = force_name or target.__name__
     return patch_module(module, name, _checked_apply(aspect, target, module=module), original=target, **options)
