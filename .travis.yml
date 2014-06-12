@@ -6,15 +6,25 @@ env:
   matrix:
     - TOXENV=check
     - TOXENV=py2-2.6,coveralls
+    - TOXENV=py2-2.6-ASPECTLIB_DEBUG=yes,coveralls
     - TOXENV=py2-2.6-nocover
+    - TOXENV=py2-2.6-nocover-ASPECTLIB_DEBUG=yes
     - TOXENV=py2-2.7,coveralls
+    - TOXENV=py2-2.7-ASPECTLIB_DEBUG=yes,coveralls
     - TOXENV=py2-2.7-nocover
+    - TOXENV=py2-2.7-nocover-ASPECTLIB_DEBUG=yes
     - TOXENV=py2-pypy,coveralls
+    - TOXENV=py2-pypy-ASPECTLIB_DEBUG=yes,coveralls
     - TOXENV=py2-pypy-nocover
+    - TOXENV=py2-pypy-nocover-ASPECTLIB_DEBUG=yes
     - TOXENV=py3-3.3,coveralls
+    - TOXENV=py3-3.3-ASPECTLIB_DEBUG=yes,coveralls
     - TOXENV=py3-3.3-nocover
+    - TOXENV=py3-3.3-nocover-ASPECTLIB_DEBUG=yes
     - TOXENV=py3-3.4,coveralls
+    - TOXENV=py3-3.4-ASPECTLIB_DEBUG=yes,coveralls
     - TOXENV=py3-3.4-nocover
+    - TOXENV=py3-3.4-nocover-ASPECTLIB_DEBUG=yes
 before_install:
   - python --version
   - uname -a
