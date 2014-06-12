@@ -63,9 +63,6 @@ Reference
 
         Will work as expected with generators (and coroutines):
 
-        ..
-
-            >>> from pytest import raises
 
         .. sourcecode:: pycon
 
@@ -73,6 +70,7 @@ Reference
             ... def broken_generator():
             ...     yield 1
             ...     raise RuntimeError()
+            >>> from pytest import raises
             >>> raises(RuntimeError, lambda: list(broken_generator()))
             Raised RuntimeError() for ()/{}
             ...
@@ -83,6 +81,27 @@ Reference
             >>> raises(RuntimeError, broken_function)
             Raised RuntimeError() for ()/{}
             ...
+
+        And it will handle results::
+
+            >>> from aspectlib import Aspect
+            >>> @Aspect
+            ... def log_results(*args, **kwargs):
+            ...     try:
+            ...         value = yield
+            ...     except Exception as exc:
+            ...         print("Raised %r for %s/%s" % (exc, args, kwargs))
+            ...         raise
+            ...     else:
+            ...         print("Returned %r for %s/%s" % (value, args, kwargs))
+
+            >>> @log_results
+            ... def weird_function():
+            ...     yield 1
+            ...     raise StopIteration('foobar')  # in Python 3 it's the same as: return 'foobar'
+            >>> list(weird_function())
+            Returned 'foobar' for ()/{}
+            [1]
 
 
 .. autoclass:: Rollback
