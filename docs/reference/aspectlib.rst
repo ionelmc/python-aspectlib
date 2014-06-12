@@ -63,6 +63,10 @@ Reference
 
         Will work as expected with generators (and coroutines):
 
+        ..
+
+            >>> from pytest import raises
+
         .. sourcecode:: pycon
 
             >>> @log_errors
