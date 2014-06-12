@@ -9,7 +9,6 @@ aspectlib
     :nosignatures:
 
     aspectlib.Aspect
-    aspectlib.Rollback
     aspectlib.Proceed
     aspectlib.Return
 
@@ -23,6 +22,7 @@ aspectlib
     aspectlib.ALL_METHODS
     aspectlib.NORMAL_METHODS
     aspectlib.weave
+    aspectlib.Rollback
 
 
 Reference

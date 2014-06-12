@@ -72,7 +72,7 @@ class UnsupportedType(TypeError):
 
 class Proceed(object):
     """
-    Instructs the Aspect Calls to call the decorated function. Can be used multiple times.
+    Instruction for calling the decorated function. Can be used multiple times.
 
     If not used as an instance then the default args and kwargs are used.
     """
@@ -85,7 +85,9 @@ class Proceed(object):
 
 class Return(object):
     """
-    Instructs the Aspect to return a value.
+    Instruction for returning a *optional* value.
+
+    If not used as an instance then ``None`` is returned.
     """
     __slots__ = 'value',
 
