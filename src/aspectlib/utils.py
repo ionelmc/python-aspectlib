@@ -35,6 +35,7 @@ def logf(logger_func):
             logProcesses = logging.logProcesses
             logThreads = logging.logThreads
             logging.logThreads = logging.logProcesses = False
+            # disable logging pids and tids - we don't want extra calls around, especilly when we monkeypatch stuff
             try:
                 return logger_func(*args)
             finally:
