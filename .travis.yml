@@ -27,6 +27,8 @@ env:
     - TOXENV=py3-3.4-nocover-ASPECTLIB_DEBUG=yes
 before_install:
   - python --version
+  - virtualenv --version
+  - pip --version
   - uname -a
   - lsb_release -a
 install:

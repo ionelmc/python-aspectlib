@@ -11,6 +11,8 @@ env:
 {% endfor %}
 before_install:
   - python --version
+  - virtualenv --version
+  - pip --version
   - uname -a
   - lsb_release -a
 install:
