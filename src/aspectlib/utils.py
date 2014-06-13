@@ -34,13 +34,15 @@ def logf(logger_func):
         if DEBUG:
             logProcesses = logging.logProcesses
             logThreads = logging.logThreads
-            logging.logThreads = logging.logProcesses = False
+            logMultiprocessing = logging.logMultiprocessing
+            logging.logThreads = logging.logProcesses = logMultiprocessing = False
             # disable logging pids and tids - we don't want extra calls around, especilly when we monkeypatch stuff
             try:
                 return logger_func(*args)
             finally:
                 logging.logProcesses = logProcesses
                 logging.logThreads = logThreads
+                logging.logMultiprocessing = logMultiprocessing
     return log_wrapper
 
 
