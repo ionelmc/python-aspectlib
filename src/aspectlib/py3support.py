@@ -10,9 +10,10 @@ from aspectlib import mimic
 from aspectlib import Proceed
 from aspectlib import Return
 from aspectlib import UnacceptableAdvice
+from aspectlib.utils import logf
 
 logger = getLogger(__name__)
-
+logdebug = logf(logger)
 
 def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
     assert isgeneratorfunction(cutpoint_function)
@@ -27,7 +28,7 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
         try:
             advice = next(advisor)
             while True:
-                logger.debug('Got advice %r from %s', advice, advising_function)
+                logdebug('Got advice %r from %s', advice, advising_function)
                 if advice is Proceed or advice is None or isinstance(advice, Proceed):
                     if isinstance(advice, Proceed):
                         args = advice.args

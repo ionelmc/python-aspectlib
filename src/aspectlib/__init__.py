@@ -42,7 +42,6 @@ logger = getLogger(__name__)
 logdebug = logf(logger.debug)
 logexception = logf(logger.exception)
 
-
 UNSPECIFIED = Sentinel('UNSPECIFIED')
 ABSOLUTELLY_ALL_METHODS = re.compile('.*')
 ALL_METHODS = re.compile('(?!__getattribute__$)')
@@ -484,7 +483,6 @@ def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, **optio
         func = getattr(instance, attr)
         if method_matches(attr):
             if ismethod(func):
-                logger.info("%s %s %s", attr, func, type(func))
                 if hasattr(func, '__func__'):
                     realfunc = func.__func__
                 else:
