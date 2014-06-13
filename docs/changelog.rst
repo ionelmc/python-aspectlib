@@ -1,8 +1,13 @@
 Changelog
 =========
 
-Version 1.1
------------
+Version 1.1.1
+-------------
+
+* Use ``ASPECTLIB_DEBUG`` for every logger in ``aspectlib``.
+
+Version 1.1.0
+-------------
 
 * Add a `bind` option to :obj:`aspectlib.Aspect` so you can access the cutpoint from the advisor.
 * Replaced automatic importing in :obj:`aspectlib.test.Replay` with extraction of context variables (locals and globals
@@ -13,7 +18,7 @@ Version 1.1
 * Added :obj:`aspectlib.test.Story.actual` and :obj:`aspectlib.test.Story.expected`.
 * Added an ``ASPECTLIB_DEBUG`` environment variable option to switch on debug logging in ``aspectlib``'s internals.
 
-Version 1.0
+Version 1.0.0
 -------------
 
 * Reworked the internals :obj:`aspectlib.test.Story` to keep call ordering, to allow dependencies and improved the
