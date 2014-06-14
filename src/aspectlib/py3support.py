@@ -15,6 +15,7 @@ from aspectlib.utils import logf
 logger = getLogger(__name__)
 logdebug = logf(logger.debug)
 
+
 def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
     assert isgeneratorfunction(cutpoint_function)
 
