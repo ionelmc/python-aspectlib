@@ -4,7 +4,6 @@ environment:
     - TOXENV: check
 {% for env, config in tox_environments|dictsort %}
     - TOXENV: "{{ env }}{% if config.cover %},coveralls{% endif %}"
-
 {% endfor %}
 init:
   - "ECHO %TOXENV%"
