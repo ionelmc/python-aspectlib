@@ -1,9 +1,9 @@
 build: false
 environment:
   matrix:
-    - TOXENV=check
+    - TOXENV: check
 {% for env, config in tox_environments|dictsort %}
-    - TOXENV={{ env }}{% if config.cover %},coveralls{% endif %}
+    - TOXENV: "{{ env }}{% if config.cover %},coveralls{% endif %}"
 
 {% endfor %}
 init:

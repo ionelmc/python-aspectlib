@@ -1,23 +1,39 @@
 build: false
 environment:
   matrix:
-    - TOXENV=check
-    - TOXENV=2.6,coveralls
-    - TOXENV=2.6-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=2.6-nocover
-    - TOXENV=2.6-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=2.7,coveralls
-    - TOXENV=2.7-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=2.7-nocover
-    - TOXENV=2.7-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=asyncio-3.3,coveralls
-    - TOXENV=asyncio-3.3-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=asyncio-3.3-nocover
-    - TOXENV=asyncio-3.3-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=pypy,coveralls
-    - TOXENV=pypy-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=pypy-nocover
-    - TOXENV=pypy-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV: check
+    - TOXENV: "2.6,coveralls"
+
+    - TOXENV: "2.6-ASPECTLIB_DEBUG=yes,coveralls"
+
+    - TOXENV: "2.6-nocover"
+
+    - TOXENV: "2.6-nocover-ASPECTLIB_DEBUG=yes"
+
+    - TOXENV: "2.7,coveralls"
+
+    - TOXENV: "2.7-ASPECTLIB_DEBUG=yes,coveralls"
+
+    - TOXENV: "2.7-nocover"
+
+    - TOXENV: "2.7-nocover-ASPECTLIB_DEBUG=yes"
+
+    - TOXENV: "asyncio-3.3,coveralls"
+
+    - TOXENV: "asyncio-3.3-ASPECTLIB_DEBUG=yes,coveralls"
+
+    - TOXENV: "asyncio-3.3-nocover"
+
+    - TOXENV: "asyncio-3.3-nocover-ASPECTLIB_DEBUG=yes"
+
+    - TOXENV: "pypy,coveralls"
+
+    - TOXENV: "pypy-ASPECTLIB_DEBUG=yes,coveralls"
+
+    - TOXENV: "pypy-nocover"
+
+    - TOXENV: "pypy-nocover-ASPECTLIB_DEBUG=yes"
+
 init:
   - "ECHO %TOXENV%"
   - ps: "ls C:/Python*"
