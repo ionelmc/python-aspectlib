@@ -9,9 +9,10 @@ init:
   - "ECHO %TOXENV%"
   - ps: "ls C:/Python*"
 install:
-  - ps: (Invoke-WebRequest https://bootstrap.pypa.io/ez_setup.py).Content | python -
-  - ps: (Invoke-WebRequest https://bootstrap.pypa.io/get-pip.py).Content | python - tox virtualenv
+  - ps: (Invoke-WebRequest "https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py").Content | python - tox pip virtualenv
+  - ps: (Invoke-WebRequest https://bootstrap.pypa.io/get-pip.py).RawContent | python - tox virtualenv
 test_script:
-  - "c:/python27/Scripts/tox.exe --version"
+  - "c:/python27/Scripts/tox --version"
   - "c:/python27/Scripts/virtualenv --version"
   - "c:/python27/Scripts/pip --version"
+  - "c:/python27/Scripts/tox"

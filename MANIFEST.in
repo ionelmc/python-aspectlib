@@ -18,6 +18,7 @@ include README.rst
 include configure
 include tox.ini tox.tmpl.ini
 include .travis.yml .travis.tmpl.yml
+include appveyor.tmpl.yml appveyor.yml
 include conftest.py
 
 global-exclude *.py[co] __pycache__ 
