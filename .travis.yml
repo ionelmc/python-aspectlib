@@ -5,22 +5,26 @@ env:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
     - TOXENV=check
-    - TOXENV=2.6,coveralls
-    - TOXENV=2.6-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=2.6-nocover
-    - TOXENV=2.6-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=2.7,coveralls
-    - TOXENV=2.7-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=2.7-nocover
-    - TOXENV=2.7-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=asyncio-3.3,coveralls
-    - TOXENV=asyncio-3.3-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=asyncio-3.3-nocover
-    - TOXENV=asyncio-3.3-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=pypy,coveralls
-    - TOXENV=pypy-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=pypy-nocover
-    - TOXENV=pypy-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV=2.6-trollius-mysql,coveralls
+    - TOXENV=2.6-trollius-mysql-ASPECTLIB_DEBUG=yes,coveralls
+    - TOXENV=2.6-trollius-mysql-nocover
+    - TOXENV=2.6-trollius-mysql-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV=2.7-trollius-mysql,coveralls
+    - TOXENV=2.7-trollius-mysql-ASPECTLIB_DEBUG=yes,coveralls
+    - TOXENV=2.7-trollius-mysql-nocover
+    - TOXENV=2.7-trollius-mysql-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV=3.3-asyncio,coveralls
+    - TOXENV=3.3-asyncio-ASPECTLIB_DEBUG=yes,coveralls
+    - TOXENV=3.3-asyncio-nocover
+    - TOXENV=3.3-asyncio-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV=3.4,coveralls
+    - TOXENV=3.4-ASPECTLIB_DEBUG=yes,coveralls
+    - TOXENV=3.4-nocover
+    - TOXENV=3.4-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV=pypy-trollius-mysql,coveralls
+    - TOXENV=pypy-trollius-mysql-ASPECTLIB_DEBUG=yes,coveralls
+    - TOXENV=pypy-trollius-mysql-nocover
+    - TOXENV=pypy-trollius-mysql-nocover-ASPECTLIB_DEBUG=yes
 before_install:
   - python --version
   - virtualenv --version
