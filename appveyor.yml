@@ -19,7 +19,8 @@ install:
   - ps: Invoke-WebRequest "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
   - python ez_setup.py
   - python get-pip.py
-  - "Scripts/pip install tox"
+  - cd Scripts
+  - pip install tox
 test_script:
   - "c:/python27/Scripts/tox --version"
   - "c:/python27/Scripts/virtualenv --version"
