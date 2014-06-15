@@ -31,10 +31,8 @@ for alias, conf in matrix.from_file('setup.cfg').items():
         'env_vars': env_vars.split(),
     }
 
-with open('tox.ini', 'w') as fh:
-    fh.write(jinja.get_template('tox.tmpl.ini').render(tox_environments=tox_environments))
-
-with open('.travis.yml', 'w') as fh:
-    fh.write(jinja.get_template('.travis.tmpl.yml').render(tox_environments=tox_environments))
+for name in ('tox.tmpl.ini', '.travis.tmpl.yml', 'appveyor.tmpl.yml'):
+    with open(name.replace('.tmpl', ''), 'w') as fh:
+        fh.write(jinja.get_template(name).render(tox_environments=tox_environments))
 
 print("DONE.")

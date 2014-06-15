@@ -1,8 +1,5 @@
-language: python
-python: 2.7
-env:
-  global:
-    LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
+build: false
+environment:
   matrix:
     - TOXENV=check
     - TOXENV=2.6,coveralls
@@ -21,17 +18,13 @@ env:
     - TOXENV=pypy-ASPECTLIB_DEBUG=yes,coveralls
     - TOXENV=pypy-nocover
     - TOXENV=pypy-nocover-ASPECTLIB_DEBUG=yes
-before_install:
-  - python --version
-  - virtualenv --version
-  - pip --version
-  - uname -a
-  - lsb_release -a
+init:
+  - "ECHO %TOXENV%"
+  - ps: "ls C:/Python*"
 install:
-  - pip install tox
-script:
-  - tox -v
-notifications:
-  email:
-    on_success: never
-    on_failure: always
+  - ps: (new-object net.webclient).DownloadFile('https://bootstrap.pypa.io/get-pip.py')
+  - "c:/python27/python.exe C:/get-pip.py tox virtualenv"
+test_script:
+  - "c:/python27/Scripts/tox.exe --version"
+  - "c:/python27/Scripts/virtualenv --version"
+  - "c:/python27/Scripts/pip --version"
