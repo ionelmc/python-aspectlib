@@ -3,7 +3,7 @@ environment:
   matrix:
     - TOXENV: check
 {% for env, config in tox_environments|dictsort %}{% if '2.7' in env or '3.4' in env %}
-    - TOXENV: "{{ env }}{% if config.cover %},coveralls{% endif %}"
+    - TOXENV: "{{ env }}
 {% endif %}{% endfor %}
 init:
   - "ECHO %TOXENV%"
