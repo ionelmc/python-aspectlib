@@ -14,13 +14,11 @@ init:
   - "ECHO %TOXENV%"
   - ps: "ls C:/Python*"
 install:
-  - "cd C:/Python27"
-  - ps: Invoke-WebRequest "https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py" -OutFile "ez_setup.py"
-  - ps: Invoke-WebRequest "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
-  - python ez_setup.py
-  - python get-pip.py
-  - cd Scripts
-  - pip install tox
+  - ps: Invoke-WebRequest "https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py" -OutFile "c:/ez_setup.py"
+  - ps: Invoke-WebRequest "https://bootstrap.pypa.io/get-pip.py" -OutFile "c:/get-pip.py"
+  - "c:/python27/python c:/ez_setup.py"
+  - "c:/python27/python c:/get-pip.py"
+  - "c:/python27/Scripts/pip install tox"
 test_script:
   - "c:/python27/Scripts/tox --version"
   - "c:/python27/Scripts/virtualenv --version"
