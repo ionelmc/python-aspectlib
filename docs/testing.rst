@@ -132,7 +132,7 @@ We can start with some existing test data in the filesystem::
 Write an empty story and examine the output::
 
         >>> from aspectlib.test import Story
-        >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
+        >>> with Story(['os.path.isdir', 'os.listdir']) as story:
         ...     pass
         >>> with story.replay(strict=False) as replay:
         ...     tree('some')
@@ -142,42 +142,29 @@ Write an empty story and examine the output::
             │   └── file.txt
             └── empty
         STORY/REPLAY DIFF:
-            --- expected...
-            +++ actual...
-            @@ ... @@
+            --- expected
+            +++ actual
+            @@ -0,0 +1,8 @@
             +os.listdir('some') == ['test']  # returns
-            +os.stat('some/test') == os.stat_result((...))  # returns
-            +os.listdir('some/test') == [...'dir'...]  # returns
-            +os.stat('some/test/dir') == os.stat_result((...))  # returns
-            +os.listdir('some/test/dir') == ['file.txt']  # returns
-            +os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
-            +os.stat('some/test/empty') == os.stat_result((...))  # returns
-            +os.listdir('some/test/empty') == []  # returns
+            +...isdir('some...test') == True  # returns
+            +os.listdir('some...test') == [...'empty'...]  # returns
+            +...isdir('some...test...dir') == True  # returns
+            +os.listdir('some...test...dir') == ['file.txt']  # returns
+            +...isdir('some...test...dir...file.txt') == False  # returns
+            +...isdir('some...test...empty') == True  # returns
+            +os.listdir('some...test...empty') == []  # returns
         ACTUAL:
             os.listdir('some') == ['test']  # returns
-            os.stat('some/test') == os.stat_result((...))  # returns
-            os.listdir('some/test') == [...'dir'...]  # returns
-            os.stat('some/test/dir') == os.stat_result((...))  # returns
-            os.listdir('some/test/dir') == ['file.txt']  # returns
-            os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
-            os.stat('some/test/empty') == os.stat_result((...))  # returns
-            os.listdir('some/test/empty') == []  # returns
+            ...isdir('some...test') == True  # returns
+            os.listdir('some...test') == [...'empty'...]  # returns
+            ...isdir('some...test...dir') == True  # returns
+            os.listdir('some...test...dir') == ['file.txt']  # returns
+            ...isdir('some...test...dir...file.txt') == False  # returns
+            ...isdir('some...test...empty') == True  # returns
+            os.listdir('some...test...empty') == []  # returns
         <BLANKLINE>
 
 ..
-
-    We can quickly get whatever we would need to put in the story with :obj:`aspectlib.test.Replay.unexpected`::
-
-        >>> print(replay.unexpected)
-        os.listdir('some') == ['test']  # returns
-        os.stat('some/test') == os.stat_result((...))  # returns
-        os.listdir('some/test') == [...'dir'...]  # returns
-        os.stat('some/test/dir') == os.stat_result((...))  # returns
-        os.listdir('some/test/dir') == ['file.txt']  # returns
-        os.stat('some/test/dir/file.txt') == os.stat_result((...))  # returns
-        os.stat('some/test/empty') == os.stat_result((...))  # returns
-        os.listdir('some/test/empty') == []  # returns
-        <BLANKLINE>
 
 Now we can remove the test directories and fill the story::
 
@@ -188,17 +175,18 @@ Now we can remove the test directories and fill the story::
 
     The story::
 
-        >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
-        ...     os.listdir('some') == ['test']
-        ...     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
-        ...     os.listdir('some/test') == ['empty', 'dir']  # returns
-        ...     os.stat('some/test/dir') == os.stat_result((16893, 6691876, 2049, 2, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
-        ...     os.listdir('some/test/dir') == ['file.txt']
-        ...     os.stat('some/test/dir/file.txt') == os.stat_result((33204, 6691877, 2049, 1, 1000, 1000, 9, 1399131539, 1399131539, 1399131539))
-        ...     os.stat('some/test/empty') == os.stat_result((16893, 6691877, 2049, 2, 1000, 1000, 4096, 1399132977, 1399132977, 1399132977))  # returns
-        ...     os.listdir('some/test/empty') == []  # returns
+        >>> with Story(['os.path.isdir', 'os.listdir']) as story:
+        ...     os.listdir('some') == ['test']  # returns
+        ...     os.path.isdir(os.path.join('some', 'test')) == True
+        ...     os.listdir(os.path.join('some', 'test')) == ['dir', 'empty']
+        ...     os.path.isdir(os.path.join('some', 'test', 'dir')) == True
+        ...     os.listdir(os.path.join('some', 'test', 'dir')) == ['file.txt']
+        ...     os.path.isdir(os.path.join('some', 'test', 'dir', 'file.txt')) == False
+        ...     os.path.isdir(os.path.join('some', 'test', 'empty')) == True
+        ...     os.listdir(os.path.join('some', 'test', 'empty')) == []
 
-    And the `strict` :obj:`replay <aspectlib.test.Story.replay>`::
+    We can also disable proxying in :obj:`replay <aspectlib.test.Story.replay>` so that the tested code can't use the
+    real functions::
 
         >>> with story.replay(proxy=False) as replay:
         ...     tree('some')
@@ -208,30 +196,8 @@ Now we can remove the test directories and fill the story::
             │   └── file.txt
             └── empty
 
-
-If we diverge a bit from the story (or we'd have some unexpected change in the ``tree`` function) we'd get something
-like this::
-
-    >>> with Story(os, methods="^(?!error)[a-z]+$") as story:
-    ...     os.listdir('some') == ['test']
-    ...     os.listdir('bogus') == ['some bogus directory']
-    ...     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
-    ...     os.listdir('some/test') == ['empty', 'dir']  # returns
-    ...     os.stat('some/test/dir') == os.stat_result((16893, 6691876, 2049, 2, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))
-    ...     os.listdir('some/test/dir') == ['file.txt']
-    ...     os.stat('some/test/dir/file.txt') == os.stat_result((33204, 6691877, 2049, 1, 1000, 1000, 9, 1399131539, 1399131539, 1399131539))
-    ...     os.stat('some/test/empty') == os.stat_result((16893, 6691877, 2049, 2, 1000, 1000, 4096, 1399132977, 1399132977, 1399132977))  # returns
-    ...     os.listdir('some/test/empty') == []  # returns
-    >>> with story.replay(proxy=False) as replay:
-    ...     tree('some')
-    Traceback (most recent call last):
-    ...
-    AssertionError: --- expected...
-    +++ actual...
-    @@ ... @@
-     os.listdir('some') == ['test']  # returns
-    -os.listdir('bogus') == ['some bogus directory']  # returns
-     os.stat('some/test') == os.stat_result((16893, 6691875, 2049, 3, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))  # returns
-     os.listdir('some/test') == [...'dir'...]  # returns
-     os.stat('some/test/dir') == os.stat_result((16893, 6691876, 2049, 2, 1000, 1000, 4096, 1399131539, 1399131539, 1399131539))  # returns
-    <BLANKLINE>
+        >>> with story.replay(proxy=False, strict=False) as replay:
+        ...     tree('missing-from-story')
+        Traceback (most recent call last):
+        ...
+        AssertionError: Unexpected call to None/os.listdir with args:'missing-from-story' kwargs:
