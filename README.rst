@@ -10,19 +10,19 @@ python-aspectlib
       - | |version-badge|
         | |downloads-badge|
 
-.. |travis-badge| image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png
+.. |travis-badge| image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png?style=flat
     :alt: Travis-CI Build Status
     :target: https://travis-ci.org/ionelmc/python-aspectlib
 .. |appveyor-badge| image:: https://ci.appveyor.com/api/projects/status/u2f05p7rmd5hsixi
     :alt: AppVeyor Build Status
     :target: https://ci.appveyor.com/project/ionelmc/python-aspectlib
-.. |coverage-badge| image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib.png
+.. |coverage-badge| image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib.png?style=flat
     :alt: Coverage Status
     :target: https://coveralls.io/r/ionelmc/python-aspectlib
-.. |version-badge| image:: http://img.shields.io/pypi/v/aspectlib.png
+.. |version-badge| image:: http://img.shields.io/pypi/v/aspectlib.png?style=flat
     :alt: PYPI Package
     :target: https://pypi.python.org/pypi/aspectlib
-.. |downloads-badge| image:: http://img.shields.io/pypi/dm/aspectlib.png
+.. |downloads-badge| image:: http://img.shields.io/pypi/dm/aspectlib.png?style=flat
     :alt: PYPI Package
     :target: https://pypi.python.org/pypi/aspectlib
 
