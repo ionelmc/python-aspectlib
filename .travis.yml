@@ -5,26 +5,38 @@ env:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
     - TOXENV=check
-    - TOXENV=2.6-trollius-mysql,coveralls
-    - TOXENV=2.6-trollius-mysql-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=2.6-trollius-mysql-nocover
-    - TOXENV=2.6-trollius-mysql-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=2.7-trollius-mysql,coveralls
-    - TOXENV=2.7-trollius-mysql-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=2.7-trollius-mysql-nocover
-    - TOXENV=2.7-trollius-mysql-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=3.3-asyncio,coveralls
-    - TOXENV=3.3-asyncio-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=3.3-asyncio-nocover
-    - TOXENV=3.3-asyncio-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV=2.6,coveralls
+    - TOXENV=2.6-debug,coveralls
+    - TOXENV=2.6-nix,coveralls
+    - TOXENV=2.6-nix-debug,coveralls
+    - TOXENV=2.6-nix-nocover
+    - TOXENV=2.6-nix-nocover-debug
+    - TOXENV=2.6-nocover
+    - TOXENV=2.6-nocover-debug
+    - TOXENV=2.7,coveralls
+    - TOXENV=2.7-debug,coveralls
+    - TOXENV=2.7-nix,coveralls
+    - TOXENV=2.7-nix-debug,coveralls
+    - TOXENV=2.7-nix-nocover
+    - TOXENV=2.7-nix-nocover-debug
+    - TOXENV=2.7-nocover
+    - TOXENV=2.7-nocover-debug
+    - TOXENV=3.3,coveralls
+    - TOXENV=3.3-debug,coveralls
+    - TOXENV=3.3-nocover
+    - TOXENV=3.3-nocover-debug
     - TOXENV=3.4,coveralls
-    - TOXENV=3.4-ASPECTLIB_DEBUG=yes,coveralls
+    - TOXENV=3.4-debug,coveralls
     - TOXENV=3.4-nocover
-    - TOXENV=3.4-nocover-ASPECTLIB_DEBUG=yes
-    - TOXENV=pypy-trollius-mysql,coveralls
-    - TOXENV=pypy-trollius-mysql-ASPECTLIB_DEBUG=yes,coveralls
-    - TOXENV=pypy-trollius-mysql-nocover
-    - TOXENV=pypy-trollius-mysql-nocover-ASPECTLIB_DEBUG=yes
+    - TOXENV=3.4-nocover-debug
+    - TOXENV=pypy,coveralls
+    - TOXENV=pypy-debug,coveralls
+    - TOXENV=pypy-nix,coveralls
+    - TOXENV=pypy-nix-debug,coveralls
+    - TOXENV=pypy-nix-nocover
+    - TOXENV=pypy-nix-nocover-debug
+    - TOXENV=pypy-nocover
+    - TOXENV=pypy-nocover-debug
 before_install:
   - python --version
   - virtualenv --version

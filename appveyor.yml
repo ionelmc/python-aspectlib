@@ -2,14 +2,14 @@ build: false
 environment:
   matrix:
     - TOXENV: check
-    - TOXENV: "2.7-trollius-mysql"
-    - TOXENV: "2.7-trollius-mysql-ASPECTLIB_DEBUG=yes"
-    - TOXENV: "2.7-trollius-mysql-nocover"
-    - TOXENV: "2.7-trollius-mysql-nocover-ASPECTLIB_DEBUG=yes"
+    - TOXENV: "2.7"
+    - TOXENV: "2.7-debug"
+    - TOXENV: "2.7-nocover"
+    - TOXENV: "2.7-nocover-debug"
     - TOXENV: "3.4"
-    - TOXENV: "3.4-ASPECTLIB_DEBUG=yes"
+    - TOXENV: "3.4-debug"
     - TOXENV: "3.4-nocover"
-    - TOXENV: "3.4-nocover-ASPECTLIB_DEBUG=yes"
+    - TOXENV: "3.4-nocover-debug"
 init:
   - "ECHO %TOXENV%"
   - ps: "ls C:/Python*"
