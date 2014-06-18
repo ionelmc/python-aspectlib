@@ -8,6 +8,10 @@ import sys
 import trollius as asyncio
 from tornado import gen
 from tornado import ioloop
+try:
+    import MySQLdb
+except ImportError:
+    MySQLdb = None
 
 from aspectlib import debug, weave, ALL_METHODS
 from aspectlib.test import Story
@@ -42,7 +46,7 @@ def test_decorate_tornado_coroutine():
     output = buf.getvalue()
     assert 'coro => %r' % 'result' in output
 
-@pytest.mark.skipif(sys.platform.startswith('win'), reason="crappy windows")
+@pytest.mark.skipif(not MySQLdb, reason="No MySQLdb installed")
 def test_mysql():
     with Story(['MySQLdb.cursors.BaseCursor', 'MySQLdb.connections.Connection']) as story:
         pass
