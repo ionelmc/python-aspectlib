@@ -24,8 +24,8 @@ try:
 except ImportError:
     from io import StringIO
 
-LOG_TEST_SOCKET = r"""^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< .*tests/test_integrations.py:\d+:test_socket.*
-\{_?socket(object)?\}.connect \~ raised .*(ConnectionRefusedError|error)\((10061|111), '.*refused.*'\)\n$"""
+LOG_TEST_SOCKET = r"""^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< .*tests[\/]test_integrations.py:\d+:test_socket.*
+\{_?socket(object)?\}.connect \~ raised .*(ConnectionRefusedError|error)\((10061|111), .*refused.*\)"""
 
 
 def test_mock_builtin():
