@@ -4,23 +4,28 @@ python-aspectlib
 
 .. list-table::
 
-    * - .. image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png
-            :alt: Travis-CI Build Status
-            :target: https://travis-ci.org/ionelmc/python-aspectlib
+    * - | |travis-badge|
+        | |appveyor-badge|
+      - | |coverage-badge|
+      - | |version-badge|
+        | |downloads-badge|
 
-        .. image:: https://ci.appveyor.com/api/projects/status/u2f05p7rmd5hsixi
-            :alt: AppVeyor Build Status
-            :target: https://ci.appveyor.com/project/ionelmc/python-aspectlib
-      - .. image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib.png
-            :alt: Coverage Status
-            :target: https://coveralls.io/r/ionelmc/python-aspectlib
-      - .. image:: http://img.shields.io/pypi/v/aspectlib.png
-            :alt: PYPI Package
-            :target: https://pypi.python.org/pypi/aspectlib
+.. |travis-badge| image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png
+    :alt: Travis-CI Build Status
+    :target: https://travis-ci.org/ionelmc/python-aspectlib
+.. |appveyor-badge| image:: https://ci.appveyor.com/api/projects/status/u2f05p7rmd5hsixi
+    :alt: AppVeyor Build Status
+    :target: https://ci.appveyor.com/project/ionelmc/python-aspectlib
+.. |coverage-badge| image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib.png
+    :alt: Coverage Status
+    :target: https://coveralls.io/r/ionelmc/python-aspectlib
+.. |version-badge| image:: http://img.shields.io/pypi/v/aspectlib.png
+    :alt: PYPI Package
+    :target: https://pypi.python.org/pypi/aspectlib
+.. |downloads-badge| image:: http://img.shields.io/pypi/dm/aspectlib.png
+    :alt: PYPI Package
+    :target: https://pypi.python.org/pypi/aspectlib
 
-        .. image:: http://img.shields.io/pypi/dm/aspectlib.png
-            :alt: PYPI Package
-            :target: https://pypi.python.org/pypi/aspectlib
 
 ``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing
 behavior in existing code is desired.
