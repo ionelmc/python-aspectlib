@@ -142,8 +142,8 @@ Write an empty story and examine the output::
             │   └── file.txt
             └── empty
         STORY/REPLAY DIFF:
-            --- expected
-            +++ actual
+            --- expected...
+            +++ actual...
             @@ ... @@
             +os.listdir('some') == ['test']  # returns
             +...isdir('some...test') == True  # returns
