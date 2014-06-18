@@ -3,11 +3,7 @@ python-aspectlib
 ================
 
 .. list-table::
-    :header-rows: 1
-    
-    * - Build Status
-      - Coverage
-      - PyPI
+
     * - .. image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png
             :alt: Travis-CI Build Status
             :target: https://travis-ci.org/ionelmc/python-aspectlib
