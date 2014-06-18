@@ -144,7 +144,7 @@ Write an empty story and examine the output::
         STORY/REPLAY DIFF:
             --- expected
             +++ actual
-            @@ -0,0 +1,8 @@
+            @@ ... @@
             +os.listdir('some') == ['test']  # returns
             +...isdir('some...test') == True  # returns
             +os.listdir('some...test') == [...'empty'...]  # returns
