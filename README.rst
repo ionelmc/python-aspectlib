@@ -2,21 +2,29 @@
 python-aspectlib
 ================
 
-.. image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png
-    :alt: Build Status
-    :target: https://travis-ci.org/ionelmc/python-aspectlib
+.. list-table::
+    :header-rows: 1
+    
+    * - Build Status
+      - Coverage
+      - PyPI
+    * - .. image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png
+            :alt: Travis-CI Build Status
+            :target: https://travis-ci.org/ionelmc/python-aspectlib
 
-.. image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib.png
-    :alt: Coverage Status
-    :target: https://coveralls.io/r/ionelmc/python-aspectlib
+        .. image:: https://ci.appveyor.com/api/projects/status/u2f05p7rmd5hsixi
+            :alt: AppVeyor Build Status
+            :target: https://ci.appveyor.com/project/ionelmc/python-aspectlib
+      - .. image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib.png
+            :alt: Coverage Status
+            :target: https://coveralls.io/r/ionelmc/python-aspectlib
+      - .. image:: http://img.shields.io/pypi/v/aspectlib.png
+            :alt: PYPI Package
+            :target: https://pypi.python.org/pypi/aspectlib
 
-.. image:: http://img.shields.io/pypi/v/aspectlib.png
-    :alt: PYPI Package
-    :target: https://pypi.python.org/pypi/aspectlib
-
-.. image:: http://img.shields.io/pypi/dm/aspectlib.png
-    :alt: PYPI Package
-    :target: https://pypi.python.org/pypi/aspectlib
+        .. image:: http://img.shields.io/pypi/dm/aspectlib.png
+            :alt: PYPI Package
+            :target: https://pypi.python.org/pypi/aspectlib
 
 ``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing
 behavior in existing code is desired.
