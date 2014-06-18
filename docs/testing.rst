@@ -79,10 +79,10 @@ Suppose we implement this simple GNU ``tree`` clone::
     ...     if not prefix:
     ...         print("%s%s" % (prefix, os.path.basename(root)))
     ...     for pos, name in reversed(list(enumerate(sorted(os.listdir(root), reverse=True)))):
-    ...         print("%s%s%s" % (prefix, "├── " if pos else "└── ", name))
+    ...         print("%s%s%s" % (prefix, "|-- " if pos else "\-- ", name))
     ...         absname = os.path.join(root, name)
     ...         if os.path.isdir(absname):
-    ...             tree(absname, prefix + ("│   " if pos else "    "))
+    ...             tree(absname, prefix + ("|   " if pos else "    "))
 
 Lets suppose we would make up some directories and files for our tests::
 
@@ -95,10 +95,10 @@ And we'll assert that ``tree`` has this output::
 
     >>> tree('some')
     some
-    └── test
-        ├── dir
-        │   └── file.txt
-        └── empty
+    \-- test
+        |-- dir
+        |   \-- file.txt
+        \-- empty
 
 But now we're left with some garbage and have to clean it up::
 
@@ -137,10 +137,10 @@ Write an empty story and examine the output::
         >>> with story.replay(strict=False) as replay:
         ...     tree('some')
         some
-        └── test
-            ├── dir
-            │   └── file.txt
-            └── empty
+        \-- test
+            |-- dir
+            |   \-- file.txt
+            \-- empty
         STORY/REPLAY DIFF:
             --- expected...
             +++ actual...
@@ -191,10 +191,10 @@ Now we can remove the test directories and fill the story::
         >>> with story.replay(proxy=False) as replay:
         ...     tree('some')
         some
-        └── test
-            ├── dir
-            │   └── file.txt
-            └── empty
+        \-- test
+            |-- dir
+            |   \-- file.txt
+            \-- empty
 
         >>> with story.replay(proxy=False, strict=False) as replay:
         ...     tree('missing-from-story')
