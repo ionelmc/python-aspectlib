@@ -5,22 +5,16 @@ env:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
     - TOXENV=check
-    - TOXENV=2.6,coveralls
-    - TOXENV=2.6-debug,coveralls
     - TOXENV=2.6-nix,coveralls
     - TOXENV=2.6-nix-debug,coveralls
     - TOXENV=2.6-nix-nocover
     - TOXENV=2.6-nix-nocover-debug
-    - TOXENV=2.6-nocover
-    - TOXENV=2.6-nocover-debug
-    - TOXENV=2.7,coveralls
-    - TOXENV=2.7-debug,coveralls
+    - TOXENV=2.6-win,coveralls
     - TOXENV=2.7-nix,coveralls
     - TOXENV=2.7-nix-debug,coveralls
     - TOXENV=2.7-nix-nocover
     - TOXENV=2.7-nix-nocover-debug
-    - TOXENV=2.7-nocover
-    - TOXENV=2.7-nocover-debug
+    - TOXENV=2.7-win,coveralls
     - TOXENV=3.3,coveralls
     - TOXENV=3.3-debug,coveralls
     - TOXENV=3.3-nocover
@@ -29,14 +23,11 @@ env:
     - TOXENV=3.4-debug,coveralls
     - TOXENV=3.4-nocover
     - TOXENV=3.4-nocover-debug
-    - TOXENV=pypy,coveralls
-    - TOXENV=pypy-debug,coveralls
     - TOXENV=pypy-nix,coveralls
     - TOXENV=pypy-nix-debug,coveralls
     - TOXENV=pypy-nix-nocover
     - TOXENV=pypy-nix-nocover-debug
-    - TOXENV=pypy-nocover
-    - TOXENV=pypy-nocover-debug
+    - TOXENV=pypy-win,coveralls
 before_install:
   - python --version
   - virtualenv --version

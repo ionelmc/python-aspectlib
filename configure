@@ -8,11 +8,13 @@ fi
 .tox/configure/bin/python $0 $*
 exit
 '''
-
+import glob
+import os
 import jinja2
 import matrix
+
 jinja = jinja2.Environment(
-    loader=jinja2.FileSystemLoader('.'),
+    loader=jinja2.FileSystemLoader('templates'),
     trim_blocks=True,
     lstrip_blocks=True,
     keep_trailing_newline=True
@@ -31,8 +33,9 @@ for alias, conf in matrix.from_file('setup.cfg').items():
         'env_vars': env_vars.split(),
     }
 
-for name in ('tox.tmpl.ini', '.travis.tmpl.yml', 'appveyor.tmpl.yml'):
-    with open(name.replace('.tmpl', ''), 'w') as fh:
+for name in os.listdir('templates'):
+    with open(name, 'w') as fh:
         fh.write(jinja.get_template(name).render(tox_environments=tox_environments))
+    print("Wrote %s" % name)
 
 print("DONE.")
