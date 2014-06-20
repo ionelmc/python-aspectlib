@@ -2,11 +2,10 @@
 python-aspectlib
 ================
 
-+------------------+------------------+-------------------+
-| |travis-badge|   | |coverage-badge| | |version-badge|   |
-+------------------+                  +-------------------+
-| |appveyor-badge| |                  | |downloads-badge| |
-+------------------+------------------+-------------------+
++--------------------+--------------------+---------------------+
+| | |travis-badge|   | |                  | | |version-badge|   |
+| | |appveyor-badge| | | |coverage-badge| | | |downloads-badge| |
++--------------------+--------------------+---------------------+
 
 .. |travis-badge| image:: http://img.shields.io/travis/ionelmc/python-aspectlib.png?style=flat
     :alt: Travis-CI Build Status
