@@ -61,6 +61,9 @@ class NormalTestClass(object):
     def static_foobar(foo, bar=None):
         return bar or foo
 
+    def only_in_base(self):
+        return type(self).__name__
+
 
 class NormalTestSubClass(NormalTestClass):
     def foobar(self, foo, bar=None):
@@ -545,6 +548,23 @@ def test_weave_instance():
 
     inst.foobar('stuff')
     assert inst.foo == 'stuff'
+
+
+def test_weave_subclass_meth_from_baseclass():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        result = yield
+        history.append(args + (result,))
+        yield aspectlib.Return('bar-'+result)
+
+    with aspectlib.weave(NormalTestSubClass.only_in_base, aspect):
+        inst = NormalTestSubClass('stuff')
+        assert inst.only_in_base() == 'bar-NormalTestSubClass'
+        assert history == [
+            (inst, 'NormalTestSubClass'),
+        ]
 
 
 def test_weave_class():

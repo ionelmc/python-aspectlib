@@ -571,10 +571,25 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
                 else:
                     continue
                 original[attr] = func
-
         entanglement.merge(lambda: deque((
             setattr(klass, attr, func) for attr, func in original.items()
         ), maxlen=0))
+        super_original = set()
+        for sklass in klass.__bases__:
+            if sklass is not object:
+                for attr, func in sklass.__dict__.items():
+                    if method_matches(attr) and attr not in original and attr not in super_original:
+                        if isroutine(func):
+                            logdebug("@ patching attribute %r (from superclass: %s, original: %r).",
+                                     attr, sklass.__name__, func)
+                            setattr(klass, attr, _rewrap_method(func, klass, aspect))
+                        else:
+                            continue
+                        super_original.add(attr)
+        entanglement.merge(lambda: deque((
+            delattr(klass, attr) for attr in super_original
+        ), maxlen=0))
+
 
     return entanglement
 

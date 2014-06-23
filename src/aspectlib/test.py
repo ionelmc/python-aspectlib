@@ -257,7 +257,7 @@ class StoryFunctionWrapper(object):
 
     def __get__(self, binding, owner):
         return mimic(type(self)(
-            self._wrapped.__get__(binding, owner),
+            self._wrapped.__get__(binding, owner) if hasattr(self._wrapped, '__get__') else self._wrapped,
             handle=self._handle,
             binding=binding,
             owner=owner,
