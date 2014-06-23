@@ -77,7 +77,6 @@ class RecordingFunctionWrapper(object):
         assert not results or iscalled, "`iscalled` must be True if `results` is True"
         mimic(self, wrapped)
         self.__wrapped = wrapped
-        self.__name = qualname(wrapped)
         self.__entanglement = None
         self.__iscalled = iscalled
         self.__binding = binding
@@ -112,11 +111,11 @@ class RecordingFunctionWrapper(object):
 
     def __record(self, args, kwargs, *response):
         if self.__callback is not None:
-            self.__callback(self.__binding, self.__name, args, kwargs, *response)
+            self.__callback(self.__binding, qualname(self), args, kwargs, *response)
         if self.calls is not None:
             if self.__extended:
                 self.calls.append((ResultEx if response else CallEx)(
-                    self.__binding, self.__name, args, kwargs, *response
+                    self.__binding, qualname(self), args, kwargs, *response
                 ))
             else:
                 self.calls.append((Result if response else Call)(
