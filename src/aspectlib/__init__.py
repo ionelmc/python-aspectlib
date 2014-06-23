@@ -292,7 +292,7 @@ class Rollback(object):
 
 
 def _checked_apply(aspects, function, module=None):
-    logdebug(' > applying aspects %s to function %s.', aspects, function)
+    logdebug('  applying aspects %s to function %s.', aspects, function)
     if callable(aspects):
         wrapper = aspects(function)
         assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspects, wrapper)
@@ -390,7 +390,7 @@ def weave(target, aspects, **options):
             while path:
                 owner = getattr(owner, path.popleft())
 
-        logdebug(" ~ patching %s from %s ...", name, owner)
+        logdebug("@ patching %s from %s ...", name, owner)
         obj = getattr(owner, name)
 
         if isinstance(obj, (type, ClassType)):
@@ -410,7 +410,7 @@ def weave(target, aspects, **options):
     elif PY3 and ismethod(target):
         inst = target.__self__
         name = target.__name__
-        logdebug(" ~ patching %r (%s) as instance method.", target, name)
+        logdebug("@ patching %r (%s) as instance method.", target, name)
         assert not options, "keyword arguments are not supported when weaving instance methods."
         func = getattr(inst, name)
         setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
@@ -421,7 +421,7 @@ def weave(target, aspects, **options):
         while path:
             owner = getattr(owner, path.popleft())
         name = target.__name__
-        logdebug(" ~ patching %r (%s) as a property.", target, name)
+        logdebug("@ patching %r (%s) as a property.", target, name)
         func = owner.__dict__[name]
         return patch_module(owner, name, _checked_apply(aspects, func), func, **options)
     elif PY2 and isfunction(target):
@@ -430,7 +430,7 @@ def weave(target, aspects, **options):
         if target.im_self:
             inst = target.im_self
             name = target.__name__
-            logdebug(" ~ patching %r (%s) as instance method.", target, name)
+            logdebug("@ patching %r (%s) as instance method.", target, name)
             assert not options, "keyword arguments are not supported when weaving instance methods."
             func = getattr(inst, name)
             setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
@@ -566,7 +566,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         for attr, func in klass.__dict__.items():
             if method_matches(attr):
                 if isroutine(func):
-                    logdebug(" ~ patching attributes %r (original: %r).", attr, func)
+                    logdebug("@ patching attribute %r (original: %r).", attr, func)
                     setattr(klass, attr, _rewrap_method(func, klass, aspect))
                 else:
                     continue
@@ -620,14 +620,14 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
             obj = getattr(module, alias)
             if obj is original:
                 if aliases or alias == name:
-                    logdebug(" ~ saving %s on %s.%s ...", replacement, location, alias)
+                    logdebug("= saving %s on %s.%s ...", replacement, location, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))
                 if alias == name:
                     seen = True
             elif alias == name:
                 if ismethod(obj):
-                    logdebug(" ~ saving %s on %s.%s ...", replacement, location, alias)
+                    logdebug("= saving %s on %s.%s ...", replacement, location, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))
                 else:
@@ -637,7 +637,7 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
         warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module.' % (
             location, name, replacement
         ))
-        logdebug(" ~ saving %s on %s.%s ...", replacement, location, name)
+        logdebug("= saving %s on %s.%s ...", replacement, location, name)
         setattr(module, name, replacement)
         rollback.merge(lambda: setattr(module, name, original))
     return rollback
