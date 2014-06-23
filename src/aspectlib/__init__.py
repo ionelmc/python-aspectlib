@@ -291,6 +291,33 @@ class Rollback(object):
     rollback = __call__ = __exit__
 
 
+class ObjectBag(object):
+    def __init__(self):
+        self._objects = {}
+
+    def has(self, obj):
+        if id(obj) in self._objects:
+            logdebug('  --- ObjectBag ALREADY HAS %r', obj)
+            return True
+        else:
+            self._objects[id(obj)] = obj
+            return False
+
+BrokenBag = type('BrokenBag', (), dict(has=lambda self, obj: False))()
+
+
+class EmptyRollback(object):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        pass
+
+    rollback = __call__ = __exit__
+
+Nothing = EmptyRollback()
+
+
 def _checked_apply(aspects, function, module=None):
     logdebug('  applying aspects %s to function %s.', aspects, function)
     if callable(aspects):
@@ -359,6 +386,9 @@ def weave(target, aspects, **options):
                 raise ExpectedAdvice('%s must be an `Aspect` instance or a callable.' % obj)
     assert target, "Can't weave falsy value %r." % target
     logdebug("weave (target=%s, aspects=%s, **options=%s)", target, aspects, options)
+
+    bag = options.setdefault('bag', ObjectBag())
+
     if isinstance(target, (list, tuple)):
         return Rollback([
             weave(item, aspects, **options) for item in target
@@ -401,13 +431,20 @@ def weave(target, aspects, **options):
             )
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
             logdebug("   .. as a callable %r.", obj)
-            return weave_module_function(owner, obj, aspects, force_name=name, **options)
+            if bag.has(obj):
+                return Nothing
+            return patch_module_function(owner, obj, aspects, force_name=name, **options)
         else:
             return weave(obj, aspects, **options)
+
     name = getattr(target, '__name__', None)
     if name and getattr(__builtin__, name, None) is target:
-        return weave_module_function(__builtin__, target, aspects, **options)
+        if bag.has(target):
+            return Nothing
+        return patch_module_function(__builtin__, target, aspects, **options)
     elif PY3 and ismethod(target):
+        if bag.has(target):
+            return Nothing
         inst = target.__self__
         name = target.__name__
         logdebug("@ patching %r (%s) as instance method.", target, name)
@@ -416,6 +453,8 @@ def weave(target, aspects, **options):
         setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
     elif PY3 and isfunction(target):
+        if bag.has(target):
+            return Nothing
         owner = __import__(target.__module__)
         path = deque(target.__qualname__.split('.')[:-1])
         while path:
@@ -425,9 +464,13 @@ def weave(target, aspects, **options):
         func = owner.__dict__[name]
         return patch_module(owner, name, _checked_apply(aspects, func), func, **options)
     elif PY2 and isfunction(target):
-        return weave_module_function(__import__(target.__module__), target, aspects, **options)
+        if bag.has(target):
+            return Nothing
+        return patch_module_function(__import__(target.__module__), target, aspects, **options)
     elif PY2 and ismethod(target):
         if target.im_self:
+            if bag.has(target):
+                return Nothing
             inst = target.im_self
             name = target.__name__
             logdebug("@ patching %r (%s) as instance method.", target, name)
@@ -464,14 +507,17 @@ def _rewrap_method(func, klass, aspect):
         return _checked_apply(aspect, func)
 
 
-def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, **options):
+def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, bag=BrokenBag, **options):
     """
     Low-level weaver for instances.
 
     .. warning:: You should not use this directly.
 
-    :returns: An :obj:`aspectlib.Entanglement` object.
+    :returns: An :obj:`aspectlib.Rollback` object.
     """
+    if bag.has(instance):
+        return Nothing
+
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
     logdebug("weave_instance (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)",
@@ -493,14 +539,17 @@ def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, **optio
     return entanglement
 
 
-def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
+def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, bag=BrokenBag, **options):
     """
     Low-level weaver for "whole module weaving".
 
     .. warning:: You should not use this directly.
 
-    :returns: An :obj:`aspectlib.Entanglement` object.
+    :returns: An :obj:`aspectlib.Rollback` object.
     """
+    if bag.has(module):
+        return Nothing
+
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
     logdebug("weave_module (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)",
@@ -510,35 +559,42 @@ def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, **options):
         func = getattr(module, attr)
         if method_matches(attr):
             if isroutine(func):
-                entanglement.merge(weave_module_function(module, func, aspect, force_name=attr, **options))
+                entanglement.merge(patch_module_function(module, func, aspect, force_name=attr, **options))
             elif isclass(func):
                 entanglement.merge(
-                    weave_class(func, aspect, owner=module, name=attr, methods=methods, lazy=lazy, **options),
+                    weave_class(func, aspect, owner=module, name=attr, methods=methods, lazy=lazy, bag=bag, **options),
                     #  it's not consistent with the other ways of weaving a class (it's never weaved as a routine).
                     #  therefore it's disabled until it's considered useful.
-                    #  #weave_module_function(module, getattr(module, attr), aspect, force_name=attr, **options),
+                    #  #patch_module_function(module, getattr(module, attr), aspect, force_name=attr, **options),
                 )
     return entanglement
 
 
 def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=False,
-                owner=None, name=None, aliases=True):
+                owner=None, name=None, aliases=True, bases=True, bag=BrokenBag):
     """
     Low-level weaver for classes.
 
     .. warning:: You should not use this directly.
     """
-
     assert isclass(klass), "Can't weave %r. Must be a class." % klass
+
+    if bag.has(klass):
+        return Nothing
+
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
+    logdebug("weave_class (klass=%r, methods=%s, subclasses=%s, lazy=%s, owner=%s, name=%s, aliases=%s, bases=%s)",
+             klass, methods, subclasses, lazy, owner, name, aliases, bases)
 
     if subclasses and hasattr(klass, '__subclasses__'):
-        for sub_class in klass.__subclasses__():
+        sub_targets = klass.__subclasses__()
+        if sub_targets:
+            logdebug("~ weaving subclasses: %s", sub_targets)
+        for sub_class in sub_targets:
             if not issubclass(sub_class, Fabric):
-                entanglement.merge(weave_class(sub_class, aspect, methods=methods, subclasses=subclasses, lazy=lazy))
-    logdebug("weave_class (klass=%r, methods=%s, subclasses=%s, lazy=%s, owner=%s, name=%s, aliases=%s)",
-             klass, methods, subclasses, lazy, owner, name, aliases)
+                entanglement.merge(weave_class(sub_class, aspect,
+                                               methods=methods, subclasses=subclasses, lazy=lazy, bases=False, bag=bag))
     if lazy:
         def __init__(self, *args, **kwargs):
             super(SubClass, self).__init__(*args, **kwargs)
@@ -574,22 +630,22 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         entanglement.merge(lambda: deque((
             setattr(klass, attr, func) for attr, func in original.items()
         ), maxlen=0))
-        super_original = set()
-        for sklass in klass.__bases__:
-            if sklass is not object:
-                for attr, func in sklass.__dict__.items():
-                    if method_matches(attr) and attr not in original and attr not in super_original:
-                        if isroutine(func):
-                            logdebug("@ patching attribute %r (from superclass: %s, original: %r).",
-                                     attr, sklass.__name__, func)
-                            setattr(klass, attr, _rewrap_method(func, klass, aspect))
-                        else:
-                            continue
-                        super_original.add(attr)
-        entanglement.merge(lambda: deque((
-            delattr(klass, attr) for attr in super_original
-        ), maxlen=0))
-
+        if bases:
+            super_original = set()
+            for sklass in klass.__bases__:
+                if sklass is not object:
+                    for attr, func in sklass.__dict__.items():
+                        if method_matches(attr) and attr not in original and attr not in super_original:
+                            if isroutine(func):
+                                logdebug("@ patching attribute %r (from superclass: %s, original: %r).",
+                                         attr, sklass.__name__, func)
+                                setattr(klass, attr, _rewrap_method(func, sklass, aspect))
+                            else:
+                                continue
+                            super_original.add(attr)
+            entanglement.merge(lambda: deque((
+                delattr(klass, attr) for attr in super_original
+            ), maxlen=0))
 
     return entanglement
 
@@ -604,9 +660,8 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
     :param original: The original value (in case the object beeing patched uses descriptors or is plain weird).
     :param bool aliases: If ``True`` patch all the attributes that have the same original value.
 
-    :returns: An :obj:`aspectlib.Entanglement` object.
+    :returns: An :obj:`aspectlib.Rollback` object.
     """
-
     rollback = Rollback()
     seen = False
     original = getattr(module, name) if original is UNSPECIFIED else original
@@ -643,15 +698,15 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
     return rollback
 
 
-def weave_module_function(module, target, aspect, force_name=None, **options):
+def patch_module_function(module, target, aspect, force_name=None, bag=BrokenBag, **options):
     """
-    Low-level weaver for one function from a specified module.
+    Low-level patcher for one function from a specified module.
 
     .. warning:: You should not use this directly.
 
-    :returns: An :obj:`aspectlib.Entanglement` object.
+    :returns: An :obj:`aspectlib.Rollback` object.
     """
-    logdebug("weave_module_function (module=%s, target=%s, aspect=%s, force_name=%s, **options=%s",
+    logdebug("patch_module_function (module=%s, target=%s, aspect=%s, force_name=%s, **options=%s",
              module, target, aspect, force_name, options)
     name = force_name or target.__name__
     return patch_module(module, name, _checked_apply(aspect, target, module=module), original=target, **options)
