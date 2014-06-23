@@ -566,6 +566,10 @@ def test_weave_subclass_meth_from_baseclass():
             (inst, 'NormalTestSubClass'),
         ]
 
+    inst = NormalTestSubClass('stuff')
+    assert inst.only_in_base() == 'NormalTestSubClass'
+
+
 
 def test_weave_class():
     history = []
