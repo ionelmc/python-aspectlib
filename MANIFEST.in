@@ -1,6 +1,6 @@
 graft docs
 graft examples
-graft templates
+graft conf
 graft src
 graft tests
 
@@ -16,7 +16,7 @@ include CONTRIBUTING.rst
 include LICENSE
 include README.rst
 
-include configure
+include bootstrap.py
 include tox.ini .travis.yml appveyor.yml
 include conftest.py
 
