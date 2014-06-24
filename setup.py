@@ -1,15 +1,20 @@
-# -*- encoding: utf-8 -*-
-from setuptools import setup, find_packages
-
-import os
-import re
+# -*- encoding: utf8 -*-
+import glob
 import io
+import re
+from os.path import basename
+from os.path import dirname
+from os.path import join
+from os.path import splitext
+
+from setuptools import find_packages
+from setuptools import setup
 
 
 def read(*names, **kwargs):
     return io.open(
-        os.path.join(os.path.dirname(__file__), *names),
-        encoding=kwargs.get('encoding', 'utf8')
+        join(dirname(__file__), *names),
+        encoding=kwargs.get("encoding", "utf8")
     ).read()
 
 setup(

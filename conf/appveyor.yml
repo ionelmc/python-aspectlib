@@ -2,7 +2,7 @@ build: false
 environment:
   matrix:
     - TOXENV: check
-{% for env, config in tox_environments|dictsort %}{% if ('2.7' in env or '3.4' in env) and 'nix' not in env %}
+{% for env, config in tox_environments|dictsort %}{% if '2.7' in env or '3.4' in env %}
     - TOXENV: "{{ env }}"
 {% endif %}{% endfor %}
 init:
