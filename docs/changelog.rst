@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 1.2.0
+-------------
+
+* Fix weaving methods that were defined in some baseclass (and not on the target class).
+* Fix wrong qualname beeing used in the Story/Replay recording. Now used the alias given to the weaver instead of
+  whatever is the realname on the current platform.
+
 Version 1.1.1
 -------------
 
