@@ -592,7 +592,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         for sub_class in sub_targets:
             if not issubclass(sub_class, Fabric):
                 entanglement.merge(weave_class(sub_class, aspect,
-                                               methods=methods, subclasses=subclasses, lazy=lazy, bases=False, bag=bag))
+                                               methods=methods, subclasses=subclasses, lazy=lazy, bag=bag))
     if lazy:
         def __init__(self, *args, **kwargs):
             super(SubClass, self).__init__(*args, **kwargs)
@@ -630,7 +630,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         ), maxlen=0))
         if bases:
             super_original = set()
-            for sklass in klass.__bases__:
+            for sklass in _find_super_classes(klass):
                 if sklass is not object:
                     for attr, func in sklass.__dict__.items():
                         if method_matches(attr) and attr not in original and attr not in super_original:
@@ -646,6 +646,17 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
             ), maxlen=0))
 
     return entanglement
+
+
+def _find_super_classes(klass):
+    if hasattr(klass, '__mro__'):
+        for k in klass.__mro__:
+            yield k
+    else:
+        for base in klass.__bases__:
+            yield base
+            for k in _find_super_classes(base):
+                yield k
 
 
 def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, location=None, **_bogus_options):

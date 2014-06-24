@@ -117,6 +117,9 @@ class LegacyTestClass:
     def static_foobar(foo, bar=None):
         return bar or foo
 
+    def only_in_base(self):
+        return self.__class__.__name__
+
 
 class LegacyTestSubClass(LegacyTestClass):
     def foobar(self, foo, bar=None):
@@ -569,6 +572,65 @@ def test_weave_subclass_meth_from_baseclass():
     inst = NormalTestSubClass('stuff')
     assert inst.only_in_base() == 'NormalTestSubClass'
 
+
+def test_weave_subclass_meth_from_baseclass_2_level():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        result = yield
+        history.append(args + (result,))
+        yield aspectlib.Return('bar-'+result)
+
+    with aspectlib.weave(NormalTestSubSubClass.only_in_base, aspect):
+        inst = NormalTestSubSubClass('stuff')
+        assert inst.only_in_base() == 'bar-NormalTestSubSubClass'
+        assert history == [
+            (inst, 'NormalTestSubSubClass'),
+        ]
+
+    inst = NormalTestSubSubClass('stuff')
+    assert inst.only_in_base() == 'NormalTestSubSubClass'
+
+
+def test_weave_legacy_subclass_meth_from_baseclass():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        result = yield
+        history.append(args + (result,))
+        yield aspectlib.Return('bar-'+result)
+
+    with aspectlib.weave(LegacyTestSubClass.only_in_base, aspect):
+        inst = LegacyTestSubClass('stuff')
+        assert inst.only_in_base() == 'bar-LegacyTestSubClass'
+        assert history == [
+            (inst, 'LegacyTestSubClass'),
+        ]
+
+    inst = LegacyTestSubClass('stuff')
+    assert inst.only_in_base() == 'LegacyTestSubClass'
+
+
+def test_weave_legacy_subclass_meth_from_baseclass_2_level():
+    history = []
+
+    @aspectlib.Aspect
+    def aspect(*args):
+        result = yield
+        history.append(args + (result,))
+        yield aspectlib.Return('bar-'+result)
+
+    with aspectlib.weave(LegacyTestSubSubClass.only_in_base, aspect):
+        inst = LegacyTestSubSubClass('stuff')
+        assert inst.only_in_base() == 'bar-LegacyTestSubSubClass'
+        assert history == [
+            (inst, 'LegacyTestSubSubClass'),
+        ]
+
+    inst = LegacyTestSubSubClass('stuff')
+    assert inst.only_in_base() == 'LegacyTestSubSubClass'
 
 
 def test_weave_class():
