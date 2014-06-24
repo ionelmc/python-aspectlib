@@ -448,7 +448,6 @@ def weave(target, aspects, **options):
         inst = target.__self__
         name = target.__name__
         logdebug("@ patching %r (%s) as instance method.", target, name)
-        assert not options, "keyword arguments are not supported when weaving instance methods."
         func = getattr(inst, name)
         setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
@@ -474,7 +473,6 @@ def weave(target, aspects, **options):
             inst = target.im_self
             name = target.__name__
             logdebug("@ patching %r (%s) as instance method.", target, name)
-            assert not options, "keyword arguments are not supported when weaving instance methods."
             func = getattr(inst, name)
             setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
             return Rollback(lambda: delattr(inst, name))
