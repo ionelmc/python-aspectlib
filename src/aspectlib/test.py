@@ -82,45 +82,62 @@ class LogCapture(object):
         [('Message from info: %s', ('somearg',), 20), ('Message from error: %s', ('somearg',), 40)]
         >>> logs.has('Message from info: %s')
         True
+        >>> logs.has('Message from info: somearg')
+        True
+        >>> logs.has('Message from info: %s', 'badarg')
+        False
         >>> logs.has('Message from debug: %s')
         False
-        >>> logs.assertLogged('Message from error: %s', )
+        >>> logs.assertLogged('Message from error: %s')
+        >>> logs.assertLogged('Message from error: %s')
+        >>> logs.assertLogged('Message from error: %s')
+
 
     """
     def __init__(self, logger, level='DEBUG'):
-        self.logger = logger
-        self.level = _checkLevel(level)
-        self.calls = []
-        self.rollback = None
+        self._logger = logger
+        self._level = _checkLevel(level)
+        self._calls = []
+        self._rollback = None
 
     def __enter__(self):
-        self.rollback = weave(
-            self.logger,
+        self._rollback = weave(
+            self._logger,
             record(callback=self._callback, extended=True, iscalled=True),
             methods='_log$'
         )
         return self
 
     def __exit__(self, *exc):
-        self.rollback()
+        self._rollback()
 
     def _callback(self, _binding, _qualname, args, _kwargs):
         level, message, args = args
-        if level >= self.level:
-            self.calls.append((message, args, level))
+        if level >= self._level:
+            self._calls.append((message % args if args else message, message, args, level))
 
-    def has(self, message, args=None, level=None):
-        #level = kwargs.pop('level', None)
-        #assert not kwargs, "Unexpected arguments: %s" % kwargs
-        for call_message, call_args, call_level in self.calls:
-            if message == call_message and (args is None or args == call_args) and (level is None or level == call_level):
+    @property
+    def calls(self):
+        return [i[1:] for i in self._calls]
+
+    def has(self, message, *args, **kwargs):
+        level = kwargs.pop('level', None)
+        assert not kwargs, "Unexpected arguments: %s" % kwargs
+        for call_final_message, call_message, call_args, call_level in self._calls:
+            if (
+                (level is None or level == call_level) and (
+                    message == call_message and args == call_args
+                    if args else
+                    message == call_final_message or message == call_message
+                )
+            ):
                 return True
         return False
 
-    def assertLogged(self, message, level=None, args=None):
-        if not self.has(message, level, args):
+    def assertLogged(self, message, *args, **kwargs):
+        if not self.has(message, *args, **kwargs):
             raise AssertionError("There's no such message %r (with args %r) logged on %s. Logged messages where: %s" % (
-                message, args, self.logger, self.calls
+                message, args, self._logger, self.calls
             ))
 
 
