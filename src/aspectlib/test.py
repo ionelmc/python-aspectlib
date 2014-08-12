@@ -1,11 +1,12 @@
-from sys import _getframe
 from collections import defaultdict
 from collections import namedtuple
 from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
+from logging import _checkLevel
 from logging import getLogger
+from sys import _getframe
 from traceback import format_stack
 
 from aspectlib import ALL_METHODS
@@ -63,6 +64,64 @@ def mock(return_value, call=False):
         return mock_wrapper
 
     return mock_decorator
+
+
+class LogCapture(object):
+    """
+    Records all log messages made on the given logger. Assumes the logger has a ``_log`` method.
+
+    Example::
+
+        >>> import logging
+        >>> logger = logging.getLogger('mylogger')
+        >>> with LogCapture(logger, level='INFO') as logs:
+        ...     logger.debug("Message from debug: %s", 'somearg')
+        ...     logger.info("Message from info: %s", 'somearg')
+        ...     logger.error("Message from error: %s", 'somearg')
+        >>> logs.calls
+        [('Message from info: %s', ('somearg',), 20), ('Message from error: %s', ('somearg',), 40)]
+        >>> logs.has('Message from info: %s')
+        True
+        >>> logs.has('Message from debug: %s')
+        False
+        >>> logs.assertLogged('Message from error: %s', )
+
+    """
+    def __init__(self, logger, level='DEBUG'):
+        self.logger = logger
+        self.level = _checkLevel(level)
+        self.calls = []
+        self.rollback = None
+
+    def __enter__(self):
+        self.rollback = weave(
+            self.logger,
+            record(callback=self._callback, extended=True, iscalled=True),
+            methods='_log$'
+        )
+        return self
+
+    def __exit__(self, *exc):
+        self.rollback()
+
+    def _callback(self, _binding, _qualname, args, _kwargs):
+        level, message, args = args
+        if level >= self.level:
+            self.calls.append((message, args, level))
+
+    def has(self, message, args=None, level=None):
+        #level = kwargs.pop('level', None)
+        #assert not kwargs, "Unexpected arguments: %s" % kwargs
+        for call_message, call_args, call_level in self.calls:
+            if message == call_message and (args is None or args == call_args) and (level is None or level == call_level):
+                return True
+        return False
+
+    def assertLogged(self, message, level=None, args=None):
+        if not self.has(message, level, args):
+            raise AssertionError("There's no such message %r (with args %r) logged on %s. Logged messages where: %s" % (
+                message, args, self.logger, self.calls
+            ))
 
 
 class _RecordingFunctionWrapper(object):
