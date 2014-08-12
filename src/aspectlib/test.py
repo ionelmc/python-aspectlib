@@ -65,7 +65,7 @@ def mock(return_value, call=False):
     return mock_decorator
 
 
-class RecordingFunctionWrapper(object):
+class _RecordingFunctionWrapper(object):
     """
     Function wrapper that records calls and can be used as an weaver context manager.
 
@@ -123,7 +123,7 @@ class RecordingFunctionWrapper(object):
                 ))
 
     def __get__(self, instance, owner):
-        return RecordingFunctionWrapper(
+        return _RecordingFunctionWrapper(
             self.__wrapped.__get__(instance, owner),
             iscalled=self.__iscalled,
             calls=self.calls,
@@ -193,7 +193,7 @@ def record(func=None, recurse_lock_factory=allocate_lock, **options):
         Added `extended` option.
     """
     if func:
-        return RecordingFunctionWrapper(
+        return _RecordingFunctionWrapper(
             func,
             recurse_lock=recurse_lock_factory(),
             **options
@@ -233,7 +233,7 @@ class StoryResultWrapper(object):
         exec("%s = __unsupported__" % mm)
 
 
-class StoryFunctionWrapper(object):
+class _StoryFunctionWrapper(object):
     def __init__(self, wrapped, handle, binding=None, owner=None):
         self._wrapped = wrapped
         self._name = wrapped.__name__
@@ -263,7 +263,7 @@ class StoryFunctionWrapper(object):
         ), self)
 
 
-class ReplayFunctionWrapper(StoryFunctionWrapper):
+class _ReplayFunctionWrapper(_StoryFunctionWrapper):
     def __call__(self, *args, **kwargs):
         if self._binding is None:
             return self._handle(None, self._qualname, args, kwargs, self._wrapped)
@@ -321,7 +321,7 @@ class _RecordingBase(object):
         self._options.setdefault('methods', ALL_METHODS)
         self.__entanglement = weave(
             self._target,
-            partial(self.FunctionWrapper, handle=self._handle),
+            partial(self._FunctionWrapper, handle=self._handle),
             **self._options
         )
         return self
@@ -380,7 +380,7 @@ class Story(_RecordingBase):
 
         .. [1] http://www.martinfowler.com/bliki/TestDouble.html
     """
-    FunctionWrapper = StoryFunctionWrapper
+    _FunctionWrapper = _StoryFunctionWrapper
 
     def __init__(self, *args, **kwargs):
         super(Story, self).__init__(*args, **kwargs)
@@ -446,7 +446,7 @@ class Replay(_RecordingBase):
     This object should be created by :obj:`Story <aspectlib.test.Story>`'s :obj:`replay <aspectlib.test.Story.replay>`
     method.
     """
-    FunctionWrapper = ReplayFunctionWrapper
+    _FunctionWrapper = _ReplayFunctionWrapper
 
     def __init__(self, play, proxy=True, strict=True, dump=True, recurse_lock=False, **options):
         super(Replay, self).__init__(play._target, **options)
