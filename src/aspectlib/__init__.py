@@ -12,6 +12,7 @@ from inspect import ismethod
 from inspect import ismethoddescriptor
 from inspect import ismodule
 from inspect import isroutine
+from types import InstanceType
 from functools import partial
 from logging import getLogger
 
@@ -484,7 +485,7 @@ def weave(target, aspects, **options):
         return weave_class(target, aspects, **options)
     elif ismodule(target):
         return weave_module(target, aspects, **options)
-    elif type(target).__module__ not in ('builtins', '__builtin__'):
+    elif type(target).__module__ not in ('builtins', '__builtin__') or isinstance(target, InstanceType):
         return weave_instance(target, aspects, **options)
     else:
         raise UnsupportedType("Can't weave object %s of type %s" % (target, type(target)))
