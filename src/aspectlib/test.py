@@ -4,7 +4,10 @@ from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
-from logging import _checkLevel
+try:
+    from logging import _levelNames as nameToLevel
+except ImportError:
+    from logging import _nameToLevel as nameToLevel
 from logging import getLogger
 from sys import _getframe
 from traceback import format_stack
@@ -96,7 +99,7 @@ class LogCapture(object):
     """
     def __init__(self, logger, level='DEBUG'):
         self._logger = logger
-        self._level = _checkLevel(level)
+        self._level = nameToLevel[level]
         self._calls = []
         self._rollback = None
 
