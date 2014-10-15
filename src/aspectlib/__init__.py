@@ -40,7 +40,7 @@ except ImportError:
 
 
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 logger = getLogger(__name__)
 logdebug = logf(logger.debug)
