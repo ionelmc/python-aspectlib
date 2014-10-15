@@ -649,17 +649,17 @@ class Replay(_RecordingBase):
     def expected(self):
         return ''.join(_format_calls(self._expected))
 
-    def __exit__(self, *args):
+    def __exit__(self, *exception):
         super(Replay, self).__exit__()
         if self._strict or self._dump:
             diff = self.diff
             if diff:
-                if self._dump:
+                if exception or self._dump:
                     print('STORY/REPLAY DIFF:')
                     print('    ' + '\n    '.join(diff.splitlines()))
                     print('ACTUAL:')
                     print('    ' + '    '.join(_format_calls(self._actual)))
-                if self._strict:
+                if not exception and self._strict:
                     raise AssertionError(diff)
 
 
