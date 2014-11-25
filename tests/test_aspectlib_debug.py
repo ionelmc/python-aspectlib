@@ -34,6 +34,7 @@ class MyStuff(object):
     def stuff(self):
         return self.foo
 
+
 class OldStuff:
     def __init__(self, foo):
         self.foo = foo
@@ -72,7 +73,7 @@ def test_logging_works():
     def foo():
         pass
     foo()
-    assert re.match('foo\(\) +<<<.*\nfoo => None\n', buf.getvalue())
+    assert re.match(r'foo\(\) +<<<.*\nfoo => None\n', buf.getvalue())
 
 
 def test_attributes():
@@ -84,9 +85,9 @@ def test_attributes():
     ), methods='(?!bar)(?!__.*__$)'):
         MyStuff('bar').stuff()
     print(buf.getvalue())
-    assert re.match("^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
     MyStuff('bar').stuff()
-    assert re.match("^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
 
 
 def test_no_stack():
@@ -110,9 +111,9 @@ def test_attributes_old_style():
     ), methods='(?!bar)(?!__.*__$)'):
         OldStuff('bar').stuff()
     print(repr(buf.getvalue()))
-    assert re.match("^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
     MyStuff('bar').stuff()
-    assert re.match("^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
 
 
 def test_no_stack_old_style():
