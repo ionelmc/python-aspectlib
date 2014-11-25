@@ -1,10 +1,15 @@
 Changelog
 =========
 
+Version 1.2.2
+-------------
+
+* Add support for weakrefs in the ``__logged__`` wrapper from :obj:`aspectlib.debug.log` decorator.
+
 Version 1.2.1
 -------------
 
-* Don't raise exceptions from Replay.__exit__ if there would be an error (makes original cause hard to debug).
+* Don't raise exceptions from ``Replay.__exit__`` if there would be an error (makes original cause hard to debug).
 
 Version 1.2.0
 -------------
