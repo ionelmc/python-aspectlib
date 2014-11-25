@@ -2,26 +2,26 @@ from __future__ import print_function
 
 import logging
 import re
-
-import aspectlib
-import aspectlib.debug
-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
+import sys
+import weakref
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
-def some_meth(*args, **kwargs):
-    return ''.join(chr(i) for i in range(255))
+import pytest
 
-LOG_TEST_SIMPLE = '''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
+import aspectlib
+import aspectlib.debug
+
+
+LOG_TEST_SIMPLE = r'''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
 some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
 $'''
+
+
+def some_meth(*_args, **_kwargs):
+    return ''.join(chr(i) for i in range(255))
 
 
 class MyStuff(object):
@@ -126,4 +126,20 @@ def test_no_stack_old_style():
     print(buf.getvalue())
     assert "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff()\n{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
 
-#test log with old-style class
+
+@pytest.mark.skipif(sys.version_info < (2, 7), reason="No weakref.WeakSet on Python<=2.6")
+def test_weakref():
+    with aspectlib.weave(MyStuff, aspectlib.debug.log):
+        s = weakref.WeakSet()
+        s.add(MyStuff.stuff)
+        print(list(s))
+    print(list(s))
+
+
+@pytest.mark.skipif(sys.version_info < (2, 7), reason="No weakref.WeakSet on Python<=2.6")
+def test_weakref_oldstyle():
+    with aspectlib.weave(OldStuff, aspectlib.debug.log):
+        s = weakref.WeakSet()
+        s.add(MyStuff.stuff)
+        print(list(s))
+    print(list(s))
