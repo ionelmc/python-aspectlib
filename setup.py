@@ -23,7 +23,9 @@ setup(
     url='https://github.com/ionelmc/python-aspectlib',
     download_url='',
     license='BSD',
-    description="Aspect-Oriented Programming toolkit.",
+    description="aspectlib is an aspect-oriented programming, monkey-patch and decorators library. It is useful when "
+                "changing behavior in existing code is desired. It includes tools for debugging and testing: simple "
+                "mock/record and a complete capture/replay framework.",
     long_description="%s\n%s" % (read('README.rst'), re.sub(':obj:`~?(.*?)`', r'``\1``', read('docs', 'changelog.rst'))),
     author='Ionel Cristian Mărieș',
     author_email='contact@ionelmc.ro',
@@ -47,8 +49,9 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     keywords=[
-        'python', 'aop', 'aspects', 'aspect oriented programming', 'decorators', 'patch', 'monkeypatch', 'weave',
-        'debug', 'log', 'tests', 'mock'
+        'aop', 'aspects', 'aspect oriented programming', 'decorators', 'patch', 'monkeypatch', 'weave', 'debug', 'log',
+        'tests', 'mock', 'capture', 'replay', 'capture-replay', 'debugging', 'patching', 'monkeypatching', 'record',
+        'recording', 'mocking', 'logger'
     ],
     install_requires=[
     ],
