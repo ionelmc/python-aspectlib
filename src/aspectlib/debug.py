@@ -62,41 +62,43 @@ def log(func=None,
     """
     Decorates `func` to have logging.
 
-    :param function func:
-        Function to decorate. If missing log returns a partial which you can use as a decorator.
-    :param int stacktrace:
-        Number of frames to show.
-    :param int stacktrace_align:
-        Column to align the framelist to.
-    :param list attributes:
-        List of instance attributes to show, in case the function is a instance method.
-    :param bool module:
-        Show the module.
-    :param bool call:
-        If ``True``, then show calls. If ``False`` only show the call details on exceptions (if ``exception`` is
-        enabled) (default: ``True``)
-    :param bool call_args:
-        If ``True``, then show call arguments. (default: ``True``)
-    :param bool call_args_repr:
-        Function to convert one argument to a string. (default: ``repr``)
-    :param bool result:
-        If ``True``, then show result. (default: ``True``)
-    :param bool exception:
-        If ``True``, then show exceptions. (default: ``True``)
-    :param function exception_repr:
-        Function to convert an exception to a string. (default: ``repr``)
-    :param function result_repr:
-        Function to convert the result object to a string. (default: ``strip_non_ascii`` - like ``str`` but nonascii
-        characters are replaced with dots.)
-    :param string use_logging:
-        Emit log messages with the given loglevel. (default: ``"CRITICAL"``)
-    :param fileobject print_to:
-        File object to write to, in case you don't want to use logging module. (default: ``None`` - printing is
-        disabled)
+    Args
+        func (function):
+            Function to decorate. If missing log returns a partial which you can use as a decorator.
+        stacktrace (int):
+            Number of frames to show.
+        stacktrace_align (int):
+            Column to align the framelist to.
+        attributes (list):
+            List of instance attributes to show, in case the function is a instance method.
+        module (bool):
+            Show the module.
+        call (bool):
+            If ``True``, then show calls. If ``False`` only show the call details on exceptions (if ``exception`` is
+            enabled) (default: ``True``)
+        call_args (bool):
+            If ``True``, then show call arguments. (default: ``True``)
+        call_args_repr (bool):
+            Function to convert one argument to a string. (default: ``repr``)
+        result (bool):
+            If ``True``, then show result. (default: ``True``)
+        exception (bool):
+            If ``True``, then show exceptions. (default: ``True``)
+        exception_repr (function):
+            Function to convert an exception to a string. (default: ``repr``)
+        result_repr (function):
+            Function to convert the result object to a string. (default: ``strip_non_ascii`` - like ``str`` but nonascii
+            characters are replaced with dots.)
+        use_logging (string):
+            Emit log messages with the given loglevel. (default: ``"CRITICAL"``)
+        print_to (fileobject):
+            File object to write to, in case you don't want to use logging module. (default: ``None`` - printing is
+            disabled)
 
-    :returns: A decorator or a wrapper.
+    Returns:
+        A decorator or a wrapper.
 
-    Example::
+    Example:
 
         >>> @log(print_to=sys.stdout)
         ... def a(weird=False):

@@ -349,31 +349,27 @@ def weave(target, aspects, **options):
     """
     Send a message to a recipient
 
-    :param target: The object to weave.
-    :type target: string, class, instance, function or builtin
+    Args:
+        target (string, class, instance, function or builtin):
+            The object to weave.
+        aspects (:py:obj:`aspectlib.Aspect`, function decorator or list of):
+            The aspects to apply to the object.
+        subclasses (bool):
+            If ``True``, subclasses of target are weaved. *Only available for classes*
+        aliases (bool):
+            If ``True``, aliases of target are replaced.
+        lazy (bool):
+            If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after
+            ``__init__`` is called. *Only available for classes*.
+        methods (list or regex or string):
+            Methods from target to patch. *Only available for classes*
 
-    :param aspects: The aspects to apply to the object.
-    :type target: :py:obj:`aspectlib.Aspect`, function decorator or list of
+    Returns:
+        aspectlib.Rollback: An object that can rollback the patches.
 
-    :param bool subclasses:
-        If ``True``, subclasses of target are weaved. *Only available for classes*
-
-    :param bool aliases:
-        If ``True``, aliases of target are replaced.
-
-    :param bool lazy:
-        If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
-        is called. *Only available for classes*.
-
-    :param methods: Methods from target to patch. *Only available for classes*
-    :type methods: list or regex or string
-
-    :returns:
-        :class:`aspectlib.Rollback` instance
-
-    :raises TypeError:
-        If target is a unacceptable object, or the specified options are not available for that type of object.
-
+    Raises:
+        TypeError: If target is a unacceptable object, or the specified options are not available for that type of
+            object.
 
     .. versionchanged:: 0.4.0
 

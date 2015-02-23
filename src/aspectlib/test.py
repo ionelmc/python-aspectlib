@@ -52,9 +52,12 @@ def mock(return_value, call=False):
     """
     Factory for a decorator that makes the function return a given `return_value`.
 
-    :param return_value: Value to return from the wrapper.
-    :param bool call: If ``True``, call the decorated function. (default: ``False``)
-    :returns: A decorator.
+    Args:
+        return_value: Value to return from the wrapper.
+        call (bool): If ``True``, call the decorated function. (default: ``False``)
+
+    Returns:
+        A decorator.
     """
 
     def mock_decorator(func):
@@ -224,24 +227,24 @@ def record(func=None, recurse_lock_factory=allocate_lock, **options):
     """
     Factory or decorator (depending if `func` is initially given).
 
-    :param list callback:
-        An a callable that is to be called with ``instance, function, args, kwargs``.
-    :param list calls:
-        An object where the `Call` objects are appended. If not given and ``callback`` is not specified then a new list
-        object will be created.
-    :param bool iscalled:
-        If ``True`` the `func` will be called. (default: ``False``)
-    :param bool extended:
-        If ``True`` the `func`'s ``__name__`` will also be included in the call list. (default: ``False``)
-    :param bool results:
-        If ``True`` the results (and exceptions) will also be included in the call list. (default: ``False``)
-    :returns:
-        A wrapper that has a `calls` property.
+    Args:
+        callback (list):
+            An a callable that is to be called with ``instance, function, args, kwargs``.
+        calls (list):
+            An object where the `Call` objects are appended. If not given and ``callback`` is not specified then a new list
+            object will be created.
+        iscalled (bool):
+            If ``True`` the `func` will be called. (default: ``False``)
+        extended (bool):
+            If ``True`` the `func`'s ``__name__`` will also be included in the call list. (default: ``False``)
+        results (bool):
+            If ``True`` the results (and exceptions) will also be included in the call list. (default: ``False``)
 
-    The decorator returns a wrapper that records all calls made to `func`. The history is available as a ``call``
-    property. If access to the function is too hard then you need to specify the history manually.
+    Returns:
+        A wrapper that records all calls made to `func`. The history is available as a ``call``
+        property. If access to the function is too hard then you need to specify the history manually.
 
-    Example::
+    Example:
 
         >>> @record
         ... def a(x, y, a, b):
@@ -420,19 +423,17 @@ class Story(_RecordingBase):
         This a simple yet flexible tool that can do "capture-replay mocking" or "test doubles" [1]_. It leverages
         ``aspectlib``'s powerful :obj:`weaver <aspectlib.weave>`.
 
-        :param target:
-            Targets to weave in the `story`/`replay` transactions.
-        :type target:
-            Same as for :obj:`aspectlib.weave`.
-        :param bool subclasses:
-            If ``True``, subclasses of target are weaved. *Only available for classes*
-        :param bool aliases:
-            If ``True``, aliases of target are replaced.
-        :param bool lazy:
-            If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
-            is called. *Only available for classes*.
-        :param methods: Methods from target to patch. *Only available for classes*
-        :type methods: list or regex or string
+        Args:
+            target (same as for :obj:`aspectlib.weave`):
+                Targets to weave in the `story`/`replay` transactions.
+            subclasses (bool):
+                If ``True``, subclasses of target are weaved. *Only available for classes*
+            aliases (bool):
+                If ``True``, aliases of target are replaced.
+            lazy (bool):
+                If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
+                is called. *Only available for classes*.
+            methods (list or regex or string): Methods from target to patch. *Only available for classes*
 
         The ``Story`` allows some testing patterns that are hard to do with other tools:
 
@@ -468,17 +469,20 @@ class Story(_RecordingBase):
 
     def replay(self, **options):
         """
-        :param bool proxy:
-            If ``True`` then unexpected uses are allowed (will use the real functions) but they are collected for later
-            use. Default: ``True``.
-        :param bool strict:
-            If ``True`` then an ``AssertionError`` is raised when there were `unexpected calls` or there were `missing
-            calls` (specified in the story but not called). Default: ``True``.
-        :param bool dump:
-            If ``True`` then the `unexpected`/`missing calls` will be printed (to ``sys.stdout``). Default: ``True``.
-        :returns: A :obj:`aspectlib.test.Replay` object.
+        Args:
+            proxy (bool):
+                If ``True`` then unexpected uses are allowed (will use the real functions) but they are collected for later
+                use. Default: ``True``.
+            strict (bool):
+                If ``True`` then an ``AssertionError`` is raised when there were `unexpected calls` or there were `missing
+                calls` (specified in the story but not called). Default: ``True``.
+            dump (bool):
+                If ``True`` then the `unexpected`/`missing calls` will be printed (to ``sys.stdout``). Default: ``True``.
 
-        Example::
+        Returns:
+            A :obj:`aspectlib.test.Replay` object.
+
+        Example:
 
             >>> import mymod
             >>> with Story(mymod) as story:
