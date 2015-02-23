@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-import re
+from __future__ import unicode_literals
+
 import os
+
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -18,11 +21,10 @@ if os.getenv('SPELLCHECK'):
 source_suffix = '.rst'
 master_doc = 'index'
 project = u'aspectlib'
-copyright = u'2014, Ionel Cristian Mărieș'
-version = release = re.findall(
-    'version="(.*)"',
-    open(os.path.join(os.path.dirname(__file__), '../setup.py')).read()
-)[0]
+year = u'2015'
+author = u'Ionel Cristian Maries'
+copyright = '{0}, {1}'.format(year, author)
+version = release = u'1.2.2'
 
 import sphinx_py3doc_enhanced_theme
 html_theme = "sphinx_py3doc_enhanced_theme"
@@ -32,7 +34,6 @@ pygments_style = 'trac'
 templates_path = ['.']
 html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
-exclude_trees = ['pydoctheme']
 html_split_index = True
 html_sidebars = {
    '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],

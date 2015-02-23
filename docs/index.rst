@@ -5,7 +5,7 @@ Welcome to python-aspectlib's documentation!
 behavior in existing code is desired.
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     introduction
     installation
@@ -16,6 +16,7 @@ behavior in existing code is desired.
     reference/index
     development
     todo
+    contributing
     changelog
 
 Indices and tables
