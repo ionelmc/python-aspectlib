@@ -1,30 +1,35 @@
 Changelog
 =========
 
-Version 1.2.2
--------------
+1.3.0 (???)
+------------------
+
+* Add ``messages`` property to :obj:`aspectlib.test.LogCapture`. Change ``call`` to have level name instead of number.
+
+1.2.2 (2014-11-25)
+------------------
 
 * Add support for weakrefs in the ``__logged__`` wrapper from :obj:`aspectlib.debug.log` decorator.
 
-Version 1.2.1
--------------
+1.2.1 (2014-10-15)
+------------------
 
 * Don't raise exceptions from ``Replay.__exit__`` if there would be an error (makes original cause hard to debug).
 
-Version 1.2.0
--------------
+1.2.0 (2014-06-24)
+------------------
 
 * Fix weaving methods that were defined in some baseclass (and not on the target class).
 * Fix wrong qualname beeing used in the Story/Replay recording. Now used the alias given to the weaver instead of
   whatever is the realname on the current platform.
 
-Version 1.1.1
--------------
+1.1.1 (2014-06-14)
+------------------
 
 * Use ``ASPECTLIB_DEBUG`` for every logger in ``aspectlib``.
 
-Version 1.1.0
--------------
+1.1.0 (2014-06-13)
+------------------
 
 * Add a `bind` option to :obj:`aspectlib.Aspect` so you can access the cutpoint from the advisor.
 * Replaced automatic importing in :obj:`aspectlib.test.Replay` with extraction of context variables (locals and globals
@@ -35,15 +40,15 @@ Version 1.1.0
 * Added :obj:`aspectlib.test.Story.actual` and :obj:`aspectlib.test.Story.expected`.
 * Added an ``ASPECTLIB_DEBUG`` environment variable option to switch on debug logging in ``aspectlib``'s internals.
 
-Version 1.0.0
--------------
+1.0.0 (2014-05-03)
+------------------
 
 * Reworked the internals :obj:`aspectlib.test.Story` to keep call ordering, to allow dependencies and improved the
   serialization (used in the diffs and the missing/unexpected lists).
 
 
-Version 0.9.0
--------------
+0.9.0 (2014-04-16)
+------------------
 
 * Changed :obj:`aspectlib.test.record`:
 
@@ -59,39 +64,39 @@ Version 0.9.0
 
 * Added :obj:`aspectlib.test.Story` class for capture-replay and stub/mock testing.
 
-Version 0.8.1
--------------
+0.8.1 (2014-04-01)
+------------------
 
 * Use simpler import for the py3support.
 
-Version 0.8.0
--------------
+0.8.0 (2014-03-31)
+------------------
 
 * Change :obj:`aspectlib.debug.log` to use :obj:`~aspectlib.Aspect` and work as expected with coroutines or generators.
 * Fixed :obj:`aspectlib.debug.log` to work on Python 3.4.
 * Remove the undocumented ``aspectlib.Yield`` advice. It was only usable when decorating generators.
 
-Version 0.7.0
--------------
+0.7.0 (2014-03-28)
+------------------
 
 * Add support for decorating generators and coroutines in :obj:`~aspectlib.Aspect`.
 * Made aspectlib raise better exceptions.
 
-Version 0.6.1
--------------
+0.6.1 (2014-03-22)
+------------------
 
 * Fix checks inside :obj:`aspectlib.debug.log` that would inadvertently call ``__bool__``/``__nonzero``.
 
-Version 0.6.0
--------------
+0.6.0 (2014-03-17)
+------------------
 
 * Don't include __getattribute__ in ALL_METHODS - it's too dangerous dangerous dangerous dangerous dangerous dangerous
   ... ;)
 * Do a more reliable check for old-style classes in debug.log
 * When weaving a class don't weave attributes that are callable but are not actually routines (functions, methods etc)
 
-Version 0.5.0
--------------
+0.5.0 (2014-03-16)
+------------------
 
 * Changed :obj:`aspectlib.debug.log`:
 
@@ -106,13 +111,13 @@ Version 0.5.0
   (``invalid name`` is not a valid identifier)
 * Various documentation improvements and examples.
 
-Version 0.4.1
--------------
+0.4.1 (2014-03-08)
+------------------
 
 * Remove junk from 0.4.0's source distribution.
 
-Version 0.4.0
--------------
+0.4.0 (2014-03-08)
+------------------
 
 * Changed :obj:`aspectlib.weave`:
 
@@ -122,3 +127,13 @@ Version 0.4.0
     * Replaced `skip_subclasses` option with `subclasses`.
 
 * Fixed weaving methods from a string target.
+
+0.3.1 (2014-03-05)
+------------------
+
+* ???
+
+0.3.0 (2014-03-05)
+------------------
+
+* First public release.
