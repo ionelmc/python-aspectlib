@@ -86,7 +86,7 @@ class LogCapture(object):
         ...     logger.info("Message from info: %s", 'somearg')
         ...     logger.error("Message from error: %s", 'somearg')
         >>> logs.calls
-        [('Message from info: %s', ('somearg',), 20), ('Message from error: %s', ('somearg',), 40)]
+        [('Message from info: %s', ('somearg',), 'INFO'), ('Message from error: %s', ('somearg',), 'ERROR')]
         >>> logs.has('Message from info: %s')
         True
         >>> logs.has('Message from info: somearg')
