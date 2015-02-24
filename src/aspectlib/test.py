@@ -4,10 +4,7 @@ from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
-try:
-    from logging import _levelNames as nameToLevel
-except ImportError:
-    from logging import _nameToLevel as nameToLevel
+from logging import getLevelName
 from logging import getLogger
 from sys import _getframe
 from traceback import format_stack
@@ -23,6 +20,10 @@ from .utils import qualname
 from .utils import repr_ex
 from .utils import Sentinel
 
+try:
+    from logging import _levelNames as nameToLevel
+except ImportError:
+    from logging import _nameToLevel as nameToLevel
 try:
     from dummy_thread import allocate_lock
 except ImportError:
@@ -98,7 +99,9 @@ class LogCapture(object):
         >>> logs.assertLogged('Message from error: %s')
         >>> logs.assertLogged('Message from error: %s')
 
+    .. versionchanged:: 1.3.0
 
+        Added ``messages`` property.
     """
     def __init__(self, logger, level='DEBUG'):
         self._logger = logger
@@ -120,24 +123,32 @@ class LogCapture(object):
     def _callback(self, _binding, _qualname, args, _kwargs):
         level, message, args = args
         if level >= self._level:
-            self._calls.append((message % args if args else message, message, args, level))
+            self._calls.append((
+                message % args if args else message,
+                message,
+                args,
+                getLevelName(level)
+            ))
 
     @property
     def calls(self):
         return [i[1:] for i in self._calls]
 
+    @property
+    def messages(self):
+        return [(i[-1], i[0]) for i in self._calls]
+
     def has(self, message, *args, **kwargs):
         level = kwargs.pop('level', None)
         assert not kwargs, "Unexpected arguments: %s" % kwargs
         for call_final_message, call_message, call_args, call_level in self._calls:
-            if (
-                (level is None or level == call_level) and (
+            if level is None or level == call_level:
+                if (
                     message == call_message and args == call_args
                     if args else
                     message == call_final_message or message == call_message
-                )
-            ):
-                return True
+                ):
+                    return True
         return False
 
     def assertLogged(self, message, *args, **kwargs):
