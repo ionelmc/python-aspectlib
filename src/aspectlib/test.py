@@ -104,6 +104,7 @@ class LogCapture(object):
     .. versionchanged:: 1.3.0
 
         Added ``messages`` property.
+        Changed ``calls`` to retrun the level as a string (instead of int).
     """
     def __init__(self, logger, level='DEBUG'):
         self._logger = logger
