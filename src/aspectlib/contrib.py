@@ -27,7 +27,7 @@ def retry(func=None, retries=5, backoff=None, exceptions=(IOError, OSError, EOFE
 
         >>> @retry
         ... def bad_func():
-        ...     raise IOError('Tough luck!')
+        ...     raise OSError('Tough luck!')
         ...
         >>> bad_func()
         Traceback (most recent call last):
