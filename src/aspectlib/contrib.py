@@ -1,12 +1,12 @@
 from logging import getLogger
-from time import sleep
+import time
 
 from aspectlib import Aspect
 
 logger = getLogger(__name__)
 
 
-def retry(func=None, retries=5, backoff=None, exceptions=(IOError, OSError, EOFError), cleanup=None, sleep=sleep):
+def retry(func=None, retries=5, backoff=None, exceptions=(IOError, OSError, EOFError), cleanup=None, sleep=time.sleep):
     """
     Decorator that retries the call ``retries`` times if ``func`` raises ``exceptions``. Can use a ``backoff`` function
     to sleep till next retry.
