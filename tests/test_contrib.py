@@ -9,7 +9,7 @@ from aspectlib import weave
 def flaky_func(arg):
     if arg:
         arg.pop()
-        raise IOError('Tough luck!')
+        raise OSError('Tough luck!')
 
 
 def test_done_suceess():
@@ -29,11 +29,11 @@ def test_defaults():
 
 def test_raises():
     calls = []
-    pytest.raises(IOError, retry(sleep=calls.append)(flaky_func), [None] * 6)
+    pytest.raises(OSError, retry(sleep=calls.append)(flaky_func), [None] * 6)
     assert calls == [0, 0, 0, 0, 0]
 
     calls = []
-    pytest.raises(IOError, retry(sleep=calls.append, retries=1)(flaky_func), [None, None])
+    pytest.raises(OSError, retry(sleep=calls.append, retries=1)(flaky_func), [None, None])
     assert calls == [0]
 
 
