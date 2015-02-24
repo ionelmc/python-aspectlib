@@ -1,5 +1,5 @@
-aspectlib.debug
-===============
+Reference: ``aspectlib.debug``
+==============================
 
 .. autosummary::
     :nosignatures:

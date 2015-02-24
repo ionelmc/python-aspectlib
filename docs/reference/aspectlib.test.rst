@@ -1,5 +1,5 @@
-aspectlib.test
-==============
+Reference: ``aspectlib.test``
+=============================
 
 This module aims to be a lightweight and flexible alternative to the popular `mock <https://pypi.python.org/pypi/mock>`_
 framework and more.

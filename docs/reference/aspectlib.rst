@@ -1,5 +1,8 @@
-aspectlib
-=========
+Reference: ``aspectlib``
+========================
+
+Overview
+--------
 
 .. highlights::
 
@@ -24,10 +27,8 @@ aspectlib
     aspectlib.weave
     aspectlib.Rollback
 
-
 Reference
 ---------
-
 
 .. automodule:: aspectlib
     :members:
