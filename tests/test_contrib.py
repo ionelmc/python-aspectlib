@@ -1,11 +1,11 @@
-import time
 from logging import getLogger
 
 import pytest
 
-from aspectlib.test import Story, record, mock, LogCapture
+from aspectlib import contrib
 from aspectlib.contrib import retry
-from aspectlib import weave, contrib
+from aspectlib.test import LogCapture
+
 
 def flaky_func(arg):
     if arg:
@@ -21,6 +21,7 @@ def test_done_suceess():
 
     ok_func()
     assert calls == [1]
+
 
 def test_defaults():
     calls = []
