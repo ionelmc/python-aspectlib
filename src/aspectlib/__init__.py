@@ -520,7 +520,9 @@ def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, bag=Bro
     method_matches = make_method_matcher(methods)
     logdebug("weave_instance (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)",
              instance, aspect, methods, lazy, options)
-    fixup = lambda func: func.__get__(instance, type(instance))
+
+    def fixup(func):
+        return func.__get__(instance, type(instance))
     fixed_aspect = aspect + [fixup] if isinstance(aspect, (list, tuple)) else [aspect, fixup]
 
     for attr in dir(instance):
