@@ -24,7 +24,7 @@ project = u'aspectlib'
 year = u'2015'
 author = u'Ionel Cristian Maries'
 copyright = '{0}, {1}'.format(year, author)
-version = release = u'1.2.2'
+version = release = u'1.3.0'
 
 import sphinx_py3doc_enhanced_theme
 html_theme = "sphinx_py3doc_enhanced_theme"
