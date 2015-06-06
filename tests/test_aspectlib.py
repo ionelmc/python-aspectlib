@@ -417,6 +417,15 @@ def test_weave_str_class_meth_target():
     assert Stuff().meth() is None
 
 
+def test_weave_old_style_method_no_warn_patch_module():
+    calls = []
+    with aspectlib.weave('warnings.warn', record(calls=calls)):
+        with aspectlib.weave('test_aspectlib.LegacyTestClass.foobar', mock('stuff')):
+            assert LegacyTestClass().foobar() == 'stuff'
+
+    assert calls == []
+
+
 def test_weave_wrong_module():
     calls = []
     with aspectlib.weave('warnings.warn', record(calls=calls)):

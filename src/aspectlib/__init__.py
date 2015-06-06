@@ -699,6 +699,7 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
                     logdebug("= saving %s on %s.%s ...", replacement, target, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))
+                    seen = True
                 else:
                     raise AssertionError("%s.%s = %s is not %s." % (module, alias, obj, original))
 

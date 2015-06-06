@@ -1,15 +1,16 @@
 Changelog
 =========
 
-1.3.0 (???)
+1.3.0 (2015-06-06)
 ------------------
 
-* Add ``messages`` property to :obj:`aspectlib.test.LogCapture`. Change ``call`` to have level name instead of number.
+* Added ``messages`` property to :obj:`aspectlib.test.LogCapture`. Change ``call`` to have level name instead of number.
+* Fixed a bogus warning from :func:`aspectlib.patch_module`` when patching methods on old style classes.
 
 1.2.2 (2014-11-25)
 ------------------
 
-* Add support for weakrefs in the ``__logged__`` wrapper from :obj:`aspectlib.debug.log` decorator.
+* Added support for weakrefs in the ``__logged__`` wrapper from :obj:`aspectlib.debug.log` decorator.
 
 1.2.1 (2014-10-15)
 ------------------
@@ -19,8 +20,8 @@ Changelog
 1.2.0 (2014-06-24)
 ------------------
 
-* Fix weaving methods that were defined in some baseclass (and not on the target class).
-* Fix wrong qualname beeing used in the Story/Replay recording. Now used the alias given to the weaver instead of
+* Fixed weaving methods that were defined in some baseclass (and not on the target class).
+* Fixed wrong qualname beeing used in the Story/Replay recording. Now used the alias given to the weaver instead of
   whatever is the realname on the current platform.
 
 1.1.1 (2014-06-14)
@@ -31,7 +32,7 @@ Changelog
 1.1.0 (2014-06-13)
 ------------------
 
-* Add a `bind` option to :obj:`aspectlib.Aspect` so you can access the cutpoint from the advisor.
+* Added a `bind` option to :obj:`aspectlib.Aspect` so you can access the cutpoint from the advisor.
 * Replaced automatic importing in :obj:`aspectlib.test.Replay` with extraction of context variables (locals and globals
   from the calling :obj:`aspectlib.test.Story`). Works better than the previous inference of module from AST of the
   result.
