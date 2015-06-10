@@ -57,6 +57,23 @@ def retry(func=None, retries=5, backoff=None, exceptions=(IOError, OSError, EOFE
                 sleep(timeout)
     return Retry if func is None else Retry(func)
 
-retry.exponential_backoff = lambda count: 2 ** count
-retry.straight_backoff = lambda count: (1, 2, 5)[count] if count < 3 else 5 * count - 5
-retry.flat_backoff = lambda count: (1, 2, 5, 10, 15, 30, 60)[count if count < 6 else -1]
+def exponential_backoff(count):
+    """
+    Wait 2**N seconds.
+    """
+    return 2 ** count
+retry.exponential_backoff = exponential_backoff
+
+def straight_backoff(count):
+    """
+    Wait 1, 2, 5 seconds. All retries after the 3rd retry will wait 5*N-5 seconds.
+    """
+    return (1, 2, 5)[count] if count < 3 else 5 * count - 5
+retry.straight_backoff = straight_backoff
+
+def flat_backoff(count):
+    """
+    Wait 1, 2, 5, 10, 15, 30 and 60 seconds. All retries after the 5th retry will wait 60 seconds.
+    """
+    return (1, 2, 5, 10, 15, 30, 60)[count if count < 6 else -1]
+retry.flat_backoff = flat_backoff
