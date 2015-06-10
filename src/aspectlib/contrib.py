@@ -35,8 +35,9 @@ def retry(func=None, retries=5, backoff=None, exceptions=(IOError, OSError, EOFE
         OSError: Tough luck!
 
     """
+
     @Aspect(bind=True)
-    def Retry(cutpoint, *args, **kwargs):
+    def retry_aspect(cutpoint, *args, **kwargs):
         for count in range(retries + 1):
             try:
                 if count and cleanup:
@@ -55,7 +56,9 @@ def retry(func=None, retries=5, backoff=None, exceptions=(IOError, OSError, EOFE
                 logger.exception("%s(%s, %s) raised exception %s. %s retries left. Sleeping %s secs.",
                                  cutpoint.__name__, args, kwargs, exc, retries - count, timeout)
                 sleep(timeout)
-    return Retry if func is None else Retry(func)
+
+    return retry_aspect if func is None else retry_aspect(func)
+
 
 def exponential_backoff(count):
     """
@@ -64,12 +67,14 @@ def exponential_backoff(count):
     return 2 ** count
 retry.exponential_backoff = exponential_backoff
 
+
 def straight_backoff(count):
     """
     Wait 1, 2, 5 seconds. All retries after the 3rd retry will wait 5*N-5 seconds.
     """
     return (1, 2, 5)[count] if count < 3 else 5 * count - 5
 retry.straight_backoff = straight_backoff
+
 
 def flat_backoff(count):
     """
