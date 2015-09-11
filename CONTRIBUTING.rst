@@ -17,8 +17,8 @@ When `reporting a bug <https://github.com/ionelmc/python-aspectlib/issues>`_ ple
 Documentation improvements
 ==========================
 
-aspectlib could always use more documentation, whether as part of the
-official aspectlib docs, in docstrings, or even on the web in blog posts,
+Aspectlib could always use more documentation, whether as part of the
+official Aspectlib docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Feature requests and feedback

@@ -6,37 +6,43 @@ env:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
     - TOXENV=check
-    - TOXENV=2.6,coveralls
-    - TOXENV=2.6-debug,coveralls
+    - TOXENV=2.6,coveralls,codecov
+    - TOXENV=2.6-debug,coveralls,codecov
     - TOXENV=2.6-nocover
     - TOXENV=2.6-nocover-debug
-    - TOXENV=2.7,coveralls
-    - TOXENV=2.7-debug,coveralls
+    - TOXENV=2.7,coveralls,codecov
+    - TOXENV=2.7-debug,coveralls,codecov
     - TOXENV=2.7-nocover
     - TOXENV=2.7-nocover-debug
-    - TOXENV=3.3,coveralls
-    - TOXENV=3.3-debug,coveralls
+    - TOXENV=3.3,coveralls,codecov
+    - TOXENV=3.3-debug,coveralls,codecov
     - TOXENV=3.3-nocover
     - TOXENV=3.3-nocover-debug
-    - TOXENV=3.4,coveralls
-    - TOXENV=3.4-debug,coveralls
+    - TOXENV=3.4,coveralls,codecov
+    - TOXENV=3.4-debug,coveralls,codecov
     - TOXENV=3.4-nocover
     - TOXENV=3.4-nocover-debug
-    - TOXENV=pypy,coveralls
-    - TOXENV=pypy-debug,coveralls
+    - TOXENV=pypy,coveralls,codecov
+    - TOXENV=pypy-debug,coveralls,codecov
     - TOXENV=pypy-nocover
     - TOXENV=pypy-nocover-debug
 before_install:
   - python --version
-  - virtualenv --version
-  - pip --version
   - uname -a
   - lsb_release -a
 install:
   - pip install tox
+  - virtualenv --version
+  - easy_install --version
+  - pip --version
+  - tox --version
 script:
   - tox -v
+after_failure:
+  - more .tox/log/* | cat
+  - more .tox/*/log/* | cat
 notifications:
   email:
     on_success: never
     on_failure: always
+

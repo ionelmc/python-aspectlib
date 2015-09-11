@@ -28,7 +28,7 @@ setup(
     description="aspectlib is an aspect-oriented programming, monkey-patch and decorators library. It is useful when "
                 "changing behavior in existing code is desired. It includes tools for debugging and testing: simple "
                 "mock/record and a complete capture/replay framework.",
-    long_description="%s\n%s" % (read('README.rst'), re.sub(':(obj|func):`~?(.*?)`', r'``\1``', read('docs', 'changelog.rst'))),
+    long_description='%s\n%s' % (read('README.rst'), re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))),
     author='Ionel Cristian Mărieș',
     author_email='contact@ionelmc.ro',
     url='https://github.com/ionelmc/python-aspectlib',
