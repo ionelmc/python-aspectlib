@@ -9,7 +9,7 @@ There are perfectly sane use cases for monkey-patching (aka *weaving*):
 
 Then in those situations:
 
-* You would need to handle yourself all different kids of patching (patching
+* You would need to handle yourself all different kinds of patching (patching
   a module is different than patching a class, a function or a method for that matter).
   ``aspectlib`` will handle all this gross patching mumbo-jumbo for you, consistently, over many Python versions.
 * Writing the actual wrappers is repetitive, boring and error-prone. You can't reuse wrappers
