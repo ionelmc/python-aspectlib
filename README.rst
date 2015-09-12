@@ -1,58 +1,83 @@
-================
-python-aspectlib
-================
+=========
+Aspectlib
+=========
 
-| |docs| |travis| |appveyor| |coveralls| |landscape| |scrutinizer|
-| |version| |downloads| |wheel| |supported-versions| |supported-implementations|
+.. list-table::
+    :stub-columns: 1
+
+    * - docs
+      - |docs|
+    * - tests
+      - | |travis| |appveyor| |requires|
+        | |coveralls| |codecov|
+        | |landscape| |scrutinizer| |codacy| |codeclimate|
+    * - package
+      - |version| |downloads| |wheel| |supported-versions| |supported-implementations|
 
 .. |docs| image:: https://readthedocs.org/projects/python-aspectlib/badge/?style=flat
     :target: https://readthedocs.org/projects/python-aspectlib
     :alt: Documentation Status
 
-.. |travis| image:: http://img.shields.io/travis/ionelmc/python-aspectlib/master.png?style=flat
+.. |travis| image:: https://travis-ci.org/ionelmc/python-aspectlib.svg?branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.org/ionelmc/python-aspectlib
 
-.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/ionelmc/python-aspectlib?branch=master
+.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/ionelmc/python-aspectlib?branch=master&svg=true
     :alt: AppVeyor Build Status
     :target: https://ci.appveyor.com/project/ionelmc/python-aspectlib
 
-.. |coveralls| image:: http://img.shields.io/coveralls/ionelmc/python-aspectlib/master.png?style=flat
+.. |requires| image:: https://requires.io/github/ionelmc/python-aspectlib/requirements.svg?branch=master
+    :alt: Requirements Status
+    :target: https://requires.io/github/ionelmc/python-aspectlib/requirements/?branch=master
+
+.. |coveralls| image:: https://coveralls.io/repos/ionelmc/python-aspectlib/badge.svg?branch=master&service=github
     :alt: Coverage Status
     :target: https://coveralls.io/r/ionelmc/python-aspectlib
+
+.. |codecov| image:: https://codecov.io/github/ionelmc/python-aspectlib/coverage.svg?branch=master
+    :alt: Coverage Status
+    :target: https://codecov.io/github/ionelmc/python-aspectlib
 
 .. |landscape| image:: https://landscape.io/github/ionelmc/python-aspectlib/master/landscape.svg?style=flat
     :target: https://landscape.io/github/ionelmc/python-aspectlib/master
     :alt: Code Quality Status
 
-.. |version| image:: http://img.shields.io/pypi/v/aspectlib.png?style=flat
+.. |codacy| image:: https://img.shields.io/codacy/REPLACE_WITH_PROJECT_ID.svg?style=flat
+    :target: https://www.codacy.com/app/ionelmc/python-aspectlib
+    :alt: Codacy Code Quality Status
+
+.. |codeclimate| image:: https://codeclimate.com/github/ionelmc/python-aspectlib/badges/gpa.svg
+   :target: https://codeclimate.com/github/ionelmc/python-aspectlib
+   :alt: CodeClimate Quality Status
+.. |version| image:: https://img.shields.io/pypi/v/aspectlib.svg?style=flat
     :alt: PyPI Package latest release
     :target: https://pypi.python.org/pypi/aspectlib
 
-.. |downloads| image:: http://img.shields.io/pypi/dm/aspectlib.png?style=flat
+.. |downloads| image:: https://img.shields.io/pypi/dm/aspectlib.svg?style=flat
     :alt: PyPI Package monthly downloads
     :target: https://pypi.python.org/pypi/aspectlib
 
-.. |wheel| image:: https://pypip.in/wheel/aspectlib/badge.png?style=flat
+.. |wheel| image:: https://img.shields.io/pypi/wheel/aspectlib.svg?style=flat
     :alt: PyPI Wheel
     :target: https://pypi.python.org/pypi/aspectlib
 
-.. |supported-versions| image:: https://pypip.in/py_versions/aspectlib/badge.png?style=flat
+.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/aspectlib.svg?style=flat
     :alt: Supported versions
     :target: https://pypi.python.org/pypi/aspectlib
 
-.. |supported-implementations| image:: https://pypip.in/implementation/aspectlib/badge.png?style=flat
+.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/aspectlib.svg?style=flat
     :alt: Supported imlementations
     :target: https://pypi.python.org/pypi/aspectlib
 
-.. |scrutinizer| image:: https://img.shields.io/scrutinizer/g/ionelmc/python-aspectlib/master.png?style=flat
-    :alt: Scrtinizer Status
+.. |scrutinizer| image:: https://img.shields.io/scrutinizer/g/ionelmc/python-aspectlib/master.svg?style=flat
+    :alt: Scrutinizer Status
     :target: https://scrutinizer-ci.com/g/ionelmc/python-aspectlib/
 
 ``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing
 behavior in existing code is desired. It includes tools for debugging and testing: simple mock/record and a complete
 capture/replay framework.
 
+* Free software: BSD license
 
 Documentation
 =============
