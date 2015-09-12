@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.3.1 (2015-09-12)
+------------------
+
+* Corrected result handling when using Aspects on generators.
+
 1.3.0 (2015-06-06)
 ------------------
 
