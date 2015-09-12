@@ -183,7 +183,12 @@ class Aspect(object):
                                         generated = next(gen)
                                     except StopIteration as exc:
                                         logexception("The cutpoint has been exhausted (early).")
-                                        result = exc.args and exc.args[0]
+                                        result = exc.args
+                                        if result:
+                                            if len(result) == 1:
+                                                result = exc.args[0]
+                                        else:
+                                            result = None
                                     else:
                                         while True:
                                             try:
@@ -198,7 +203,12 @@ class Aspect(object):
                                                     generated = gen.throw(*sys.exc_info())
                                                 except StopIteration as exc:
                                                     logexception("The cutpoint has been exhausted.")
-                                                    result = exc.args and exc.args[0]
+                                                    result = exc.args
+                                                    if result:
+                                                        if len(result) == 1:
+                                                            result = exc.args[0]
+                                                    else:
+                                                        result = None
                                                     break
                                             else:
                                                 try:
@@ -208,7 +218,12 @@ class Aspect(object):
                                                         generated = gen.send(sent)
                                                 except StopIteration as exc:
                                                     logexception("The cutpoint has been exhausted.")
-                                                    result = exc.args and exc.args[0]
+                                                    result = exc.args
+                                                    if result:
+                                                        if len(result) == 1:
+                                                            result = exc.args[0]
+                                                    else:
+                                                        result = None
                                                     break
                                 except BaseException as exc:
                                     advice = advisor.throw(*sys.exc_info())

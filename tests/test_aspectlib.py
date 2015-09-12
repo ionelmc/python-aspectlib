@@ -1563,3 +1563,22 @@ def test_weave_module(strmod=None):
 
 def test_weave_module_as_str():
     test_weave_module("test_pkg1.test_pkg2.test_mod")
+
+
+def test_aspect_chain_on_generator():
+    @aspectlib.Aspect
+    def foo(arg):
+        result = yield aspectlib.Proceed(arg + 1)
+        yield aspectlib.Return(result - 1)
+
+    @foo
+    @foo
+    @foo
+    def func(a):
+        assert a == 3
+        raise StopIteration(a)
+        yield
+
+    gen = func(0)
+    result = pytest.raises(StopIteration, gen.__next__ if hasattr(gen, '__next__') else gen.next)
+    assert result.value.args == (0,)
