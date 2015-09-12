@@ -12,6 +12,8 @@ from aspectlib.test import record
 class Base(object):
     def meth(*_):
         return 'base'
+
+
 Base2 = Base
 
 
@@ -21,11 +23,15 @@ class Sub(Base):
 
 class Global(Base):
     pass
+
+
 Global2 = Global
 
 
 class MissingGlobal(Base):
     pass
+
+
 AliasedGlobal = MissingGlobal
 del MissingGlobal
 
@@ -36,6 +42,8 @@ def module_func():
 
 def module_func2():
     pass
+
+
 module_func3 = module_func2
 
 
@@ -322,7 +330,7 @@ def test_aspect_raise():
 
     @aspect
     def func():
-        1/0
+        1 / 0
 
     assert func() == 'stuff'
 
@@ -330,7 +338,7 @@ def test_aspect_raise():
 def test_aspect_raise_from_aspect():
     @aspectlib.Aspect
     def aspect():
-        1/0
+        1 / 0
         yield
 
     @aspect
@@ -436,6 +444,7 @@ def test_weave_wrong_module():
           "There was no previous definition, probably patching the wrong module.",),
          {})
     ]
+
 
 def test_weave_no_aliases():
     with aspectlib.weave(module_func2, mock('stuff'), aliases=False):
@@ -569,7 +578,7 @@ def test_weave_subclass_meth_from_baseclass():
     def aspect(*args):
         result = yield
         history.append(args + (result,))
-        yield aspectlib.Return('bar-'+result)
+        yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(NormalTestSubClass.only_in_base, aspect):
         inst = NormalTestSubClass('stuff')
@@ -589,7 +598,7 @@ def test_weave_subclass_meth_from_baseclass_2_level():
     def aspect(*args):
         result = yield
         history.append(args + (result,))
-        yield aspectlib.Return('bar-'+result)
+        yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(NormalTestSubSubClass.only_in_base, aspect):
         inst = NormalTestSubSubClass('stuff')
@@ -609,7 +618,7 @@ def test_weave_legacy_subclass_meth_from_baseclass():
     def aspect(*args):
         result = yield
         history.append(args + (result,))
-        yield aspectlib.Return('bar-'+result)
+        yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(LegacyTestSubClass.only_in_base, aspect):
         inst = LegacyTestSubClass('stuff')
@@ -629,7 +638,7 @@ def test_weave_legacy_subclass_meth_from_baseclass_2_level():
     def aspect(*args):
         result = yield
         history.append(args + (result,))
-        yield aspectlib.Return('bar-'+result)
+        yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(LegacyTestSubSubClass.only_in_base, aspect):
         inst = LegacyTestSubSubClass('stuff')
@@ -867,7 +876,6 @@ def test_weave_class_on_init():
 
     inst = SlotsTestClass()
     with aspectlib.weave(SlotsTestClass, aspect, lazy=True):
-
         inst = SlotsTestClass('stuff')
         assert inst.foo == 'stuff'
         assert inst.bar is None
@@ -1146,7 +1154,7 @@ def test_just_proceed_with_error():
 
     @aspect
     def func():
-        1/0
+        1 / 0
 
     raises(ZeroDivisionError, func)
 
@@ -1181,12 +1189,14 @@ def test_weave_subclass_meth_manual():
 
     assert Sub().meth() == 'base'
 
+
 @pytest.mark.skipif('aspectlib.PY3')
 def test_weave_subclass_meth_auto():
     with aspectlib.weave(Sub.meth, mock('foobar'), lazy=True):
         assert Sub().meth() == 'foobar'
 
     assert Sub().meth() == 'base'
+
 
 @pytest.mark.skipif('aspectlib.PY2')
 def test_weave_subclass_meth_auto2():
@@ -1215,6 +1225,7 @@ def test_sentinel():
 
 def _internal():
     pass
+
 
 if aspectlib.PY3:
     exec(u"""# encoding: utf8
@@ -1287,6 +1298,7 @@ def test_aspect_on_func():
     @aspect
     def func():
         raise RuntimeError()
+
     assert func() == 'squelched'
     assert hist == ['before', 'error', 'finally', 'closed']
 
@@ -1303,6 +1315,7 @@ def test_aspect_on_func_invalid_advice():
         raise RuntimeError()
 
     raises(aspectlib.UnacceptableAdvice, func)
+
 
 def test_aspect_on_generator_func():
     hist = []
@@ -1331,8 +1344,9 @@ def test_aspect_on_generator_func():
         for i in range(3):
             yield i
         raise RuntimeError()
+
     assert list(func()) == [0, 1, 2]
-    print (hist)
+    print(hist)
     assert hist == ['before', 'error', 'finally', 'closed']
 
 
@@ -1381,6 +1395,7 @@ def test_aspect_on_generator_raise_stopiteration():
 
 def test_aspect_on_generator_close():
     excs = []
+
     @aspectlib.Aspect
     def aspect():
         yield aspectlib.Proceed
@@ -1404,6 +1419,7 @@ def test_aspect_on_generator_close():
 
 def test_aspect_on_generator_throw():
     excs = []
+
     @aspectlib.Aspect
     def aspect():
         yield aspectlib.Proceed
@@ -1427,6 +1443,7 @@ def test_aspect_on_generator_throw():
 
 def test_aspect_on_generator_throw_exhaust():
     excs = []
+
     @aspectlib.Aspect
     def aspect():
         yield aspectlib.Proceed
@@ -1492,6 +1509,7 @@ def test_aspect_on_generator_result_from_aspect():
 
 def test_aspect_on_generator_result():
     result = []
+
     @aspectlib.Aspect
     def aspect():
         result.append((yield aspectlib.Proceed))
@@ -1535,6 +1553,7 @@ def test_aspect_on_coroutine():
             val = yield val + 1
             print("GOT", val)
         raise StopIteration("the-return-value")
+
     gen = func()
     data = []
     try:
@@ -1544,9 +1563,8 @@ def test_aspect_on_coroutine():
         data.append('done')
     print(data)
     assert data == [100, 1, 2, 'done'], hist
-    print (hist)
+    print(hist)
     assert hist == ['before', 'the-return-value', 'after', 'finally', 'closed']
-
 
 
 def test_weave_module(strmod=None):
@@ -1560,6 +1578,7 @@ def test_weave_module(strmod=None):
         (None, 'test_pkg1.test_pkg2.test_mod.target', (), {}),
         (obj, 'test_pkg1.test_pkg2.test_mod.meth', (), {})
     ]
+
 
 def test_weave_module_as_str():
     test_weave_module("test_pkg1.test_pkg2.test_mod")
