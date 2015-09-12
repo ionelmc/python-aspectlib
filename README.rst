@@ -42,13 +42,14 @@ Aspectlib
     :target: https://landscape.io/github/ionelmc/python-aspectlib/master
     :alt: Code Quality Status
 
-.. |codacy| image:: https://img.shields.io/codacy/REPLACE_WITH_PROJECT_ID.svg?style=flat
+.. |codacy| image:: https://img.shields.io/codacy/9557dc3ca38f43bcac85240f73e1985a.svg?style=flat
     :target: https://www.codacy.com/app/ionelmc/python-aspectlib
     :alt: Codacy Code Quality Status
 
 .. |codeclimate| image:: https://codeclimate.com/github/ionelmc/python-aspectlib/badges/gpa.svg
    :target: https://codeclimate.com/github/ionelmc/python-aspectlib
    :alt: CodeClimate Quality Status
+
 .. |version| image:: https://img.shields.io/pypi/v/aspectlib.svg?style=flat
     :alt: PyPI Package latest release
     :target: https://pypi.python.org/pypi/aspectlib
