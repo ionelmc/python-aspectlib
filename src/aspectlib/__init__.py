@@ -231,7 +231,7 @@ class Aspect(object):
                                     try:
                                         advice = advisor.send(result)
                                     except StopIteration:
-                                        return
+                                        raise StopIteration(result)
                                 finally:
                                     gen.close()
                             elif advice is Return:

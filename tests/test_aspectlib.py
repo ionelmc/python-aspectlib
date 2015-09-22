@@ -1624,3 +1624,24 @@ def test_aspect_chain_on_generator_no_return():
         assert gen.next() is None
         result = pytest.raises(StopIteration, gen.next)
     assert result.value.args == (None,)
+
+
+def test_aspect_chain_on_generator_no_return_advice():
+    @aspectlib.Aspect
+    def foo(arg):
+        yield aspectlib.Proceed(arg + 1)
+
+    @foo
+    @foo
+    @foo
+    def func(a):
+        assert a == 3
+        raise StopIteration(a)
+        yield
+
+    gen = func(0)
+    if hasattr(gen, '__next__'):
+        result = pytest.raises(StopIteration, gen.__next__)
+    else:
+        result = pytest.raises(StopIteration, gen.next)
+    assert result.value.args == (3,)
