@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.3.2 (2015-09-22)
+------------------
+
+* Fixed another tricky bug in the generator advising wrappers - result was not returned if only `Proceed` was yielded.
+
 1.3.1 (2015-09-12)
 ------------------
 
