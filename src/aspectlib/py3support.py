@@ -43,7 +43,7 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
                         try:
                             advice = advisor.send(result)
                         except StopIteration:
-                            return
+                            return result
                     finally:
                         gen.close()
                 elif advice is Return:
