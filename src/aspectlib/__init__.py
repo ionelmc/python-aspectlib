@@ -39,7 +39,7 @@ except ImportError:
     ClassType = type
 
 
-__all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS'
+__all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS', 'ABSOLUTELY_ALL_METHODS'
 __version__ = '1.3.2'
 
 logger = getLogger(__name__)
@@ -48,6 +48,7 @@ logexception = logf(logger.exception)
 
 UNSPECIFIED = Sentinel('UNSPECIFIED')
 ABSOLUTELLY_ALL_METHODS = re.compile('.*')
+ABSOLUTELY_ALL_METHODS = ABSOLUTELLY_ALL_METHODS
 ALL_METHODS = re.compile('(?!__getattribute__$)')
 NORMAL_METHODS = re.compile('(?!__.*__$)')
 VALID_IDENTIFIER = re.compile(r'^[^\W\d]\w*$', re.UNICODE if PY3 else 0)
