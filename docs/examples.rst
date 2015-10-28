@@ -1,10 +1,8 @@
 Examples
 ========
 
-Retry decorator
+Retrying
 ---------------
-
-TODO: Make a more configurable retry decorator and add it in ``aspectlib.contrib``.
 
 .. code-block:: python
 
@@ -17,45 +15,23 @@ TODO: Make a more configurable retry decorator and add it in ``aspectlib.contrib
         def action(self, data):
             # do some stuff
 
-    def retry(retries=(1, 5, 15, 30, 60), retry_on=(IOError, OSError), prepare=None):
-        assert len(retries)
-
-        @aspectlib.Aspect
-        def retry_aspect(*args, **kwargs):
-            durations = retries
-            while True:
-                try:
-                    yield aspectlib.Proceed
-                    break
-                except retry_on as exc:
-                    if durations:
-                        logging.warn(exc)
-                        time.sleep(durations[0])
-                        durations = durations[1:]
-                        if prepare:
-                            prepare(*args, **kwargs)
-                    else:
-                        raise
-
-        return retry_aspect
-
 Now patch the ``Client`` class to have the retry functionality on all its methods:
 
 .. code-block:: python
 
-    aspectlib.weave(Client, retry())
+    aspectlib.weave(Client, aspectlib.contrib.retry())
 
 or with different retry options (reconnect before retry):
 
 .. code-block:: python
 
-    aspectlib.weave(Client, retry(prepare=lambda self, *_: self.connect())
+    aspectlib.weave(Client, aspectlib.contrib.retry(prepare=lambda self, *_: self.connect())
 
 or just for one method:
 
 .. code-block:: python
 
-    aspectlib.weave(Client.action, retry())
+    aspectlib.weave(Client.action, aspectlib.contrib.retry())
 
 You can see here the advantage of having reusable retry functionality. Also, the retry handling is
 decoupled from the ``Client`` class.
@@ -116,3 +92,55 @@ Mock behavior for tests:
             with aspectlib.weave(foo.Bar.stuff, mock_stuff):
                 obj = foo.Bar()
                 self.assertEqual(obj.stuff('special'), 'mocked-result')
+
+Profiling
+---------
+
+There's no decorator for such in aspectlib but you can use any of the many choices on `PyPI <https://pypi.python.org/>`_.
+
+Here's one example with `profilestats <https://pypi.python.org/pypi/profilestats>`_:
+
+.. code-block:: pycon
+
+    >>> import os, sys, aspectlib, profilestats
+    >>> with aspectlib.weave('os.path.join', profilestats.profile(print_stats=10, dump_stats=True)):
+    ...     print("os.path.join will be run with a profiler:")
+    ...     os.path.join('a', 'b')
+    ...
+    os.path.join will be run with a profiler:
+             ... function calls in ... seconds
+    ...
+       Ordered by: cumulative time
+    ...
+       ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+            1    0.000    0.000    0.000    0.000 ...
+            1    0.000    0.000    0.000    0.000 ...
+            1    0.000    0.000    0.000    0.000 ...
+            1    0.000    0.000    0.000    0.000 ...
+    ...
+    ...
+    'a/b'
+
+You can even mix it with the :obj:`aspectlib.debug.log` aspect:
+
+.. code-block:: pycon
+
+    >>> import aspectlib.debug
+    >>> with aspectlib.weave('os.path.join', [profilestats.profile(print_stats=10, dump_stats=True), aspectlib.debug.log(print_to=sys.stdout)]):
+    ...     print("os.path.join will be run with a profiler and aspectlib.debug.log:")
+    ...     os.path.join('a', 'b')
+    ...
+    os.path.join will be run with a profiler and aspectlib.debug.log:
+    join('a', 'b')                                                <<< ...
+             ... function calls in ... seconds
+    ...
+       Ordered by: cumulative time
+    ...
+       ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+          ...    0.000    0.000    0.000    0.000 ...
+          ...    0.000    0.000    0.000    0.000 ...
+          ...    0.000    0.000    0.000    0.000 ...
+          ...    0.000    0.000    0.000    0.000 ...
+    ...
+    ...
+    'a/b'
