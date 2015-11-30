@@ -110,7 +110,7 @@ def log(func=None,
         >>> try:
         ...     a(weird=True)
         ... except Exception:
-        ...     pass # naughty code !
+        ...     pass # naughty code!
         a(weird=True)                                                 <<< ...
         a ~ raised RuntimeError('BOOM!',)
 
@@ -121,7 +121,7 @@ def log(func=None,
         ...     try:
         ...         float('invalid')
         ...     except Exception as e:
-        ...         pass # naughty code !
+        ...         pass # naughty code!
         float('invalid')                                              <<< ...
         float ~ raised ValueError(...float...invalid...)
 
@@ -132,7 +132,7 @@ def log(func=None,
         >>> try:
         ...     log(call=False, result=False, print_to=sys.stdout)(float)('invalid')
         ... except Exception:
-        ...     pass # naughty code !
+        ...     pass # naughty code!
         float('invalid')                                              <<< ...
         float ~ raised ValueError(...float...invalid...)
 

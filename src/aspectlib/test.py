@@ -506,7 +506,7 @@ class Story(_RecordingBase):
             ...     print(mymod.func('some arg'))
             ...     mymod.func('bogus arg')
             some result
-            Got bogus arg in the real code !
+            Got bogus arg in the real code!
             STORY/REPLAY DIFF:
                 --- expected...
                 +++ actual...
@@ -615,7 +615,7 @@ class Replay(_RecordingBase):
             ...         mymod.badfunc()
             ...     except ValueError as exc:
             ...         print(exc)
-            Got some arg in the real code !
+            Got some arg in the real code!
             boom!
             >>> print(replay.unexpected)
             mymod.func('some arg') == None  # returns

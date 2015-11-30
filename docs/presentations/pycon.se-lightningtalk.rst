@@ -48,7 +48,7 @@ What if you use it on a generator ?
 
     >>> t = raises(RuntimeError, lambda: list(broken_generator()))
 
-Dooh ! No output.
+Dooh! No output.
 
 How to fix it ?
 ===============
