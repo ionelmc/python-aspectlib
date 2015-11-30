@@ -94,7 +94,7 @@ Pending:
 
 * *"Concerns"* (see `docs/todo.rst`)
 
-If ``aspectlib.weave`` doesn't work for your scenario please report a bug !
+If ``aspectlib.weave`` doesn't work for your scenario please report a bug!
 
 Requirements
 ============
