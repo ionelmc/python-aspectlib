@@ -18,6 +18,10 @@ env:
     - TOXENV=3.4-debug,coveralls,codecov
     - TOXENV=3.4-nocover
     - TOXENV=3.4-nocover-debug
+    - TOXENV=3.5,coveralls,codecov
+    - TOXENV=3.5-debug,coveralls,codecov
+    - TOXENV=3.5-nocover
+    - TOXENV=3.5-nocover-debug
     - TOXENV=pypy,coveralls,codecov
     - TOXENV=pypy-debug,coveralls,codecov
     - TOXENV=pypy-nocover
