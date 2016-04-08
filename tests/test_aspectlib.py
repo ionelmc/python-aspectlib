@@ -1645,3 +1645,45 @@ def test_aspect_chain_on_generator_no_return_advice():
     else:
         result = pytest.raises(StopIteration, gen.next)
     assert result.value.args == (3,)
+
+
+def test_weave_method():
+    calls = []
+    intercepted = []
+
+    @aspectlib.Aspect(bind=True)
+    def intercept(func, *args):
+        intercepted.append(args)
+        yield aspectlib.Proceed(*args)
+
+    class Foo(object):
+        def foo(self, arg):
+            calls.append((self, arg))
+
+    f = Foo()
+    with aspectlib.weave(f.foo, intercept):
+        f.foo(1)
+
+    assert calls == [(f, 1)]
+    assert intercepted == [(f, 1)]
+
+
+def test_weave_method_noargs():
+    calls = []
+    intercepted = []
+
+    @aspectlib.Aspect(bind=True)
+    def intercept(func, *args):
+        intercepted.append(args)
+        yield
+
+    class Foo(object):
+        def foo(self, arg):
+            calls.append((self, arg))
+
+    f = Foo()
+    with aspectlib.weave(f.foo, intercept):
+        f.foo(1)
+
+    assert calls == [(f, 1)]
+    assert intercepted == [(f, 1)]

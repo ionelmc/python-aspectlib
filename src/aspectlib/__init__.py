@@ -464,7 +464,7 @@ def weave(target, aspects, **options):
         inst = target.__self__
         name = target.__name__
         logdebug("@ patching %r (%s) as instance method.", target, name)
-        func = getattr(inst, name)
+        func = target.__func__
         setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
     elif PY3 and isfunction(target):
@@ -489,7 +489,7 @@ def weave(target, aspects, **options):
             inst = target.im_self
             name = target.__name__
             logdebug("@ patching %r (%s) as instance method.", target, name)
-            func = getattr(inst, name)
+            func = target.im_func
             setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
             return Rollback(lambda: delattr(inst, name))
         else:
