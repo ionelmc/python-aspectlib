@@ -1,6 +1,11 @@
 Reference: ``aspectlib.debug``
 ==============================
 
+.. testsetup::
+
+    from aspectlib.debug import log
+    from aspectlib import weave
+
 .. autosummary::
     :nosignatures:
 

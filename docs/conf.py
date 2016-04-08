@@ -3,15 +3,16 @@ from __future__ import unicode_literals
 
 import os
 
-
+import fields
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'sphinx.ext.todo',
     'sphinx.ext.coverage',
+    'sphinx.ext.doctest',
     'sphinx.ext.ifconfig',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.todo',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.napoleon'
 ]
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',

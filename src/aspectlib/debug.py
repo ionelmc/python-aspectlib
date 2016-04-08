@@ -98,7 +98,7 @@ def log(func=None,
     Returns:
         A decorator or a wrapper.
 
-    Example:
+    Example::
 
         >>> @log(print_to=sys.stdout)
         ... def a(weird=False):

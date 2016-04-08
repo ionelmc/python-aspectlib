@@ -41,7 +41,7 @@ Debugging
 
 ... those damn sockets:
 
-.. code-block:: pycon
+.. doctest:: pycon
 
     >>> import aspectlib, socket, sys
     >>> with aspectlib.weave(

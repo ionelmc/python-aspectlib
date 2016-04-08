@@ -61,6 +61,7 @@ setup(
         'recording', 'mocking', 'logger'
     ],
     install_requires=[
+        'fields'
     ],
     extras_require={
     }
