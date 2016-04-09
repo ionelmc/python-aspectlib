@@ -307,7 +307,7 @@ class Rollback(object):
     def __exit__(self, *_):
         for rollback in self._rollbacks:
             rollback()
-        self._rollbacks.clear()
+        del self._rollbacks[:]
 
     rollback = __call__ = __exit__
 
