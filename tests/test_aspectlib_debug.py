@@ -4,15 +4,16 @@ import logging
 import re
 import sys
 import weakref
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 import pytest
 
 import aspectlib
 import aspectlib.debug
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 
 LOG_TEST_SIMPLE = r'''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*

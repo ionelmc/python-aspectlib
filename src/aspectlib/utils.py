@@ -1,14 +1,13 @@
 from __future__ import print_function
 
-import platform
 import logging
-import re
 import os
+import platform
+import re
 import sys
 from collections import deque
 from functools import wraps
 from inspect import isclass
-
 
 RegexType = type(re.compile(""))
 

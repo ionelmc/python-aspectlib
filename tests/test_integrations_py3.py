@@ -2,9 +2,9 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+import asyncio
 from datetime import timedelta
 
-import asyncio
 from tornado import gen
 from tornado import ioloop
 

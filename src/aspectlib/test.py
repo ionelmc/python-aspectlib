@@ -13,12 +13,12 @@ from aspectlib import ALL_METHODS
 from aspectlib import mimic
 from aspectlib import weave
 
+from .utils import Sentinel
 from .utils import camelcase_to_underscores
 from .utils import container
 from .utils import logf
 from .utils import qualname
 from .utils import repr_ex
-from .utils import Sentinel
 
 try:
     from logging import _levelNames as nameToLevel

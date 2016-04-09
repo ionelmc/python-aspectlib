@@ -6,10 +6,10 @@ from inspect import isgeneratorfunction
 from logging import getLogger
 
 from aspectlib import ExpectedGenerator
-from aspectlib import mimic
 from aspectlib import Proceed
 from aspectlib import Return
 from aspectlib import UnacceptableAdvice
+from aspectlib import mimic
 from aspectlib.utils import logf
 
 logger = getLogger(__name__)

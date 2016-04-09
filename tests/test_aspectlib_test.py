@@ -1,20 +1,20 @@
 from __future__ import print_function
 
 from pytest import raises
+from test_pkg1.test_pkg2 import test_mod
 
 from aspectlib import PY2
+from aspectlib.test import OrderedDict
+from aspectlib.test import Story
+from aspectlib.test import StoryResultWrapper
 from aspectlib.test import _Binds
 from aspectlib.test import _format_calls
 from aspectlib.test import _Raises
 from aspectlib.test import _Returns
 from aspectlib.test import mock
-from aspectlib.test import OrderedDict
 from aspectlib.test import record
-from aspectlib.test import Story
-from aspectlib.test import StoryResultWrapper
 from aspectlib.utils import PY26
 from aspectlib.utils import repr_ex
-from test_pkg1.test_pkg2 import test_mod
 
 format_calls = lambda calls: ''.join(_format_calls(calls))
 

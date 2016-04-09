@@ -3,18 +3,19 @@ try:
 except ImportError:
     from io import StringIO
 from datetime import timedelta
+
 import pytest
-import sys
 import trollius as asyncio
 from tornado import gen
 from tornado import ioloop
+
+from aspectlib import debug
+from aspectlib.test import Story
+
 try:
     import MySQLdb
 except ImportError:
     MySQLdb = None
-
-from aspectlib import debug, weave, ALL_METHODS
-from aspectlib.test import Story
 
 
 def test_decorate_asyncio_coroutine():

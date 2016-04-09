@@ -4,6 +4,7 @@ import re
 import sys
 import warnings
 from collections import deque
+from functools import partial
 from inspect import isclass
 from inspect import isfunction
 from inspect import isgenerator
@@ -12,21 +13,21 @@ from inspect import ismethod
 from inspect import ismethoddescriptor
 from inspect import ismodule
 from inspect import isroutine
-try:
-    from types import InstanceType
-except ImportError:
-    InstanceType = None
-from functools import partial
 from logging import getLogger
 
+from .utils import PY2
+from .utils import PY3
+from .utils import Sentinel
 from .utils import basestring
 from .utils import force_bind
 from .utils import logf
 from .utils import make_method_matcher
 from .utils import mimic
-from .utils import PY2
-from .utils import PY3
-from .utils import Sentinel
+
+try:
+    from types import InstanceType
+except ImportError:
+    InstanceType = None
 
 try:
     import __builtin__

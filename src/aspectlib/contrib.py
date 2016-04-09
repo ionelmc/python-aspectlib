@@ -1,5 +1,5 @@
-from logging import getLogger
 import time
+from logging import getLogger
 
 from aspectlib import Aspect
 
