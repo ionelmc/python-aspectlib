@@ -1,6 +1,8 @@
-=========
-Aspectlib
-=========
+========
+Overview
+========
+
+.. start-badges
 
 .. list-table::
     :stub-columns: 1
@@ -67,18 +69,28 @@ Aspectlib
     :target: https://pypi.python.org/pypi/aspectlib
 
 .. |supported-implementations| image:: https://img.shields.io/pypi/implementation/aspectlib.svg?style=flat
-    :alt: Supported imlementations
+    :alt: Supported implementations
     :target: https://pypi.python.org/pypi/aspectlib
 
 .. |scrutinizer| image:: https://img.shields.io/scrutinizer/g/ionelmc/python-aspectlib/master.svg?style=flat
     :alt: Scrutinizer Status
     :target: https://scrutinizer-ci.com/g/ionelmc/python-aspectlib/
 
+
+.. end-badges
+
 ``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing
 behavior in existing code is desired. It includes tools for debugging and testing: simple mock/record and a complete
 capture/replay framework.
 
 * Free software: BSD license
+
+Installation
+============
+
+::
+
+    pip install aspectlib
 
 Documentation
 =============
