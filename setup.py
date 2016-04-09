@@ -65,5 +65,10 @@ setup(
         'fields'
     ],
     extras_require={
+    },
+    entry_points={
+        'pytest11': [
+            'aspectlib = aspectlib.pytestsupport'
+        ],
     }
 )
