@@ -1687,3 +1687,11 @@ def test_weave_method_noargs():
 
     assert calls == [(f, 1)]
     assert intercepted == [(f, 1)]
+
+
+def test_weave_debug_log():
+    from aspectlib.contrib import retry
+    from aspectlib.debug import log
+
+    with aspectlib.weave(log, retry):
+        pass

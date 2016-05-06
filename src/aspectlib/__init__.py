@@ -417,14 +417,12 @@ def weave(target, aspects, **options):
             _check_name(part)
 
         if len(parts) == 1:
-            __import__(part)
-            return weave_module(sys.modules[part], aspects, **options)
+            return weave_module(_import_module(part), aspects, **options)
 
         for pos in reversed(range(1, len(parts))):
             owner, name = '.'.join(parts[:pos]), '.'.join(parts[pos:])
             try:
-                __import__(owner)
-                owner = sys.modules[owner]
+                owner = _import_module(owner)
             except ImportError:
                 continue
             else:
@@ -472,10 +470,12 @@ def weave(target, aspects, **options):
     elif PY3 and isfunction(target):
         if bag.has(target):
             return Nothing
-        owner = __import__(target.__module__)
+        owner = _import_module(target.__module__)
         path = deque(target.__qualname__.split('.')[:-1])
+        print(owner, target.__module__)
         while path:
             owner = getattr(owner, path.popleft())
+            print(owner, )
         name = target.__name__
         logdebug("@ patching %r (%s) as a property.", target, name)
         func = owner.__dict__[name]
@@ -483,7 +483,7 @@ def weave(target, aspects, **options):
     elif PY2 and isfunction(target):
         if bag.has(target):
             return Nothing
-        return patch_module_function(__import__(target.__module__), target, aspects, **options)
+        return patch_module_function(_import_module(target.__module__), target, aspects, **options)
     elif PY2 and ismethod(target):
         if target.im_self:
             if bag.has(target):
@@ -633,7 +633,7 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         name = name or klass.__name__
         SubClass = type(name, (klass, Fabric), wrappers)
         SubClass.__module__ = klass.__module__
-        module = owner or __import__(klass.__module__)
+        module = owner or _import_module(klass.__module__)
         entanglement.merge(patch_module(module, name, SubClass, original=klass, aliases=aliases))
     else:
         original = {}
@@ -677,6 +677,11 @@ def _find_super_classes(klass):
             yield base
             for k in _find_super_classes(base):
                 yield k
+
+
+def _import_module(module):
+    __import__(module)
+    return sys.modules[module]
 
 
 def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, location=None, **_bogus_options):
