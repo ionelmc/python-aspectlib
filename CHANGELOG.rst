@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.4.1 (2016-05-06)
+------------------
+
+* Fixed weaving of objects that don't live on root-level modules.
+
 1.4.0 (2016-04-09)
 ------------------
 
