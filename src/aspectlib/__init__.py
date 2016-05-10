@@ -472,10 +472,8 @@ def weave(target, aspects, **options):
             return Nothing
         owner = _import_module(target.__module__)
         path = deque(target.__qualname__.split('.')[:-1])
-        print(owner, target.__module__)
         while path:
             owner = getattr(owner, path.popleft())
-            print(owner, )
         name = target.__name__
         logdebug("@ patching %r (%s) as a property.", target, name)
         func = owner.__dict__[name]
