@@ -708,29 +708,35 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
         if hasattr(module, alias):
             obj = getattr(module, alias)
             logdebug("- %s:%s (%s)", obj, original, obj is original)
-            if obj is original:
-                if aliases or alias == name:
-                    logdebug("= saving %s on %s.%s ...", replacement, target, alias)
-                    setattr(module, alias, replacement)
-                    rollback.merge(lambda alias=alias: setattr(module, alias, original))
-                if alias == name:
-                    seen = True
-            elif alias == name:
-                if ismethod(obj):
-                    logdebug("= saving %s on %s.%s ...", replacement, target, alias)
-                    setattr(module, alias, replacement)
-                    rollback.merge(lambda alias=alias: setattr(module, alias, original))
-                    seen = True
-                else:
-                    raise AssertionError("%s.%s = %s is not %s." % (module, alias, obj, original))
+            try:
+                if obj is original:
+                    if aliases or alias == name:
+                        logdebug("= saving %s on %s.%s ...", replacement, target, alias)
+                        setattr(module, alias, replacement)
+                        rollback.merge(lambda alias=alias: setattr(module, alias, original))
+                    if alias == name:
+                        seen = True
+                elif alias == name:
+                    if ismethod(obj):
+                        logdebug("= saving %s on %s.%s ...", replacement, target, alias)
+                        setattr(module, alias, replacement)
+                        rollback.merge(lambda alias=alias: setattr(module, alias, original))
+                        seen = True
+                    else:
+                        raise AssertionError("%s.%s = %s is not %s." % (module, alias, obj, original))
+            except AttributeError:
+                logdebug("= failed to save %s on %s.%s ...", replacement, target, alias)
 
     if not seen:
         warnings.warn('Setting %s.%s to %s. There was no previous definition, probably patching the wrong module.' % (
             target, name, replacement
         ))
         logdebug("= saving %s on %s.%s ...", replacement, target, name)
-        setattr(module, name, replacement)
-        rollback.merge(lambda: setattr(module, name, original))
+        try:
+            setattr(module, name, replacement)
+            rollback.merge(lambda: setattr(module, name, original))
+        except AttributeError:
+            logdebug("= failed to save %s on %s.%s ...", replacement, target, name)
     return rollback
 
 
