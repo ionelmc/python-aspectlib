@@ -19,7 +19,7 @@ Example:
 .. code-block:: python
 
     @aspectlib.Aspect
-    def strip_return_value():
+    def strip_return_value(*args, **kwargs):
         result = yield aspectlib.Proceed
         yield aspectlib.Return(result.strip())
 
