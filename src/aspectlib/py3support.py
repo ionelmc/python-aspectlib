@@ -36,7 +36,7 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
                         kwargs = advice.kwargs
                     gen = cutpoint_function(*args, **kwargs)
                     try:
-                        result = yield from gen
+                        result = next(gen)
                     except BaseException:
                         advice = advisor.throw(*sys.exc_info())
                     else:
