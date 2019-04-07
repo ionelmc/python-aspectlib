@@ -32,6 +32,7 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
 
             advice = next(advisor)
             logdebug('Got advice %r from %s', advice, advising_function)
+            result = None
             if advice is Proceed or advice is None or isinstance(advice, Proceed):
                 try:
                     result = next(gen)
@@ -42,7 +43,7 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
                     advice = advisor.throw(*sys.exc_info())
 
             if advice is Return:
-                yield
+                yield result
             elif isinstance(advice, Return):
                 yield advice.value
             else:
