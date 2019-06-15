@@ -542,8 +542,8 @@ def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, bag=Bro
     fixed_aspect = aspect + [fixup] if isinstance(aspect, (list, tuple)) else [aspect, fixup]
 
     for attr in dir(instance):
-        func = getattr(instance, attr)
         if method_matches(attr):
+            func = getattr(instance, attr)
             if ismethod(func):
                 if hasattr(func, '__func__'):
                     realfunc = func.__func__
@@ -572,8 +572,8 @@ def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, bag=BrokenB
              module, aspect, methods, lazy, options)
 
     for attr in dir(module):
-        func = getattr(module, attr)
         if method_matches(attr):
+            func = getattr(module, attr)
             if isroutine(func):
                 entanglement.merge(patch_module_function(module, func, aspect, force_name=attr, **options))
             elif isclass(func):
@@ -615,9 +615,10 @@ def weave_class(klass, aspect, methods=NORMAL_METHODS, subclasses=True, lazy=Fal
         def __init__(self, *args, **kwargs):
             super(SubClass, self).__init__(*args, **kwargs)
             for attr in dir(self):
-                func = getattr(self, attr, None)
-                if method_matches(attr) and attr not in wrappers and isroutine(func):
-                    setattr(self, attr, _checked_apply(aspect, force_bind(func)).__get__(self, SubClass))
+                if method_matches(attr) and attr not in wrappers:
+                    func = getattr(self, attr, None)
+                    if isroutine(func):
+                        setattr(self, attr, _checked_apply(aspect, force_bind(func)).__get__(self, SubClass))
 
         wrappers = {
             '__init__': _checked_apply(aspect, __init__) if method_matches('__init__') else __init__
