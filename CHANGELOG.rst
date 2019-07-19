@@ -1,6 +1,11 @@
 Changelog
 =========
 
+unreleased (2019-07-19)
+-----------------------
+
+* During weaving, stop reading attributes don't match the method selector.
+
 1.4.2 (2016-05-10)
 ------------------
 
