@@ -1,5 +1,7 @@
 import sys
+
 PY3 = sys.version_info[0] >= 3
+
 
 def pytest_ignore_collect(path, config):
     basename = path.basename

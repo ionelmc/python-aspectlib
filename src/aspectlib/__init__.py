@@ -227,7 +227,7 @@ class Aspect(object):
                                                     else:
                                                         result = None
                                                     break
-                                except BaseException as exc:
+                                except BaseException as exc:  # noqa
                                     advice = advisor.throw(*sys.exc_info())
                                 else:
                                     try:
@@ -325,6 +325,7 @@ class ObjectBag(object):
             self._objects[id(obj)] = obj
             return False
 
+
 BrokenBag = type('BrokenBag', (), dict(has=lambda self, obj: False))()
 
 
@@ -336,6 +337,7 @@ class EmptyRollback(object):
         pass
 
     rollback = __call__ = __exit__
+
 
 Nothing = EmptyRollback()
 

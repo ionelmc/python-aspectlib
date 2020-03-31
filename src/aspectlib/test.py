@@ -522,13 +522,14 @@ class Story(_RecordingBase):
         options.update(self._options)
         return Replay(self, **options)
 
+
 ReplayPair = namedtuple("ReplayPair", ('expected', 'actual'))
 
 
 def logged_eval(value, context):
     try:
         return eval(value, *context)
-    except:
+    except:  # noqa
         logexception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(
             f=_getframe(1),
             limit=15

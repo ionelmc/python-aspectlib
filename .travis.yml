@@ -1,40 +1,112 @@
 language: python
-python: '3.5'
-sudo: false
+dist: xenial
+cache: false
 env:
   global:
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
     - SEGFAULT_SIGNALS=all
-  matrix:
-    - TOXENV=check
-    - TOXENV=docs
-
-    - TOXENV=2.7,coveralls,codecov
-    - TOXENV=2.7-debug,coveralls,codecov
-    - TOXENV=2.7-nocover
-    - TOXENV=2.7-nocover-debug
-    - TOXENV=3.3,coveralls,codecov
-    - TOXENV=3.3-debug,coveralls,codecov
-    - TOXENV=3.3-nocover
-    - TOXENV=3.3-nocover-debug
-    - TOXENV=3.4,coveralls,codecov
-    - TOXENV=3.4-debug,coveralls,codecov
-    - TOXENV=3.4-nocover
-    - TOXENV=3.4-nocover-debug
-    - TOXENV=3.5,coveralls,codecov
-    - TOXENV=3.5-debug,coveralls,codecov
-    - TOXENV=3.5-nocover
-    - TOXENV=3.5-nocover-debug
-    - TOXENV=pypy,coveralls,codecov
-    - TOXENV=pypy-debug,coveralls,codecov
-    - TOXENV=pypy-nocover
-    - TOXENV=pypy-nocover-debug
+matrix:
+  include:
+    - python: '3.6'
+      env:
+        - TOXENV=check
+    - python: '3.6'
+      env:
+        - TOXENV=docs
+    - env:
+        - TOXENV=py27-cover,codecov,coveralls
+      python: '2.7'
+    - env:
+        - TOXENV=py27-cover-debug,codecov,coveralls
+      python: '2.7'
+    - env:
+        - TOXENV=py27-nocov
+      python: '2.7'
+    - env:
+        - TOXENV=py27-nocov-debug
+      python: '2.7'
+    - env:
+        - TOXENV=py35-cover,codecov,coveralls
+      python: '3.5'
+    - env:
+        - TOXENV=py35-cover-debug,codecov,coveralls
+      python: '3.5'
+    - env:
+        - TOXENV=py35-nocov
+      python: '3.5'
+    - env:
+        - TOXENV=py35-nocov-debug
+      python: '3.5'
+    - env:
+        - TOXENV=py36-cover,codecov,coveralls
+      python: '3.6'
+    - env:
+        - TOXENV=py36-cover-debug,codecov,coveralls
+      python: '3.6'
+    - env:
+        - TOXENV=py36-nocov
+      python: '3.6'
+    - env:
+        - TOXENV=py36-nocov-debug
+      python: '3.6'
+    - env:
+        - TOXENV=py37-cover,codecov,coveralls
+      python: '3.7'
+    - env:
+        - TOXENV=py37-cover-debug,codecov,coveralls
+      python: '3.7'
+    - env:
+        - TOXENV=py37-nocov
+      python: '3.7'
+    - env:
+        - TOXENV=py37-nocov-debug
+      python: '3.7'
+    - env:
+        - TOXENV=py38-cover,codecov,coveralls
+      python: '3.8'
+    - env:
+        - TOXENV=py38-cover-debug,codecov,coveralls
+      python: '3.8'
+    - env:
+        - TOXENV=py38-nocov
+      python: '3.8'
+    - env:
+        - TOXENV=py38-nocov-debug
+      python: '3.8'
+    - env:
+        - TOXENV=pypy-cover,codecov,coveralls
+      python: 'pypy'
+    - env:
+        - TOXENV=pypy-cover-debug,codecov,coveralls
+      python: 'pypy'
+    - env:
+        - TOXENV=pypy-nocov
+      python: 'pypy'
+    - env:
+        - TOXENV=pypy-nocov-debug
+      python: 'pypy'
+    - env:
+        - TOXENV=pypy3-cover,codecov,coveralls
+        - TOXPYTHON=pypy3
+      python: 'pypy3'
+    - env:
+        - TOXENV=pypy3-cover-debug,codecov,coveralls
+        - TOXPYTHON=pypy3
+      python: 'pypy3'
+    - env:
+        - TOXENV=pypy3-nocov
+        - TOXPYTHON=pypy3
+      python: 'pypy3'
+    - env:
+        - TOXENV=pypy3-nocov-debug
+        - TOXPYTHON=pypy3
+      python: 'pypy3'
 before_install:
   - python --version
   - uname -a
-  - lsb_release -a
+  - lsb_release -a || true
 install:
-  - pip install tox
+  - python -mpip install --progress-bar=off tox -rci/requirements.txt
   - virtualenv --version
   - easy_install --version
   - pip --version
@@ -44,11 +116,6 @@ script:
 after_failure:
   - more .tox/log/* | cat
   - more .tox/*/log/* | cat
-before_cache:
-  - rm -rf $HOME/.cache/pip/log
-cache:
-  directories:
-    - $HOME/.cache/pip
 notifications:
   email:
     on_success: never

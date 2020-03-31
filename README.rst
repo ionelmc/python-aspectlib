@@ -12,15 +12,14 @@ Overview
     * - tests
       - | |travis| |appveyor| |requires|
         | |coveralls| |codecov|
-        | |landscape| |scrutinizer| |codacy| |codeclimate|
     * - package
-      - |version| |downloads| |wheel| |supported-versions| |supported-implementations|
-
+      - | |version| |wheel| |supported-versions| |supported-implementations|
+        | |commits-since|
 .. |docs| image:: https://readthedocs.org/projects/python-aspectlib/badge/?style=flat
     :target: https://readthedocs.org/projects/python-aspectlib
     :alt: Documentation Status
 
-.. |travis| image:: https://travis-ci.org/ionelmc/python-aspectlib.svg?branch=master
+.. |travis| image:: https://api.travis-ci.org/ionelmc/python-aspectlib.svg?branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.org/ionelmc/python-aspectlib
 
@@ -36,45 +35,30 @@ Overview
     :alt: Coverage Status
     :target: https://coveralls.io/r/ionelmc/python-aspectlib
 
-.. |codecov| image:: https://codecov.io/github/ionelmc/python-aspectlib/coverage.svg?branch=master
+.. |codecov| image:: https://codecov.io/gh/ionelmc/python-aspectlib/branch/master/graphs/badge.svg?branch=master
     :alt: Coverage Status
     :target: https://codecov.io/github/ionelmc/python-aspectlib
 
-.. |landscape| image:: https://landscape.io/github/ionelmc/python-aspectlib/master/landscape.svg?style=flat
-    :target: https://landscape.io/github/ionelmc/python-aspectlib/master
-    :alt: Code Quality Status
-
-.. |codacy| image:: https://img.shields.io/codacy/9557dc3ca38f43bcac85240f73e1985a.svg?style=flat
-    :target: https://www.codacy.com/app/ionelmc/python-aspectlib
-    :alt: Codacy Code Quality Status
-
-.. |codeclimate| image:: https://codeclimate.com/github/ionelmc/python-aspectlib/badges/gpa.svg
-   :target: https://codeclimate.com/github/ionelmc/python-aspectlib
-   :alt: CodeClimate Quality Status
-
-.. |version| image:: https://img.shields.io/pypi/v/aspectlib.svg?style=flat
+.. |version| image:: https://img.shields.io/pypi/v/aspectlib.svg
     :alt: PyPI Package latest release
-    :target: https://pypi.python.org/pypi/aspectlib
+    :target: https://pypi.org/project/aspectlib
 
-.. |downloads| image:: https://img.shields.io/pypi/dm/aspectlib.svg?style=flat
-    :alt: PyPI Package monthly downloads
-    :target: https://pypi.python.org/pypi/aspectlib
-
-.. |wheel| image:: https://img.shields.io/pypi/wheel/aspectlib.svg?style=flat
+.. |wheel| image:: https://img.shields.io/pypi/wheel/aspectlib.svg
     :alt: PyPI Wheel
-    :target: https://pypi.python.org/pypi/aspectlib
+    :target: https://pypi.org/project/aspectlib
 
-.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/aspectlib.svg?style=flat
+.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/aspectlib.svg
     :alt: Supported versions
-    :target: https://pypi.python.org/pypi/aspectlib
+    :target: https://pypi.org/project/aspectlib
 
-.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/aspectlib.svg?style=flat
+.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/aspectlib.svg
     :alt: Supported implementations
-    :target: https://pypi.python.org/pypi/aspectlib
+    :target: https://pypi.org/project/aspectlib
 
-.. |scrutinizer| image:: https://img.shields.io/scrutinizer/g/ionelmc/python-aspectlib/master.svg?style=flat
-    :alt: Scrutinizer Status
-    :target: https://scrutinizer-ci.com/g/ionelmc/python-aspectlib/
+.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-aspectlib/v1.4.2.svg
+    :alt: Commits since latest release
+    :target: https://github.com/ionelmc/python-aspectlib/compare/v1.4.2...master
+
 
 
 .. end-badges
