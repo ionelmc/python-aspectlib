@@ -1,9 +1,11 @@
+import logging
 from collections import defaultdict
 from collections import namedtuple
 from difflib import unified_diff
 from functools import partial
 from functools import wraps
 from inspect import isclass
+from logging import _checkLevel
 from logging import getLevelName
 from logging import getLogger
 from sys import _getframe
@@ -116,15 +118,28 @@ class LogCapture(object):
         self._rollback = weave(
             self._logger,
             record(callback=self._callback, extended=True, iscalled=True),
-            methods='_log$'
+            methods=('debug', 'info', 'warning', 'error', 'exception', 'critical', 'log')
         )
         return self
 
     def __exit__(self, *exc):
         self._rollback()
 
-    def _callback(self, _binding, _qualname, args, _kwargs):
-        level, message, args = args
+    def _callback(self, _binding, qualname, args, _kwargs):
+        _, name = qualname.rsplit('.', 1)
+
+        if name == 'log':
+            level, args = _checkLevel(args[0]), args[1:]
+        elif name == 'exception':
+            level = logging.ERROR
+        else:
+            level = _checkLevel(name.upper())
+
+        if len(args) > 1:
+            message, args = args[0], args[1:]
+        else:
+            message, args = args[0], ()
+
         if level >= self._level:
             self._calls.append((
                 message % args if args else message,
