@@ -16,7 +16,11 @@ from aspectlib.test import record
 from aspectlib.utils import PY26
 from aspectlib.utils import repr_ex
 
-format_calls = lambda calls: ''.join(_format_calls(calls))
+pytest_plugins = 'pytester',
+
+
+def format_calls(calls):
+    return ''.join(_format_calls(calls))
 
 
 def module_fun(a, b=2):
@@ -278,6 +282,7 @@ def test_xxx():
 
     # TODO
 
+
 def test_story_text_helpers():
     with Story(test_mod) as story:
         obj = test_mod.Stuff(1, 2)
@@ -297,19 +302,19 @@ def test_story_text_helpers():
         test_mod.func(5)
         test_mod.target(1)
 
-    print (replay.missing)
+    print(replay.missing)
     assert replay.missing == """stuff_1.meth('b') == 'y'  # returns
 stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(2, 3)
 stuff_2.meth('c') == 'z'  # returns
 test_pkg1.test_pkg2.test_mod.target(2) == 3  # returns
 """
-    print (replay.unexpected)
+    print(replay.unexpected)
     assert replay.unexpected == """stuff_1.meth() == None  # returns
 stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)
 stuff_2.meth() == None  # returns
 test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 """
-    print (replay.diff)
+    print(replay.diff)
     if PY26:
         assert replay.diff == """--- expected """ """
 +++ actual """ """
@@ -344,7 +349,7 @@ test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 """
 
 
-def test_story_empty_play_proxy_class_missing_report():
+def test_story_empty_play_proxy_class_missing_report(LineMatcher):
     with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         obj.mix(3, 4)
@@ -362,55 +367,29 @@ def test_story_empty_play_proxy_class_missing_report():
         obj.mix()
         obj.meth()
         obj.mix(10)
-
-    print(repr(replay.diff))
-
-    if PY26:
-        assert replay.diff == """--- expected """ """
-+++ actual """ """
-@@ -1,0 +1,18 @@
-+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
-+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns
-+stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
-+stuff_1.raises(123) ** ValueError((123,),)  # raises
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)
-+stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
-+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns
-+test_pkg1.test_pkg2.test_mod.target() == None  # returns
-+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',),)  # raises
-+stuff_2.raises(123) ** ValueError((123,),)  # raises
-+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)
-+that_long_stuf_1.mix(2) == (1, 2)  # returns
-+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)
-+that_long_stuf_2.mix(4) == (3, 4)  # returns
-+that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)
-+that_long_stuf_3.mix() == (2,)  # returns
-+that_long_stuf_3.meth() == None  # returns
-+that_long_stuf_3.mix(10) == (2, 10)  # returns
-"""
-    else:
-        assert replay.diff == """--- expected
-+++ actual
-@@ -0,0 +1,18 @@
-+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
-+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns
-+stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns
-+stuff_1.raises(123) ** ValueError((123,),)  # raises
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)
-+stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns
-+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns
-+test_pkg1.test_pkg2.test_mod.target() == None  # returns
-+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',),)  # raises
-+stuff_2.raises(123) ** ValueError((123,),)  # raises
-+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)
-+that_long_stuf_1.mix(2) == (1, 2)  # returns
-+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)
-+that_long_stuf_2.mix(4) == (3, 4)  # returns
-+that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)
-+that_long_stuf_3.mix() == (2,)  # returns
-+that_long_stuf_3.meth() == None  # returns
-+that_long_stuf_3.mix(10) == (2, 10)  # returns
-"""
+    LineMatcher(replay.diff.splitlines()).fnmatch_lines([
+        "--- expected",
+        "+++ actual",
+        "@@ -0,0 +1,18 @@",
+        "+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)",
+        "+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns",
+        "+stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns",
+        "+stuff_1.raises(123) ** ValueError((123,)*)  # raises",
+        "+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)",
+        "+stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns",
+        "+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns",
+        "+test_pkg1.test_pkg2.test_mod.target() == None  # returns",
+        "+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',)*)  # raises",
+        "+stuff_2.raises(123) ** ValueError((123,)*)  # raises",
+        "+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)",
+        "+that_long_stuf_1.mix(2) == (1, 2)  # returns",
+        "+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)",
+        "+that_long_stuf_2.mix(4) == (3, 4)  # returns",
+        "+that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)",
+        "+that_long_stuf_3.mix() == (2,)  # returns",
+        "+that_long_stuf_3.meth() == None  # returns",
+        "+that_long_stuf_3.mix(10) == (2, 10)  # returns",
+    ])
 
 
 def test_story_empty_play_proxy_class():
@@ -556,8 +535,8 @@ def test_story_create():
         assert isinstance(obj, test_mod.Stuff)
         obj.meth('other', 1, 2) == 123
         obj.mix('other') == 'mixymix'
-    #from pprint import pprint as print
-    #print (dict(story._calls))
+    # from pprint import pprint as print
+    # print (dict(story._calls))
     assert dict(story._calls) == {
         (None, 'test_pkg1.test_pkg2.test_mod.Stuff',  "'stuff'", ''): _Binds('stuff_1'),
         ('stuff_1', 'meth', "'other', 1, 2", ''): _Returns("123"),
@@ -566,6 +545,7 @@ def test_story_create():
         (None, 'test_pkg1.test_pkg2.test_mod.target', "1, 2, 3", ''): _Returns("'foobar'"),
         (None, 'test_pkg1.test_pkg2.test_mod.target', "'a', 'b', 'c'", ''): _Returns("'abc'"),
     }
+
 
 def xtest_story_empty_play_proxy_class_dependencies():
     with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:

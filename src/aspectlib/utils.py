@@ -12,6 +12,7 @@ from inspect import isclass
 RegexType = type(re.compile(""))
 
 PY3 = sys.version_info[0] == 3
+PY36GT = PY3 and sys.version_info[1] > 6
 PY2 = sys.version_info[0] == 2
 PY26 = PY2 and sys.version_info[1] == 6
 PYPY = platform.python_implementation() == 'PyPy'
