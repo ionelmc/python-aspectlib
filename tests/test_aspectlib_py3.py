@@ -38,10 +38,8 @@ def test_aspect_chain_on_generator_no_return():
         assert a == 3
         yield
 
-    gen = func(0)
-    assert gen.__next__() is None
-    result = pytest.raises(StopIteration, gen.__next__)
-    assert result.value.args == (None,)
+    result = consume(func(0))
+    assert result is None
 
 
 def consume(gen):
@@ -69,7 +67,7 @@ def test_aspect_chain_on_generator_yield_from():
         yield
 
     gen = func(0)
-    assert consume(func(0)) == 0
+    assert consume(gen) == 0
 
 
 def test_aspect_chain_on_generator_no_return_yield_from():
@@ -86,4 +84,4 @@ def test_aspect_chain_on_generator_no_return_yield_from():
         yield
 
     gen = func(0)
-    assert consume(func(0)) is None
+    assert consume(gen) is None

@@ -17,6 +17,7 @@ from logging import getLogger
 
 from .utils import PY2
 from .utils import PY3
+from .utils import PY37plus
 from .utils import Sentinel
 from .utils import basestring
 from .utils import force_bind
@@ -39,6 +40,21 @@ try:
 except ImportError:
     ClassType = type
 
+try:
+    from inspect import isasyncgenfunction
+except ImportError:
+    isasyncgenfunction = None
+
+try:
+    from inspect import iscoroutinefunction
+
+    def isasyncfunction(obj):
+        if isasyncgenfunction is None:
+            return iscoroutinefunction(obj)
+        else:
+            return isasyncgenfunction(obj) or iscoroutinefunction(obj)
+except ImportError:
+    isasyncfunction = None
 
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS', 'ABSOLUTELY_ALL_METHODS'
 __version__ = '1.4.2'
@@ -159,8 +175,14 @@ class Aspect(object):
         self.bind = bind
 
     def __call__(self, cutpoint_function):
-        if isgeneratorfunction(cutpoint_function):
-            if PY3:
+        if isasyncfunction is not None and isasyncfunction(cutpoint_function):
+            from aspectlib.py35support import decorate_advising_asyncgenerator_py35
+            return decorate_advising_asyncgenerator_py35(self.advising_function, cutpoint_function, self.bind)
+        elif isgeneratorfunction(cutpoint_function):
+            if PY37plus:
+                from aspectlib.py35support import decorate_advising_generator_py35
+                return decorate_advising_generator_py35(self.advising_function, cutpoint_function, self.bind)
+            elif PY3:
                 from aspectlib.py3support import decorate_advising_generator_py3
                 return decorate_advising_generator_py3(self.advising_function, cutpoint_function, self.bind)
             else:
@@ -244,6 +266,7 @@ class Aspect(object):
                                 raise UnacceptableAdvice("Unknown advice %s" % advice)
                     finally:
                         advisor.close()
+
                 return mimic(advising_generator_wrapper, cutpoint_function)
         else:
             def advising_function_wrapper(*args, **kwargs):
@@ -278,6 +301,7 @@ class Aspect(object):
                             raise UnacceptableAdvice("Unknown advice %s" % advice)
                 finally:
                     advisor.close()
+
             return mimic(advising_function_wrapper, cutpoint_function)
 
 
@@ -541,6 +565,7 @@ def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, bag=Bro
 
     def fixup(func):
         return func.__get__(instance, type(instance))
+
     fixed_aspect = aspect + [fixup] if isinstance(aspect, (list, tuple)) else [aspect, fixup]
 
     for attr in dir(instance):

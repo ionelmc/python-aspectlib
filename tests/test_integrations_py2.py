@@ -5,12 +5,13 @@ except ImportError:
 from datetime import timedelta
 
 import pytest
-import trollius as asyncio
 from tornado import gen
 from tornado import ioloop
 
 from aspectlib import debug
 from aspectlib.test import Story
+
+asyncio = pytest.importorskip("trollius")
 
 try:
     import MySQLdb
@@ -46,6 +47,7 @@ def test_decorate_tornado_coroutine():
     loop.run_sync(coro)
     output = buf.getvalue()
     assert 'coro => %r' % 'result' in output
+
 
 @pytest.mark.skipif(not MySQLdb, reason="No MySQLdb installed")
 def test_mysql():

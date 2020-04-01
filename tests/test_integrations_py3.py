@@ -1,16 +1,20 @@
+import asyncio
+from datetime import timedelta
+
+import pytest
+from tornado import gen
+from tornado import ioloop
+
+from aspectlib import PY37plus
+from aspectlib import debug
+
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-import asyncio
-from datetime import timedelta
-
-from tornado import gen
-from tornado import ioloop
-
-from aspectlib import debug
 
 
+@pytest.mark.skipif(PY37plus, reason="Test is incompatible with PEP-479")
 def test_decorate_asyncio_coroutine():
     buf = StringIO()
 
