@@ -98,7 +98,7 @@ Profiling
 
 There's no decorator for such in aspectlib but you can use any of the many choices on `PyPI <https://pypi.python.org/>`_.
 
-Here's one example with `profilestats <https://pypi.python.org/pypi/profilestats>`_:
+Here's one example with `profilestats`:
 
 .. code-block:: pycon
 
