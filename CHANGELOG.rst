@@ -1,10 +1,12 @@
 Changelog
 =========
 
-unreleased (2019-07-19)
------------------------
+1.5.0 (2020-04-05)
+------------------
 
-* During weaving, stop reading attributes don't match the method selector.
+* Fixed ``weave`` to stop reading attributes that don't match the method selector.
+  Contributed by Jonas Maurus in `#14 <https://github.com/ionelmc/python-aspectlib/pull/14>`_.
+* Added support for Python 3.7 and 3.8 (``async def`` functions and generators).
 
 1.4.2 (2016-05-10)
 ------------------
@@ -21,7 +23,7 @@ unreleased (2019-07-19)
 
 * Corrected weaving of methods, the weaved function should be unbound.
 * Rolling back only applies undos once.
-* Added a convenience `weave` fixture for pytest.
+* Added a convenience ``weave`` fixture for pytest.
 
 1.3.3 (2015-10-02)
 ------------------
