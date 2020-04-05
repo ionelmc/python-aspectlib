@@ -55,9 +55,9 @@ Overview
     :alt: Supported implementations
     :target: https://pypi.org/project/aspectlib
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-aspectlib/v1.4.2.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-aspectlib/v1.5.0.svg
     :alt: Commits since latest release
-    :target: https://github.com/ionelmc/python-aspectlib/compare/v1.4.2...master
+    :target: https://github.com/ionelmc/python-aspectlib/compare/v1.5.0...master
 
 
 
