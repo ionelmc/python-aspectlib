@@ -15,11 +15,6 @@ from aspectlib.test import record
 from aspectlib.utils import PYPY
 
 try:
-    import thread
-except ImportError:
-    import _thread as thread
-
-try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
@@ -61,6 +56,7 @@ def test_fork():
     if not pid:
         os._exit(0)
     assert pid != 'foobar'
+
 
 def test_socket(target=socket.socket):
     buf = StringIO()
@@ -116,7 +112,7 @@ def test_socket_all_methods():
         lazy=True,
         methods=aspectlib.ALL_METHODS
     ):
-        s = socket.socket()
+        socket.socket()
 
     assert "}.__init__ => None" in buf.getvalue()
 

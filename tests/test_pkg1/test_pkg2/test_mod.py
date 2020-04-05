@@ -9,6 +9,7 @@ def func(*a):
 def raises(*a):
     raise ValueError(a)
 
+
 a = 1
 
 

@@ -15,9 +15,9 @@ try:
 except ImportError:
     from io import StringIO
 
-
 LOG_TEST_SIMPLE = r'''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
-some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
+some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@''' \
+r'''ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
 $'''
 
 
@@ -86,9 +86,11 @@ def test_attributes():
     ), methods='(?!bar)(?!__.*__$)'):
         MyStuff('bar').stuff()
     print(buf.getvalue())
-    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+                    r"test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
     MyStuff('bar').stuff()
-    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+                    r"test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
 
 
 def test_no_stack():
@@ -100,7 +102,8 @@ def test_no_stack():
     ), methods='(?!bar)(?!__.*__$)'):
         MyStuff('bar').stuff()
     print(buf.getvalue())
-    assert "{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff()\n{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
+    assert "{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff()\n" \
+           "{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
 
 
 def test_attributes_old_style():
@@ -112,9 +115,11 @@ def test_attributes_old_style():
     ), methods='(?!bar)(?!__.*__$)'):
         OldStuff('bar').stuff()
     print(repr(buf.getvalue()))
-    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+                    r"test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
     MyStuff('bar').stuff()
-    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+                    r"test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
 
 
 def test_no_stack_old_style():
@@ -126,7 +131,8 @@ def test_no_stack_old_style():
     ), methods='(?!bar)(?!__.*__$)'):
         OldStuff('bar').stuff()
     print(buf.getvalue())
-    assert "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff()\n{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
+    assert "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff()\n" \
+           "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
 
 
 @pytest.mark.skipif(sys.version_info < (2, 7), reason="No weakref.WeakSet on Python<=2.6")
