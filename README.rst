@@ -67,7 +67,7 @@ Overview
 behavior in existing code is desired. It includes tools for debugging and testing: simple mock/record and a complete
 capture/replay framework.
 
-* Free software: BSD license
+* Free software: BSD 2-Clause License
 
 Installation
 ============
