@@ -15,6 +15,7 @@ def flaky_func(arg):
 
 def test_done_suceess():
     calls = []
+
     @retry
     def ok_func():
         calls.append(1)
