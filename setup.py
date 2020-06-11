@@ -25,7 +25,7 @@ def read(*names, **kwargs):
 
 setup(
     name='aspectlib',
-    version='1.5.0',
+    version='1.5.1',
     license='BSD-2-Clause',
     description='``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing',
     long_description='%s\n%s' % (

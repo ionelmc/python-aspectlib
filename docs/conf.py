@@ -20,7 +20,7 @@ project = 'Aspectlib'
 year = '2014-2020'
 author = 'Ionel Cristian Mărieș'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '1.5.0'
+version = release = '1.5.1'
 
 pygments_style = 'trac'
 templates_path = ['.']
