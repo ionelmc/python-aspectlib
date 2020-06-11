@@ -42,9 +42,7 @@ def decorate_advising_asyncgenerator_py35(advising_function, cutpoint_function, 
                         kwargs = advice.kwargs
                     gen = cutpoint_function(*args, **kwargs)
                     try:
-                        print(' await:', gen)
                         result = await gen
-                        print('got result from await:', result)
                     except BaseException:
                         advice = advisor.throw(*sys.exc_info())
                     else:
