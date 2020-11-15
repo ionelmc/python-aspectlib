@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.5.2 (2020-11-15)
+------------------
+
+* Fixed broken import on Python 3.9.
+  Contributed by Felix Yan in `#19 <https://github.com/ionelmc/python-aspectlib/pull/19>`_.
+
 1.5.1 (2020-06-11)
 ------------------
 
