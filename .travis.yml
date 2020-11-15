@@ -1,10 +1,12 @@
 language: python
 dist: xenial
+virt: lxd
 cache: false
 env:
   global:
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
     - SEGFAULT_SIGNALS=all
+    - LANG=en_US.UTF-8
 matrix:
   include:
     - python: '3.6'
@@ -74,6 +76,18 @@ matrix:
         - TOXENV=py38-nocov-debug
       python: '3.8'
     - env:
+        - TOXENV=py39-cover,codecov,coveralls
+      python: '3.9'
+    - env:
+        - TOXENV=py39-cover-debug,codecov,coveralls
+      python: '3.9'
+    - env:
+        - TOXENV=py39-nocov
+      python: '3.9'
+    - env:
+        - TOXENV=py39-nocov-debug
+      python: '3.9'
+    - env:
         - TOXENV=pypy-cover,codecov,coveralls
       python: 'pypy'
     - env:
@@ -87,19 +101,15 @@ matrix:
       python: 'pypy'
     - env:
         - TOXENV=pypy3-cover,codecov,coveralls
-        - TOXPYTHON=pypy3
       python: 'pypy3'
     - env:
         - TOXENV=pypy3-cover-debug,codecov,coveralls
-        - TOXPYTHON=pypy3
       python: 'pypy3'
     - env:
         - TOXENV=pypy3-nocov
-        - TOXPYTHON=pypy3
       python: 'pypy3'
     - env:
         - TOXENV=pypy3-nocov-debug
-        - TOXPYTHON=pypy3
       python: 'pypy3'
 before_install:
   - python --version
@@ -114,8 +124,8 @@ install:
 script:
   - tox -v
 after_failure:
-  - more .tox/log/* | cat
-  - more .tox/*/log/* | cat
+  - cat .tox/log/*
+  - cat .tox/*/log/*
 notifications:
   email:
     on_success: never
