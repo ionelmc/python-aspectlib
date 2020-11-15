@@ -29,7 +29,10 @@ except ImportError:
 try:
     from dummy_thread import allocate_lock
 except ImportError:
-    from _dummy_thread import allocate_lock
+    try:
+        from _dummy_thread import allocate_lock
+    except ImportError:
+        from _thread import allocate_lock
 try:
     from collections import OrderedDict
 except ImportError:
