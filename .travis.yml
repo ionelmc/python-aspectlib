@@ -28,18 +28,6 @@ matrix:
         - TOXENV=py27-nocov-debug
       python: '2.7'
     - env:
-        - TOXENV=py35-cover,codecov,coveralls
-      python: '3.5'
-    - env:
-        - TOXENV=py35-cover-debug,codecov,coveralls
-      python: '3.5'
-    - env:
-        - TOXENV=py35-nocov
-      python: '3.5'
-    - env:
-        - TOXENV=py35-nocov-debug
-      python: '3.5'
-    - env:
         - TOXENV=py36-cover,codecov,coveralls
       python: '3.6'
     - env:

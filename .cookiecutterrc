@@ -20,7 +20,7 @@ default_context:
     distribution_name: aspectlib
     email: contact@ionelmc.ro
     full_name: Ionel Cristian Mărieș
-    landscape: no
+    legacy_python: yes
     license: BSD 2-Clause License
     linter: flake8
     package_name: aspectlib
@@ -29,7 +29,7 @@ default_context:
     project_short_description: '``aspectlib`` is an aspect-oriented programming, monkey-patch and decorators library. It is useful when changing'
     pypi_badge: yes
     pypi_disable_upload: no
-    release_date: '2020-06-11'
+    release_date: '2020-11-15'
     repo_hosting: github.com
     repo_hosting_domain: github.com
     repo_name: python-aspectlib
@@ -47,7 +47,7 @@ default_context:
     test_runner: pytest
     travis: yes
     travis_osx: no
-    version: 1.5.1
+    version: 1.5.2
     website: http://blog.ionelmc.ro
     year_from: '2014'
-    year_to: '2020'
+    year_to: '2021'

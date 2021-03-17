@@ -19,9 +19,9 @@ Overview
     :target: https://readthedocs.org/projects/python-aspectlib
     :alt: Documentation Status
 
-.. |travis| image:: https://api.travis-ci.org/ionelmc/python-aspectlib.svg?branch=master
+.. |travis| image:: https://api.travis-ci.com/ionelmc/python-aspectlib.svg?branch=master
     :alt: Travis-CI Build Status
-    :target: https://travis-ci.org/ionelmc/python-aspectlib
+    :target: https://travis-ci.com/github/ionelmc/python-aspectlib
 
 .. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/ionelmc/python-aspectlib?branch=master&svg=true
     :alt: AppVeyor Build Status
