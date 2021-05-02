@@ -36,7 +36,10 @@ def test_decorate_tornado_coroutine():
     @gen.coroutine
     @debug.log(print_to=buf, module=False, stacktrace=2, result_repr=repr)
     def coro():
-        yield gen.Task(loop.add_timeout, timedelta(microseconds=10))
+        if hasattr(gen, 'Task'):
+            yield gen.Task(loop.add_timeout, timedelta(microseconds=10))
+        else:
+            yield gen.sleep(0.01)
         return "result"
 
     loop = ioloop.IOLoop.current()
