@@ -3,7 +3,6 @@ from __future__ import print_function
 from pytest import raises
 from test_pkg1.test_pkg2 import test_mod
 
-from aspectlib import PY2
 from aspectlib.test import OrderedDict
 from aspectlib.test import Story
 from aspectlib.test import StoryResultWrapper
@@ -13,7 +12,9 @@ from aspectlib.test import _Raises
 from aspectlib.test import _Returns
 from aspectlib.test import mock
 from aspectlib.test import record
+from aspectlib.utils import PY2
 from aspectlib.utils import PY26
+from aspectlib.utils import PY310plus
 from aspectlib.utils import repr_ex
 
 pytest_plugins = 'pytester',
@@ -414,14 +415,17 @@ def test_story_empty_play_proxy_class():
         (('stuff_1', 'mix', "'a', 'b'", ''), _Returns("(1, 2, 'a', 'b')")),
         (('stuff_1', 'meth', "123", ''), _Raises(repr_ex(TypeError(
             'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
+            ('Stuff.' if PY310plus else '') +
+                'meth() takes 1 positional argument but 2 were given'
+
         )))),
         ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "0, 1", ''), _Binds('stuff_2')),
         (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
         (('stuff_2', 'mix', "3, 4", ''), _Returns("(0, 1, 3, 4)")),
         (('stuff_2', 'meth', "123", ''), _Raises(repr_ex(TypeError(
             'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
+            ('Stuff.' if PY310plus else '') +
+                'meth() takes 1 positional argument but 2 were given'
         ))))
     ]))
 
@@ -449,14 +453,16 @@ def test_story_half_play_proxy_class():
         (('stuff_1', 'meth', '', ''), _Returns('None')),
         (('stuff_1', 'meth', '123', ''), _Raises(repr_ex(TypeError(
             'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
+            ('Stuff.' if PY310plus else '') +
+                'meth() takes 1 positional argument but 2 were given'
         )))),
         ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '0, 1', ''), _Binds("stuff_2")),
         (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
         (('stuff_2', 'mix',  '3, 4', ''), _Returns('(0, 1, 3, 4)')),
         (('stuff_2', 'meth', '123', ''), _Raises(repr_ex(TypeError(
             'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
+            ('Stuff.' if PY310plus else '') +
+                'meth() takes 1 positional argument but 2 were given'
         ))))
     ]))
 

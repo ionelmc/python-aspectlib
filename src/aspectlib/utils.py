@@ -13,6 +13,7 @@ RegexType = type(re.compile(""))
 
 PY3 = sys.version_info[0] == 3
 PY37plus = PY3 and sys.version_info[1] >= 7
+PY310plus = PY3 and sys.version_info[1] >= 10
 PY2 = sys.version_info[0] == 2
 PY26 = PY2 and sys.version_info[1] == 6
 PYPY = platform.python_implementation() == 'PyPy'
