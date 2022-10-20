@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import sys
 from inspect import isgenerator
 from inspect import isgeneratorfunction
@@ -54,4 +52,5 @@ def decorate_advising_generator_py3(advising_function, cutpoint_function, bind):
                     raise UnacceptableAdvice("Unknown advice %s" % advice)
         finally:
             advisor.close()
+
     return mimic(advising_generator_wrapper_py3, cutpoint_function)

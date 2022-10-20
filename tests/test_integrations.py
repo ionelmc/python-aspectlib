@@ -1,15 +1,18 @@
-from __future__ import print_function
-
+import asyncio
 import os
 import re
 import socket
 import warnings
+from datetime import timedelta
 
 import pytest
 from process_tests import dump_on_error
 from process_tests import wait_for_strings
+from tornado import gen
+from tornado import ioloop
 
 import aspectlib
+from aspectlib import debug
 from aspectlib.test import mock
 from aspectlib.test import record
 from aspectlib.utils import PYPY
@@ -60,11 +63,7 @@ def test_fork():
 
 def test_socket(target=socket.socket):
     buf = StringIO()
-    with aspectlib.weave(target, aspectlib.debug.log(
-        print_to=buf,
-        stacktrace=4,
-        module=False
-    ), lazy=True):
+    with aspectlib.weave(target, aspectlib.debug.log(print_to=buf, stacktrace=4, module=False), lazy=True):
         s = socket.socket()
         try:
             s.connect(('127.0.0.1', 1))
@@ -106,12 +105,7 @@ def test_socket_meth_as_string_target():
 
 def test_socket_all_methods():
     buf = StringIO()
-    with aspectlib.weave(
-        socket.socket,
-        aspectlib.debug.log(print_to=buf, stacktrace=False),
-        lazy=True,
-        methods=aspectlib.ALL_METHODS
-    ):
+    with aspectlib.weave(socket.socket, aspectlib.debug.log(print_to=buf, stacktrace=False), lazy=True, methods=aspectlib.ALL_METHODS):
         socket.socket()
 
     assert "}.__init__ => None" in buf.getvalue()
@@ -128,8 +122,7 @@ def test_realsocket_makefile():
 
     if pid:
         with aspectlib.weave(
-            ['socket._fileobject' if aspectlib.PY2 else 'socket.SocketIO'] +
-            (['socket.socket', 'socket._realsocket'] if aspectlib.PY2 else ['socket.socket']),
+            ['socket.SocketIO', 'socket.socket'],
             aspectlib.debug.log(print_to=buf, stacktrace=False),
             lazy=True,
             methods=aspectlib.ALL_METHODS,
@@ -137,16 +130,14 @@ def test_realsocket_makefile():
             s = socket.socket()
             s.settimeout(1)
             s.connect(p.getsockname())
-            if aspectlib.PY3:
-                fh = s.makefile('rwb', buffering=0)
-            else:
-                fh = s.makefile(bufsize=0)
+            fh = s.makefile('rwb', buffering=0)
             fh.write(b"STUFF\n")
             fh.readline()
 
         with dump_on_error(buf.getvalue):
             wait_for_strings(
-                buf.getvalue, 0,
+                buf.getvalue,
+                0,
                 "}.connect",
                 "}.makefile",
                 "}.write(",
@@ -160,10 +151,7 @@ def test_realsocket_makefile():
         try:
             c, _ = p.accept()
             c.settimeout(1)
-            if aspectlib.PY3:
-                f = c.makefile('rw', buffering=1)
-            else:
-                f = c.makefile(bufsize=1)
+            f = c.makefile('rw', buffering=1)
             while f.readline():
                 f.write('-\n')
         finally:
@@ -177,7 +165,43 @@ def test_weave_os_module():
         os.getenv('BUBU', 'bubu')
         os.walk('.')
 
-    assert calls == [
-        (None, 'os.getenv', ('BUBU', 'bubu'), {}),
-        (None, 'os.walk', ('.',), {})
-    ]
+    assert calls == [(None, 'os.getenv', ('BUBU', 'bubu'), {}), (None, 'os.walk', ('.',), {})]
+
+
+def test_decorate_asyncio_coroutine():
+    buf = StringIO()
+
+    @debug.log(print_to=buf, module=False, stacktrace=2, result_repr=repr)
+    async def coro():
+        await asyncio.sleep(0.01)
+        return "result"
+
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(coro())
+    output = buf.getvalue()
+    print(output)
+    assert 'coro => %r' % 'result' in output
+
+
+def test_decorate_tornado_coroutine():
+    buf = StringIO()
+
+    @gen.coroutine
+    @debug.log(print_to=buf, module=False, stacktrace=2, result_repr=repr)
+    def coro():
+        if hasattr(gen, 'Task'):
+            yield gen.Task(loop.add_timeout, timedelta(microseconds=10))
+        else:
+            yield gen.sleep(0.01)
+        return "result"
+
+    asyncio_loop = asyncio.new_event_loop()
+    try:
+        get_event_loop = asyncio.get_event_loop
+        asyncio.get_event_loop = lambda: asyncio_loop
+        loop = ioloop.IOLoop.current()
+        loop.run_sync(coro)
+    finally:
+        asyncio.get_event_loop = get_event_loop
+    output = buf.getvalue()
+    assert 'coro => %r' % 'result' in output

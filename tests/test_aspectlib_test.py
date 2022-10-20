@@ -1,9 +1,6 @@
-from __future__ import print_function
-
 from pytest import raises
 from test_pkg1.test_pkg2 import test_mod
 
-from aspectlib import PY2
 from aspectlib.test import OrderedDict
 from aspectlib.test import Story
 from aspectlib.test import StoryResultWrapper
@@ -13,10 +10,10 @@ from aspectlib.test import _Raises
 from aspectlib.test import _Returns
 from aspectlib.test import mock
 from aspectlib.test import record
-from aspectlib.utils import PY26
+from aspectlib.utils import PY310
 from aspectlib.utils import repr_ex
 
-pytest_plugins = 'pytester',
+pytest_plugins = ('pytester',)
 
 
 def format_calls(calls):
@@ -49,7 +46,7 @@ def test_record():
     assert fun(3, b=4) == (3, 4)
     assert fun.calls == [
         (None, (2, 3), {}),
-        (None, (3, ), {'b': 4}),
+        (None, (3,), {'b': 4}),
     ]
 
 
@@ -60,7 +57,7 @@ def test_record_result():
     assert fun(3, b=4) == (3, 4)
     assert fun.calls == [
         (None, (2, 3), {}, (2, 3), None),
-        (None, (3, ), {'b': 4}, (3, 4), None),
+        (None, (3,), {'b': 4}, (3, 4), None),
     ]
 
 
@@ -82,7 +79,7 @@ def test_record_result_callback():
     assert fun(3, b=4) == (3, 4)
     assert calls == [
         (None, 'test_aspectlib_test.nfun', (2, 3), {}, (2, 3), None),
-        (None, 'test_aspectlib_test.nfun', (3, ), {'b': 4}, (3, 4), None),
+        (None, 'test_aspectlib_test.nfun', (3,), {'b': 4}, (3, 4), None),
     ]
 
 
@@ -106,7 +103,7 @@ def test_record_callback():
     assert fun(3, b=4) == (3, 4)
     assert calls == [
         (None, 'test_aspectlib_test.nfun', (2, 3), {}),
-        (None, 'test_aspectlib_test.nfun', (3, ), {'b': 4}),
+        (None, 'test_aspectlib_test.nfun', (3,), {'b': 4}),
     ]
 
 
@@ -145,7 +142,7 @@ def test_record_as_context():
 
     assert history.calls == [
         (None, (2, 3), {}),
-        (None, (3, ), {'b': 4}),
+        (None, (3,), {'b': 4}),
     ]
     del history.calls[:]
 
@@ -217,13 +214,23 @@ def test_story_empty_play_proxy():
         assert test_mod.target() is None
         raises(TypeError, test_mod.target, 123)
 
-    assert format_calls(replay._actual) == format_calls(OrderedDict([
-        ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
-        ((None, 'test_pkg1.test_pkg2.test_mod.target', '123', ''), _Raises(repr_ex(TypeError(
-            'target() takes no arguments (1 given)' if PY2 else
-            'target() takes 0 positional arguments but 1 was given',
-        ))))
-    ]))
+    assert format_calls(replay._actual) == format_calls(
+        OrderedDict(
+            [
+                ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
+                (
+                    (None, 'test_pkg1.test_pkg2.test_mod.target', '123', ''),
+                    _Raises(
+                        repr_ex(
+                            TypeError(
+                                'target() takes 0 positional arguments but 1 was given',
+                            )
+                        )
+                    ),
+                ),
+            ]
+        )
+    )
 
 
 def test_story_empty_play_noproxy_class():
@@ -237,9 +244,7 @@ def test_story_empty_play_error_on_init():
     with Story(test_mod).replay(strict=False) as replay:
         raises(ValueError, test_mod.Stuff, "error")
         print(replay._actual)
-    assert replay._actual == OrderedDict([
-        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "'error'", ''), _Raises('ValueError()'))
-    ])
+    assert replay._actual == OrderedDict([((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "'error'", ''), _Raises('ValueError()'))])
 
 
 def test_story_half_play_noproxy_class():
@@ -303,36 +308,27 @@ def test_story_text_helpers():
         test_mod.target(1)
 
     print(replay.missing)
-    assert replay.missing == """stuff_1.meth('b') == 'y'  # returns
+    assert (
+        replay.missing
+        == """stuff_1.meth('b') == 'y'  # returns
 stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(2, 3)
 stuff_2.meth('c') == 'z'  # returns
 test_pkg1.test_pkg2.test_mod.target(2) == 3  # returns
 """
+    )
     print(replay.unexpected)
-    assert replay.unexpected == """stuff_1.meth() == None  # returns
+    assert (
+        replay.unexpected
+        == """stuff_1.meth() == None  # returns
 stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)
 stuff_2.meth() == None  # returns
 test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
 """
+    )
     print(replay.diff)
-    if PY26:
-        assert replay.diff == """--- expected """ """
-+++ actual """ """
-@@ -1,7 +1,7 @@
- stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
- stuff_1.meth('a') == 'x'  # returns
--stuff_1.meth('b') == 'y'  # returns
--stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(2, 3)
--stuff_2.meth('c') == 'z'  # returns
-+stuff_1.meth() == None  # returns
-+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(4, 4)
-+stuff_2.meth() == None  # returns
-+test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
- test_pkg1.test_pkg2.test_mod.target(1) == 2  # returns
--test_pkg1.test_pkg2.test_mod.target(2) == 3  # returns
-"""
-    else:
-        assert replay.diff == """--- expected
+    assert (
+        replay.diff
+        == """--- expected
 +++ actual
 @@ -1,7 +1,7 @@
  stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)
@@ -347,6 +343,7 @@ test_pkg1.test_pkg2.test_mod.func(5) == None  # returns
  test_pkg1.test_pkg2.test_mod.target(1) == 2  # returns
 -test_pkg1.test_pkg2.test_mod.target(2) == 3  # returns
 """
+    )
 
 
 def test_story_empty_play_proxy_class_missing_report(LineMatcher):
@@ -367,29 +364,31 @@ def test_story_empty_play_proxy_class_missing_report(LineMatcher):
         obj.mix()
         obj.meth()
         obj.mix(10)
-    LineMatcher(replay.diff.splitlines()).fnmatch_lines([
-        "--- expected",
-        "+++ actual",
-        "@@ -0,0 +1,18 @@",
-        "+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)",
-        "+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns",
-        "+stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns",
-        "+stuff_1.raises(123) ** ValueError((123,)*)  # raises",
-        "+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)",
-        "+stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns",
-        "+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns",
-        "+test_pkg1.test_pkg2.test_mod.target() == None  # returns",
-        "+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',)*)  # raises",
-        "+stuff_2.raises(123) ** ValueError((123,)*)  # raises",
-        "+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)",
-        "+that_long_stuf_1.mix(2) == (1, 2)  # returns",
-        "+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)",
-        "+that_long_stuf_2.mix(4) == (3, 4)  # returns",
-        "+that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)",
-        "+that_long_stuf_3.mix() == (2,)  # returns",
-        "+that_long_stuf_3.meth() == None  # returns",
-        "+that_long_stuf_3.mix(10) == (2, 10)  # returns",
-    ])
+    LineMatcher(replay.diff.splitlines()).fnmatch_lines(
+        [
+            "--- expected",
+            "+++ actual",
+            "@@ -0,0 +1,18 @@",
+            "+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)",
+            "+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns",
+            "+stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns",
+            "+stuff_1.raises(123) ** ValueError((123,)*)  # raises",
+            "+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)",
+            "+stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns",
+            "+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns",
+            "+test_pkg1.test_pkg2.test_mod.target() == None  # returns",
+            "+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',)*)  # raises",
+            "+stuff_2.raises(123) ** ValueError((123,)*)  # raises",
+            "+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)",
+            "+that_long_stuf_1.mix(2) == (1, 2)  # returns",
+            "+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)",
+            "+that_long_stuf_2.mix(4) == (3, 4)  # returns",
+            "+that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)",
+            "+that_long_stuf_3.mix() == (2,)  # returns",
+            "+that_long_stuf_3.meth() == None  # returns",
+            "+that_long_stuf_3.mix(10) == (2, 10)  # returns",
+        ]
+    )
 
 
 def test_story_empty_play_proxy_class():
@@ -408,22 +407,42 @@ def test_story_empty_play_proxy_class():
 
         raises(TypeError, obj.meth, 123)
 
-    assert format_calls(replay._actual) == format_calls(OrderedDict([
-        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "1, 2", ''), _Binds('stuff_1')),
-        (('stuff_1', 'mix', "3, 4", ''), _Returns("(1, 2, 3, 4)")),
-        (('stuff_1', 'mix', "'a', 'b'", ''), _Returns("(1, 2, 'a', 'b')")),
-        (('stuff_1', 'meth', "123", ''), _Raises(repr_ex(TypeError(
-            'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
-        )))),
-        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "0, 1", ''), _Binds('stuff_2')),
-        (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
-        (('stuff_2', 'mix', "3, 4", ''), _Returns("(0, 1, 3, 4)")),
-        (('stuff_2', 'meth', "123", ''), _Raises(repr_ex(TypeError(
-            'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
-        ))))
-    ]))
+    assert format_calls(replay._actual) == format_calls(
+        OrderedDict(
+            [
+                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "1, 2", ''), _Binds('stuff_1')),
+                (('stuff_1', 'mix', "3, 4", ''), _Returns("(1, 2, 3, 4)")),
+                (('stuff_1', 'mix', "'a', 'b'", ''), _Returns("(1, 2, 'a', 'b')")),
+                (
+                    ('stuff_1', 'meth', "123", ''),
+                    _Raises(
+                        repr_ex(
+                            TypeError(
+                                'Stuff.meth() takes 1 positional argument but 2 were given'
+                                if PY310
+                                else 'meth() takes 1 positional argument but 2 were given'
+                            )
+                        )
+                    ),
+                ),
+                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "0, 1", ''), _Binds('stuff_2')),
+                (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
+                (('stuff_2', 'mix', "3, 4", ''), _Returns("(0, 1, 3, 4)")),
+                (
+                    ('stuff_2', 'meth', "123", ''),
+                    _Raises(
+                        repr_ex(
+                            TypeError(
+                                'Stuff.meth() takes 1 positional argument but 2 were given'
+                                if PY310
+                                else 'meth() takes 1 positional argument but 2 were given'
+                            )
+                        )
+                    ),
+                ),
+            ]
+        )
+    )
 
 
 def test_story_half_play_proxy_class():
@@ -445,20 +464,40 @@ def test_story_half_play_proxy_class():
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
         raises(TypeError, obj.meth, 123)
-    assert replay.unexpected == format_calls(OrderedDict([
-        (('stuff_1', 'meth', '', ''), _Returns('None')),
-        (('stuff_1', 'meth', '123', ''), _Raises(repr_ex(TypeError(
-            'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
-        )))),
-        ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '0, 1', ''), _Binds("stuff_2")),
-        (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
-        (('stuff_2', 'mix',  '3, 4', ''), _Returns('(0, 1, 3, 4)')),
-        (('stuff_2', 'meth', '123', ''), _Raises(repr_ex(TypeError(
-            'meth() takes exactly 1 argument (2 given)' if PY2 else
-            'meth() takes 1 positional argument but 2 were given'
-        ))))
-    ]))
+    assert replay.unexpected == format_calls(
+        OrderedDict(
+            [
+                (('stuff_1', 'meth', '', ''), _Returns('None')),
+                (
+                    ('stuff_1', 'meth', '123', ''),
+                    _Raises(
+                        repr_ex(
+                            TypeError(
+                                'Stuff.meth() takes 1 positional argument but 2 were given'
+                                if PY310
+                                else 'meth() takes 1 positional argument but 2 were given'
+                            )
+                        )
+                    ),
+                ),
+                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '0, 1', ''), _Binds("stuff_2")),
+                (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
+                (('stuff_2', 'mix', '3, 4', ''), _Returns('(0, 1, 3, 4)')),
+                (
+                    ('stuff_2', 'meth', '123', ''),
+                    _Raises(
+                        repr_ex(
+                            TypeError(
+                                'Stuff.meth() takes 1 positional argument but 2 were given'
+                                if PY310
+                                else 'meth() takes 1 positional argument but 2 were given'
+                            )
+                        )
+                    ),
+                ),
+            ]
+        )
+    )
 
 
 def test_story_full_play_noproxy():
@@ -498,14 +537,23 @@ def test_story_full_play_proxy():
         raises(ValueError, test_mod.target, 1234)
         raises(TypeError, test_mod.target, 'asdf')
 
-    assert replay.unexpected == format_calls(OrderedDict([
-        ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
-        ((None, 'test_pkg1.test_pkg2.test_mod.target', "'asdf'", ''), _Raises(repr_ex(TypeError(
-            'target() takes no arguments (1 given)'
-            if PY2
-            else 'target() takes 0 positional arguments but 1 was given',)
-        )))
-    ]))
+    assert replay.unexpected == format_calls(
+        OrderedDict(
+            [
+                ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
+                (
+                    (None, 'test_pkg1.test_pkg2.test_mod.target', "'asdf'", ''),
+                    _Raises(
+                        repr_ex(
+                            TypeError(
+                                'target() takes 0 positional arguments but 1 was given',
+                            )
+                        )
+                    ),
+                ),
+            ]
+        )
+    )
 
 
 def test_story_result_wrapper():
@@ -521,8 +569,8 @@ def test_story_result_wrapper():
 
 def test_story_result_wrapper_bad_exception():
     x = StoryResultWrapper(lambda *a: None)
-    raises(RuntimeError, lambda: x ** 1)
-    x ** Exception
+    raises(RuntimeError, lambda: x**1)
+    x**Exception
     x ** Exception('boom!')
 
 
@@ -538,7 +586,7 @@ def test_story_create():
     # from pprint import pprint as print
     # print (dict(story._calls))
     assert dict(story._calls) == {
-        (None, 'test_pkg1.test_pkg2.test_mod.Stuff',  "'stuff'", ''): _Binds('stuff_1'),
+        (None, 'test_pkg1.test_pkg2.test_mod.Stuff', "'stuff'", ''): _Binds('stuff_1'),
         ('stuff_1', 'meth', "'other', 1, 2", ''): _Returns("123"),
         ('stuff_1', 'mix', "'other'", ''): _Returns("'mixymix'"),
         (None, 'test_pkg1.test_pkg2.test_mod.target', '', ''): _Raises("Exception"),

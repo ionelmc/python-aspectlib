@@ -1,5 +1,8 @@
 aspectlib
 builtin
+builtins
+classmethod
+staticmethod
 classmethods
 staticmethods
 mumbo

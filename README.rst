@@ -10,32 +10,28 @@ Overview
     * - docs
       - |docs|
     * - tests
-      - | |travis| |appveyor| |requires|
+      - | |github-actions| |requires|
         | |coveralls| |codecov|
     * - package
       - | |version| |wheel| |supported-versions| |supported-implementations|
         | |commits-since|
 .. |docs| image:: https://readthedocs.org/projects/python-aspectlib/badge/?style=flat
-    :target: https://readthedocs.org/projects/python-aspectlib
+    :target: https://python-aspectlib.readthedocs.io/
     :alt: Documentation Status
 
-.. |travis| image:: https://api.travis-ci.com/ionelmc/python-aspectlib.svg?branch=master
-    :alt: Travis-CI Build Status
-    :target: https://travis-ci.com/github/ionelmc/python-aspectlib
+.. |github-actions| image:: https://github.com/ionelmc/python-aspectlib/actions/workflows/github-actions.yml/badge.svg
+    :alt: GitHub Actions Build Status
+    :target: https://github.com/ionelmc/python-aspectlib/actions
 
-.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/ionelmc/python-aspectlib?branch=master&svg=true
-    :alt: AppVeyor Build Status
-    :target: https://ci.appveyor.com/project/ionelmc/python-aspectlib
-
-.. |requires| image:: https://requires.io/github/ionelmc/python-aspectlib/requirements.svg?branch=master
+.. |requires| image:: https://requires.io/github/ionelmc/python-aspectlib/requirements.svg?branch=main
     :alt: Requirements Status
-    :target: https://requires.io/github/ionelmc/python-aspectlib/requirements/?branch=master
+    :target: https://requires.io/github/ionelmc/python-aspectlib/requirements/?branch=main
 
-.. |coveralls| image:: https://coveralls.io/repos/ionelmc/python-aspectlib/badge.svg?branch=master&service=github
+.. |coveralls| image:: https://coveralls.io/repos/ionelmc/python-aspectlib/badge.svg?branch=main&service=github
     :alt: Coverage Status
     :target: https://coveralls.io/r/ionelmc/python-aspectlib
 
-.. |codecov| image:: https://codecov.io/gh/ionelmc/python-aspectlib/branch/master/graphs/badge.svg?branch=master
+.. |codecov| image:: https://codecov.io/gh/ionelmc/python-aspectlib/branch/main/graphs/badge.svg?branch=main
     :alt: Coverage Status
     :target: https://codecov.io/github/ionelmc/python-aspectlib
 
@@ -57,7 +53,7 @@ Overview
 
 .. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-aspectlib/v1.5.2.svg
     :alt: Commits since latest release
-    :target: https://github.com/ionelmc/python-aspectlib/compare/v1.5.2...master
+    :target: https://github.com/ionelmc/python-aspectlib/compare/v1.5.2...main
 
 
 
@@ -75,6 +71,11 @@ Installation
 ::
 
     pip install aspectlib
+
+You can also install the in-development version with::
+
+    pip install https://github.com/ionelmc/python-aspectlib/archive/main.zip
+
 
 Documentation
 =============

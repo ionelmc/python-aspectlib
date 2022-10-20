@@ -1,12 +1,10 @@
 [paths]
-source =
-   src
-   */site-packages
+source = src
 
 [run]
 branch = true
 source =
-    aspectlib
+    src
     tests
 parallel = true
 

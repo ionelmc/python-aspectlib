@@ -33,14 +33,9 @@ except ImportError:
         from _dummy_thread import allocate_lock
     except ImportError:
         from _thread import allocate_lock
-try:
-    from collections import OrderedDict
-except ImportError:
-    from .py2ordereddict import OrderedDict
-try:
-    from collections import ChainMap
-except ImportError:
-    from .py2chainmap import ChainMap
+
+from collections import ChainMap
+from collections import OrderedDict
 
 __all__ = 'mock', 'record', "Story"
 
@@ -111,6 +106,7 @@ class LogCapture(object):
         Added ``messages`` property.
         Changed ``calls`` to retrun the level as a string (instead of int).
     """
+
     def __init__(self, logger, level='DEBUG'):
         self._logger = logger
         self._level = nameToLevel[level]
@@ -121,7 +117,7 @@ class LogCapture(object):
         self._rollback = weave(
             self._logger,
             record(callback=self._callback, extended=True, iscalled=True),
-            methods=('debug', 'info', 'warning', 'error', 'exception', 'critical', 'log')
+            methods=('debug', 'info', 'warning', 'error', 'exception', 'critical', 'log'),
         )
         return self
 
@@ -144,12 +140,7 @@ class LogCapture(object):
             message, args = args[0], ()
 
         if level >= self._level:
-            self._calls.append((
-                message % args if args else message,
-                message,
-                args,
-                getLevelName(level)
-            ))
+            self._calls.append((message % args if args else message, message, args, getLevelName(level)))
 
     @property
     def calls(self):
@@ -164,19 +155,16 @@ class LogCapture(object):
         assert not kwargs, "Unexpected arguments: %s" % kwargs
         for call_final_message, call_message, call_args, call_level in self._calls:
             if level is None or level == call_level:
-                if (
-                    message == call_message and args == call_args
-                    if args else
-                    message == call_final_message or message == call_message
-                ):
+                if message == call_message and args == call_args if args else message == call_final_message or message == call_message:
                     return True
         return False
 
     def assertLogged(self, message, *args, **kwargs):
         if not self.has(message, *args, **kwargs):
-            raise AssertionError("There's no such message %r (with args %r) logged on %s. Logged messages where: %s" % (
-                message, args, self._logger, self.calls
-            ))
+            raise AssertionError(
+                "There's no such message %r (with args %r) logged on %s. Logged messages where: %s"
+                % (message, args, self._logger, self.calls)
+            )
 
 
 class _RecordingFunctionWrapper(object):
@@ -186,8 +174,7 @@ class _RecordingFunctionWrapper(object):
     See :obj:`aspectlib.test.record` for arguments.
     """
 
-    def __init__(self, wrapped, iscalled=True, calls=None, callback=None, extended=False, results=False,
-                 recurse_lock=None, binding=None):
+    def __init__(self, wrapped, iscalled=True, calls=None, callback=None, extended=False, results=False, recurse_lock=None, binding=None):
         assert not results or iscalled, "`iscalled` must be True if `results` is True"
         mimic(self, wrapped)
         self.__wrapped = wrapped
@@ -228,13 +215,9 @@ class _RecordingFunctionWrapper(object):
             self.__callback(self.__binding, qualname(self), args, kwargs, *response)
         if self.calls is not None:
             if self.__extended:
-                self.calls.append((ResultEx if response else CallEx)(
-                    self.__binding, qualname(self), args, kwargs, *response
-                ))
+                self.calls.append((ResultEx if response else CallEx)(self.__binding, qualname(self), args, kwargs, *response))
             else:
-                self.calls.append((Result if response else Call)(
-                    self.__binding, args, kwargs, *response
-                ))
+                self.calls.append((Result if response else Call)(self.__binding, args, kwargs, *response))
 
     def __get__(self, instance, owner):
         return _RecordingFunctionWrapper(
@@ -307,11 +290,7 @@ def record(func=None, recurse_lock_factory=allocate_lock, **options):
         Added `extended` option.
     """
     if func:
-        return _RecordingFunctionWrapper(
-            func,
-            recurse_lock=recurse_lock_factory(),
-            **options
-        )
+        return _RecordingFunctionWrapper(func, recurse_lock=recurse_lock_factory(), **options)
     else:
         return partial(record, **options)
 
@@ -334,14 +313,73 @@ class StoryResultWrapper(object):
         raise TypeError("Unsupported operation. Only `==` (for results) and `**` (for exceptions) can be used.")
 
     for mm in (
-        '__add__', '__sub__', '__mul__', '__floordiv__', '__mod__', '__divmod__', '__lshift__', '__rshift__', '__and__',
-        '__xor__', '__or__', '__div__', '__truediv__', '__radd__', '__rsub__', '__rmul__', '__rdiv__', '__rtruediv__',
-        '__rfloordiv__', '__rmod__', '__rdivmod__', '__rpow__', '__rlshift__', '__rrshift__', '__rand__', '__rxor__',
-        '__ror__', '__iadd__', '__isub__', '__imul__', '__idiv__', '__itruediv__', '__ifloordiv__', '__imod__',
-        '__ipow__', '__ilshift__', '__irshift__', '__iand__', '__ixor__', '__ior__', '__neg__', '__pos__', '__abs__',
-        '__invert__', '__complex__', '__int__', '__long__', '__float__', '__oct__', '__hex__', '__index__',
-        '__coerce__', '__getslice__', '__setslice__', '__delslice__', '__len__', '__getitem__', '__reversed__',
-        '__contains__', '__call__', '__lt__', '__le__', '__ne__', '__gt__', '__ge__', '__cmp__', '__rcmp__',
+        '__add__',
+        '__sub__',
+        '__mul__',
+        '__floordiv__',
+        '__mod__',
+        '__divmod__',
+        '__lshift__',
+        '__rshift__',
+        '__and__',
+        '__xor__',
+        '__or__',
+        '__div__',
+        '__truediv__',
+        '__radd__',
+        '__rsub__',
+        '__rmul__',
+        '__rdiv__',
+        '__rtruediv__',
+        '__rfloordiv__',
+        '__rmod__',
+        '__rdivmod__',
+        '__rpow__',
+        '__rlshift__',
+        '__rrshift__',
+        '__rand__',
+        '__rxor__',
+        '__ror__',
+        '__iadd__',
+        '__isub__',
+        '__imul__',
+        '__idiv__',
+        '__itruediv__',
+        '__ifloordiv__',
+        '__imod__',
+        '__ipow__',
+        '__ilshift__',
+        '__irshift__',
+        '__iand__',
+        '__ixor__',
+        '__ior__',
+        '__neg__',
+        '__pos__',
+        '__abs__',
+        '__invert__',
+        '__complex__',
+        '__int__',
+        '__long__',
+        '__float__',
+        '__oct__',
+        '__hex__',
+        '__index__',
+        '__coerce__',
+        '__getslice__',
+        '__setslice__',
+        '__delslice__',
+        '__len__',
+        '__getitem__',
+        '__reversed__',
+        '__contains__',
+        '__call__',
+        '__lt__',
+        '__le__',
+        '__ne__',
+        '__gt__',
+        '__ge__',
+        '__cmp__',
+        '__rcmp__',
         '__nonzero__',
     ):
         exec("%s = __unsupported__" % mm)
@@ -369,12 +407,15 @@ class _StoryFunctionWrapper(object):
                 return StoryResultWrapper(partial(self._handle, self._binding, self._name, args, kwargs))
 
     def __get__(self, binding, owner):
-        return mimic(type(self)(
-            self._wrapped.__get__(binding, owner) if hasattr(self._wrapped, '__get__') else self._wrapped,
-            handle=self._handle,
-            binding=binding,
-            owner=owner,
-        ), self)
+        return mimic(
+            type(self)(
+                self._wrapped.__get__(binding, owner) if hasattr(self._wrapped, '__get__') else self._wrapped,
+                handle=self._handle,
+                binding=binding,
+                owner=owner,
+            ),
+            self,
+        )
 
 
 class _ReplayFunctionWrapper(_StoryFunctionWrapper):
@@ -402,12 +443,7 @@ class _RecordingBase(object):
     def _make_key(self, binding, name, args, kwargs):
         if binding is not None:
             binding, _ = self._ids[id(binding)]
-        return (
-            binding,
-            name,
-            ', '.join(repr_ex(i) for i in args),
-            ', '.join("%s=%s" % (k, repr_ex(v)) for k, v in kwargs.items())
-        )
+        return (binding, name, ', '.join(repr_ex(i) for i in args), ', '.join("%s=%s" % (k, repr_ex(v)) for k, v in kwargs.items()))
 
     def _tag_result(self, name, result):
         if isinstance(result, _Binds):
@@ -423,21 +459,20 @@ class _RecordingBase(object):
     def _handle(self, binding, name, args, kwargs, result):
         pk = self._make_key(binding, name, args, kwargs)
         result = self._tag_result(name, result)
-        assert pk not in self._calls or self._calls[pk] == result, (
-            "Story creation inconsistency. There is already a result cached for "
-            "binding:%r name:%r args:%r kwargs:%r and it's: %r." % (
-                binding, name, args, kwargs, self._calls[pk]
-            )
+        assert (
+            pk not in self._calls or self._calls[pk] == result
+        ), "Story creation inconsistency. There is already a result cached for " "binding:%r name:%r args:%r kwargs:%r and it's: %r." % (
+            binding,
+            name,
+            args,
+            kwargs,
+            self._calls[pk],
         )
         self._calls[pk] = result
 
     def __enter__(self):
         self._options.setdefault('methods', ALL_METHODS)
-        self.__entanglement = weave(
-            self._target,
-            partial(self._FunctionWrapper, handle=self._handle),
-            **self._options
-        )
+        self.__entanglement = weave(self._target, partial(self._FunctionWrapper, handle=self._handle), **self._options)
         return self
 
     def __exit__(self, *args):
@@ -452,46 +487,47 @@ _Binds = container("Binds")
 
 class Story(_RecordingBase):
     """
-        This a simple yet flexible tool that can do "capture-replay mocking" or "test doubles" [1]_. It leverages
-        ``aspectlib``'s powerful :obj:`weaver <aspectlib.weave>`.
+    This a simple yet flexible tool that can do "capture-replay mocking" or "test doubles" [1]_. It leverages
+    ``aspectlib``'s powerful :obj:`weaver <aspectlib.weave>`.
 
-        Args:
-            target (same as for :obj:`aspectlib.weave`):
-                Targets to weave in the `story`/`replay` transactions.
-            subclasses (bool):
-                If ``True``, subclasses of target are weaved. *Only available for classes*
-            aliases (bool):
-                If ``True``, aliases of target are replaced.
-            lazy (bool):
-                If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
-                is called. *Only available for classes*.
-            methods (list or regex or string): Methods from target to patch. *Only available for classes*
+    Args:
+        target (same as for :obj:`aspectlib.weave`):
+            Targets to weave in the `story`/`replay` transactions.
+        subclasses (bool):
+            If ``True``, subclasses of target are weaved. *Only available for classes*
+        aliases (bool):
+            If ``True``, aliases of target are replaced.
+        lazy (bool):
+            If ``True`` only target's ``__init__`` method is patched, the rest of the methods are patched after ``__init__``
+            is called. *Only available for classes*.
+        methods (list or regex or string): Methods from target to patch. *Only available for classes*
 
-        The ``Story`` allows some testing patterns that are hard to do with other tools:
+    The ``Story`` allows some testing patterns that are hard to do with other tools:
 
-        * **Proxied mocks**: partially mock `objects` and `modules` so they are called normally if the request is unknown.
-        * **Stubs**: completely mock `objects` and `modules`. Raise errors if the request is unknown.
+    * **Proxied mocks**: partially mock `objects` and `modules` so they are called normally if the request is unknown.
+    * **Stubs**: completely mock `objects` and `modules`. Raise errors if the request is unknown.
 
-        The ``Story`` works in two of transactions:
+    The ``Story`` works in two of transactions:
 
-        *   **The story**: You describe what calls you want to mocked. Initially you don't need to write this. Example:
+    *   **The story**: You describe what calls you want to mocked. Initially you don't need to write this. Example:
 
-            ::
+        ::
 
-                >>> import mymod
-                >>> with Story(mymod) as story:
-                ...     mymod.func('some arg') == 'some result'
-                ...     mymod.func('bad arg') ** ValueError("can't use this")
+            >>> import mymod
+            >>> with Story(mymod) as story:
+            ...     mymod.func('some arg') == 'some result'
+            ...     mymod.func('bad arg') ** ValueError("can't use this")
 
-        *   **The replay**: You run the code uses the interfaces mocked in the `story`. The :obj:`replay
-            <aspectlib.test.Story.replay>` always starts from a `story` instance.
+    *   **The replay**: You run the code uses the interfaces mocked in the `story`. The :obj:`replay
+        <aspectlib.test.Story.replay>` always starts from a `story` instance.
 
-        .. versionchanged:: 0.9.0
+    .. versionchanged:: 0.9.0
 
-            Added in.
+        Added in.
 
-        .. [1] http://www.martinfowler.com/bliki/TestDouble.html
+    .. [1] http://www.martinfowler.com/bliki/TestDouble.html
     """
+
     _FunctionWrapper = _StoryFunctionWrapper
 
     def __init__(self, *args, **kwargs):
@@ -548,10 +584,7 @@ def logged_eval(value, context):
     try:
         return eval(value, *context)
     except:  # noqa
-        logexception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(
-            f=_getframe(1),
-            limit=15
-        )))
+        logexception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(f=_getframe(1), limit=15)))
         raise
 
 
@@ -562,6 +595,7 @@ class Replay(_RecordingBase):
     This object should be created by :obj:`Story <aspectlib.test.Story>`'s :obj:`replay <aspectlib.test.Story.replay>`
     method.
     """
+
     _FunctionWrapper = _ReplayFunctionWrapper
 
     def __init__(self, play, proxy=True, strict=True, dump=True, recurse_lock=False, **options):
@@ -613,10 +647,7 @@ class Replay(_RecordingBase):
             expected, actual = self._actual, self._expected
         else:
             actual, expected = self._actual, self._expected
-        return ''.join(_format_calls(OrderedDict(
-            (pk, val) for pk, val in actual.items()
-            if pk not in expected or val != expected.get(pk)
-        )))
+        return ''.join(_format_calls(OrderedDict((pk, val) for pk, val in actual.items() if pk not in expected or val != expected.get(pk))))
 
     @property
     def unexpected(self):

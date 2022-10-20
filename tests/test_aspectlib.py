@@ -1,7 +1,4 @@
 # encoding: utf8
-from __future__ import print_function
-
-import pytest
 from pytest import raises
 
 import aspectlib
@@ -401,27 +398,33 @@ def test_weave_str_bad_target():
 def test_weave_str_target():
     with aspectlib.weave('test_pkg1.test_pkg2.test_mod.target', mock('foobar')):
         from test_pkg1.test_pkg2.test_mod import target
+
         assert target() == 'foobar'
 
     from test_pkg1.test_pkg2.test_mod import target
+
     assert target() is None
 
 
 def test_weave_str_class_target():
     with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff', mock('foobar')):
         from test_pkg1.test_pkg2.test_mod import Stuff
+
         assert Stuff().meth() == 'foobar'
 
     from test_pkg1.test_pkg2.test_mod import Stuff
+
     assert Stuff().meth() is None
 
 
 def test_weave_str_class_meth_target():
     with aspectlib.weave('test_pkg1.test_pkg2.test_mod.Stuff.meth', mock('foobar')):
         from test_pkg1.test_pkg2.test_mod import Stuff
+
         assert Stuff().meth() == 'foobar'
 
     from test_pkg1.test_pkg2.test_mod import Stuff
+
     assert Stuff().meth() is None
 
 
@@ -439,10 +442,14 @@ def test_weave_wrong_module():
     with aspectlib.weave('warnings.warn', record(calls=calls)):
         aspectlib.weave(AliasedGlobal, mock('stuff'), lazy=True)
     assert calls == [
-        (None,
-         ("Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
-          "There was no previous definition, probably patching the wrong module.",),
-         {})
+        (
+            None,
+            (
+                "Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
+                "There was no previous definition, probably patching the wrong module.",
+            ),
+            {},
+        )
     ]
 
 
@@ -457,19 +464,6 @@ def test_weave_no_aliases():
     assert module_func2 is module_func3
 
 
-@pytest.mark.skipif('aspectlib.PY3')
-def test_weave_class_meth_no_aliases():
-    with aspectlib.weave(Global.meth, mock('stuff'), aliases=False, lazy=True):
-        assert Global().meth() == 'stuff'
-        assert Global2 is not Global
-        assert Global2().meth() == 'base'
-
-    assert Global().meth() == 'base'
-    assert Global2 is Global
-    assert Global2().meth() == 'base'
-
-
-@pytest.mark.skipif('aspectlib.PY2')
 def test_weave_class_meth_no_aliases_unsupported_on_py3():
     with aspectlib.weave(Global.meth, mock('stuff')):
         assert Global().meth() == 'stuff'
@@ -540,7 +534,6 @@ def test_weave_instance_meth():
     assert inst.foo == 'stuff'
 
 
-@pytest.mark.skipif('aspectlib.PY2')
 def test_weave_legacy_instance():
     @aspectlib.Aspect
     def aspect(self):
@@ -657,7 +650,7 @@ def test_weave_class():
     @aspectlib.Aspect
     def aspect(*args):
         history.append(args)
-        args += ':)',
+        args += (':)',)
         yield aspectlib.Proceed(*args)
         yield aspectlib.Return('bar')
 
@@ -754,7 +747,7 @@ def test_weave_class_slots():
     @aspectlib.Aspect
     def aspect(*args):
         history.append(args)
-        args += ':)',
+        args += (':)',)
         yield aspectlib.Proceed(*args)
         yield aspectlib.Return('bar')
 
@@ -860,7 +853,7 @@ def test_weave_class_on_init():
     @aspectlib.Aspect
     def aspect(*args):
         history.append(args)
-        args += ':)',
+        args += (':)',)
         yield aspectlib.Proceed(*args)
         yield aspectlib.Return('bar')
 
@@ -953,7 +946,7 @@ def test_weave_class_old_style():
     @aspectlib.Aspect
     def aspect(*args):
         history.append(args)
-        args += ':)',
+        args += (':)',)
         yield aspectlib.Proceed(*args)
         yield aspectlib.Return('bar')
 
@@ -1190,15 +1183,6 @@ def test_weave_subclass_meth_manual():
     assert Sub().meth() == 'base'
 
 
-@pytest.mark.skipif('aspectlib.PY3')
-def test_weave_subclass_meth_auto():
-    with aspectlib.weave(Sub.meth, mock('foobar'), lazy=True):
-        assert Sub().meth() == 'foobar'
-
-    assert Sub().meth() == 'base'
-
-
-@pytest.mark.skipif('aspectlib.PY2')
 def test_weave_subclass_meth_auto2():
     with aspectlib.weave(Sub.meth, mock('foobar')):
         assert Sub().meth() == 'foobar'
@@ -1227,22 +1211,13 @@ def _internal():
     pass
 
 
-if aspectlib.PY3:
-    exec(u"""# encoding: utf8
-
 def ăbc():
     pass
+
 
 def test_ăbc():
     with aspectlib.weave('test_aspectlib.ăbc', mock('stuff')):
         assert ăbc() == 'stuff'
-""")
-else:
-    def test_py2_invalid_unicode_in_string_target():
-        raises(SyntaxError, aspectlib.weave, 'os.ăa', mock(None))
-        raises(SyntaxError, aspectlib.weave, u'os.ăa', mock(None))
-        raises(SyntaxError, aspectlib.weave, 'os.aă', mock(None))
-        raises(SyntaxError, aspectlib.weave, u'os.aă', mock(None))
 
 
 def test_invalid_string_target():
@@ -1471,14 +1446,12 @@ def test_aspect_on_generator_send_in_aspect():
 def test_weave_module(strmod=None):
     calls = []
     from test_pkg1.test_pkg2 import test_mod
+
     with aspectlib.weave(strmod or test_mod, record(calls=calls, extended=True)):
         test_mod.target()
         obj = test_mod.Stuff()
         obj.meth()
-    assert calls == [
-        (None, 'test_pkg1.test_pkg2.test_mod.target', (), {}),
-        (obj, 'test_pkg1.test_pkg2.test_mod.meth', (), {})
-    ]
+    assert calls == [(None, 'test_pkg1.test_pkg2.test_mod.target', (), {}), (obj, 'test_pkg1.test_pkg2.test_mod.meth', (), {})]
 
 
 def test_weave_module_as_str():

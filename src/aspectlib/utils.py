@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import logging
 import os
 import platform
@@ -12,9 +10,7 @@ from inspect import isclass
 RegexType = type(re.compile(""))
 
 PY3 = sys.version_info[0] == 3
-PY37plus = PY3 and sys.version_info[1] >= 7
-PY2 = sys.version_info[0] == 2
-PY26 = PY2 and sys.version_info[1] == 6
+PY310 = PY3 and sys.version_info[1] >= 10
 PYPY = platform.python_implementation() == 'PyPy'
 
 if PY3:
@@ -43,6 +39,7 @@ def logf(logger_func):
                 logging.logProcesses = logProcesses
                 logging.logThreads = logThreads
                 logging.logMultiprocessing = logMultiprocessing
+
     return log_wrapper
 
 
@@ -61,6 +58,7 @@ def qualname(obj):
 def force_bind(func):
     def bound(self, *args, **kwargs):  # pylint: disable=W0613
         return func(*args, **kwargs)
+
     bound.__name__ = func.__name__
     bound.__doc__ = func.__doc__
     return bound
@@ -87,6 +85,7 @@ class Sentinel(object):
             return "%s" % self.name
         else:
             return "%s: %s" % (self.name, self.__doc__)
+
     __str__ = __repr__
 
 
@@ -94,13 +93,17 @@ def container(name):
     def __init__(self, value):
         self.value = value
 
-    return type(name, (object,), {
-        '__slots__': 'value',
-        '__init__': __init__,
-        '__str__': lambda self: "%s(%s)" % (name, self.value),
-        '__repr__': lambda self: "%s(%r)" % (name, self.value),
-        '__eq__': lambda self, other: type(self) is type(other) and self.value == other.value,
-    })
+    return type(
+        name,
+        (object,),
+        {
+            '__slots__': 'value',
+            '__init__': __init__,
+            '__str__': lambda self: "%s(%s)" % (name, self.value),
+            '__repr__': lambda self: "%s(%r)" % (name, self.value),
+            '__eq__': lambda self, other: type(self) is type(other) and self.value == other.value,
+        },
+    )
 
 
 def mimic(wrapper, func, module=None):
@@ -125,9 +128,8 @@ representers = {
     set: lambda obj, aliases: "set([%s])" % ', '.join(repr_ex(i) for i in obj),
     frozenset: lambda obj, aliases: "set([%s])" % ', '.join(repr_ex(i) for i in obj),
     deque: lambda obj, aliases: "collections.deque([%s])" % ', '.join(repr_ex(i) for i in obj),
-    dict: lambda obj, aliases: "{%s}" % ', '.join(
-        "%s: %s" % (repr_ex(k), repr_ex(v)) for k, v in (obj.items() if PY3 else obj.iteritems())
-    ),
+    dict: lambda obj, aliases: "{%s}"
+    % ', '.join("%s: %s" % (repr_ex(k), repr_ex(v)) for k, v in (obj.items() if PY3 else obj.iteritems())),
 }
 
 
@@ -135,10 +137,7 @@ def _make_fixups():
     for obj in ('os.stat_result', 'grp.struct_group', 'pwd.struct_passwd'):
         mod, attr = obj.split('.')
         try:
-            yield getattr(__import__(mod), attr), lambda obj, aliases, prefix=obj: "%s(%r)" % (
-                prefix,
-                obj.__reduce__()[1][0]
-            )
+            yield getattr(__import__(mod), attr), lambda obj, aliases, prefix=obj: "%s(%r)" % (prefix, obj.__reduce__()[1][0])
         except ImportError:
             continue
 

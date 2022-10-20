@@ -1,14 +1,11 @@
 # encoding: utf8
-from __future__ import print_function
+
 
 import pytest
 
 import aspectlib
-from aspectlib.utils import PY37plus
 
 from test_aspectlib_py3 import consume
-
-pytestmark = pytest.mark.skipif(not PY37plus, reason="Tests only work with PEP-479")
 
 
 def test_aspect_on_generator_result():

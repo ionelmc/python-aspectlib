@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import logging
 import re
 import sys
@@ -15,10 +13,12 @@ try:
 except ImportError:
     from io import StringIO
 
-LOG_TEST_SIMPLE = r'''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
-some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@''' \
-r'''ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
+LOG_TEST_SIMPLE = (
+    r'''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
+some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@'''
+    r'''ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
 $'''
+)
 
 
 def some_meth(*_args, **_kwargs):
@@ -61,6 +61,7 @@ def test_fail_to_log():
     @aspectlib.debug.log(print_to="crap")
     def foo():
         pass
+
     foo()
 
 
@@ -73,66 +74,75 @@ def test_logging_works():
     @aspectlib.debug.log
     def foo():
         pass
+
     foo()
     assert re.match(r'foo\(\) +<<<.*\nfoo => None\n', buf.getvalue())
 
 
 def test_attributes():
     buf = StringIO()
-    with aspectlib.weave(MyStuff, aspectlib.debug.log(
-        print_to=buf,
-        stacktrace=10,
-        attributes=('foo', 'bar()')
-    ), methods='(?!bar)(?!__.*__$)'):
+    with aspectlib.weave(
+        MyStuff, aspectlib.debug.log(print_to=buf, stacktrace=10, attributes=('foo', 'bar()')), methods='(?!bar)(?!__.*__$)'
+    ):
         MyStuff('bar').stuff()
     print(buf.getvalue())
-    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
-                    r"test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(
+        r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+        r"test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$",
+        buf.getvalue(),
+    )
     MyStuff('bar').stuff()
-    assert re.match(r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
-                    r"test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(
+        r"^\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+        r"test_attributes.*\n\{test_aspectlib_debug.MyStuff foo='bar' bar='foo'\}.stuff => bar\n$",
+        buf.getvalue(),
+    )
 
 
 def test_no_stack():
     buf = StringIO()
-    with aspectlib.weave(MyStuff, aspectlib.debug.log(
-        print_to=buf,
-        stacktrace=None,
-        attributes=('foo', 'bar()')
-    ), methods='(?!bar)(?!__.*__$)'):
+    with aspectlib.weave(
+        MyStuff, aspectlib.debug.log(print_to=buf, stacktrace=None, attributes=('foo', 'bar()')), methods='(?!bar)(?!__.*__$)'
+    ):
         MyStuff('bar').stuff()
     print(buf.getvalue())
-    assert "{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff()\n" \
-           "{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
+    assert (
+        "{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff()\n"
+        "{test_aspectlib_debug.MyStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
+    )
 
 
 def test_attributes_old_style():
     buf = StringIO()
-    with aspectlib.weave(OldStuff, aspectlib.debug.log(
-        print_to=buf,
-        stacktrace=10,
-        attributes=('foo', 'bar()')
-    ), methods='(?!bar)(?!__.*__$)'):
+    with aspectlib.weave(
+        OldStuff, aspectlib.debug.log(print_to=buf, stacktrace=10, attributes=('foo', 'bar()')), methods='(?!bar)(?!__.*__$)'
+    ):
         OldStuff('bar').stuff()
     print(repr(buf.getvalue()))
-    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
-                    r"test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(
+        r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+        r"test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$",
+        buf.getvalue(),
+    )
     MyStuff('bar').stuff()
-    assert re.match(r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
-                    r"test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$", buf.getvalue())
+    assert re.match(
+        r"^\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff\(\) +<<< .*tests/test_aspectlib_debug.py:\d+:"
+        r"test_attributes.*\n\{test_aspectlib_debug.OldStuff foo='bar' bar='foo'\}.stuff => bar\n$",
+        buf.getvalue(),
+    )
 
 
 def test_no_stack_old_style():
     buf = StringIO()
-    with aspectlib.weave(OldStuff, aspectlib.debug.log(
-        print_to=buf,
-        stacktrace=None,
-        attributes=('foo', 'bar()')
-    ), methods='(?!bar)(?!__.*__$)'):
+    with aspectlib.weave(
+        OldStuff, aspectlib.debug.log(print_to=buf, stacktrace=None, attributes=('foo', 'bar()')), methods='(?!bar)(?!__.*__$)'
+    ):
         OldStuff('bar').stuff()
     print(buf.getvalue())
-    assert "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff()\n" \
-           "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
+    assert (
+        "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff()\n"
+        "{test_aspectlib_debug.OldStuff foo='bar' bar='foo'}.stuff => bar\n" == buf.getvalue()
+    )
 
 
 @pytest.mark.skipif(sys.version_info < (2, 7), reason="No weakref.WeakSet on Python<=2.6")

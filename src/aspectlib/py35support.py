@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import sys
 from inspect import iscoroutinefunction
 from inspect import isgenerator
@@ -60,6 +58,7 @@ def decorate_advising_asyncgenerator_py35(advising_function, cutpoint_function, 
                     raise UnacceptableAdvice("Unknown advice %s" % advice)
         finally:
             advisor.close()
+
     return mimic(advising_asyncgenerator_wrapper_py35, cutpoint_function)
 
 
@@ -101,4 +100,5 @@ def decorate_advising_generator_py35(advising_function, cutpoint_function, bind)
                     raise UnacceptableAdvice("Unknown advice %s" % advice)
         finally:
             advisor.close()
+
     return mimic(advising_generator_wrapper_py35, cutpoint_function)
