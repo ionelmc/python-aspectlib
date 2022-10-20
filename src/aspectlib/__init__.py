@@ -51,7 +51,7 @@ except ImportError:
     isasyncfunction = None
 
 __all__ = 'weave', 'Aspect', 'Proceed', 'Return', 'ALL_METHODS', 'NORMAL_METHODS', 'ABSOLUTELY_ALL_METHODS'
-__version__ = '1.5.2'
+__version__ = '2.0.0'
 
 logger = getLogger(__name__)
 logdebug = logf(logger.debug)
