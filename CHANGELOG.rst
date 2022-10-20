@@ -2,6 +2,13 @@
 Changelog
 =========
 
+2.0.0 (2022-10-20)
+------------------
+
+* Drop support for legacy Pythons (2.7, 3.6 or older).
+* Remove Travis/Appveyor CI and switch to GitHub Actions.
+* Added support for Tornado 6 (in the test suite).
+
 1.5.2 (2020-11-15)
 ------------------
 
