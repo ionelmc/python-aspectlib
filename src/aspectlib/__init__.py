@@ -173,13 +173,85 @@ class Aspect(object):
 
     def __call__(self, cutpoint_function):
         if isasyncfunction is not None and isasyncfunction(cutpoint_function):
-            from aspectlib.py35support import decorate_advising_asyncgenerator_py35
+            assert isasyncgenfunction(cutpoint_function) or iscoroutinefunction(cutpoint_function)
 
-            return decorate_advising_asyncgenerator_py35(self.advising_function, cutpoint_function, self.bind)
+            async def advising_asyncgenerator_wrapper_py35(*args, **kwargs):
+                if self.bind:
+                    advisor = self.advising_function(cutpoint_function, *args, **kwargs)
+                else:
+                    advisor = self.advising_function(*args, **kwargs)
+                if not isgenerator(advisor):
+                    raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
+                try:
+                    advice = next(advisor)
+                    while True:
+                        logdebug('Got advice %r from %s', advice, self.advising_function)
+                        if advice is Proceed or advice is None or isinstance(advice, Proceed):
+                            if isinstance(advice, Proceed):
+                                args = advice.args
+                                kwargs = advice.kwargs
+                            gen = cutpoint_function(*args, **kwargs)
+                            try:
+                                result = await gen
+                            except BaseException:
+                                advice = advisor.throw(*sys.exc_info())
+                            else:
+                                try:
+                                    advice = advisor.send(result)
+                                except StopIteration:
+                                    return result
+                            finally:
+                                gen.close()
+                        elif advice is Return:
+                            return
+                        elif isinstance(advice, Return):
+                            return advice.value
+                        else:
+                            raise UnacceptableAdvice("Unknown advice %s" % advice)
+                finally:
+                    advisor.close()
+
+            return mimic(advising_asyncgenerator_wrapper_py35, cutpoint_function)
         elif isgeneratorfunction(cutpoint_function):
-            from aspectlib.py35support import decorate_advising_generator_py35
+            assert isgeneratorfunction(cutpoint_function)
 
-            return decorate_advising_generator_py35(self.advising_function, cutpoint_function, self.bind)
+            def advising_generator_wrapper_py35(*args, **kwargs):
+                if self.bind:
+                    advisor = self.advising_function(cutpoint_function, *args, **kwargs)
+                else:
+                    advisor = self.advising_function(*args, **kwargs)
+                if not isgenerator(advisor):
+                    raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
+                try:
+                    advice = next(advisor)
+                    while True:
+                        logdebug('Got advice %r from %s', advice, self.advising_function)
+                        if advice is Proceed or advice is None or isinstance(advice, Proceed):
+                            if isinstance(advice, Proceed):
+                                args = advice.args
+                                kwargs = advice.kwargs
+                            gen = cutpoint_function(*args, **kwargs)
+                            try:
+                                result = yield from gen
+                            except BaseException:
+                                advice = advisor.throw(*sys.exc_info())
+                            else:
+                                try:
+                                    advice = advisor.send(result)
+                                except StopIteration:
+                                    return result
+                            finally:
+                                gen.close()
+                        elif advice is Return:
+                            return
+                        elif isinstance(advice, Return):
+                            return advice.value
+                        else:
+                            raise UnacceptableAdvice("Unknown advice %s" % advice)
+                finally:
+                    advisor.close()
+
+            return mimic(advising_generator_wrapper_py35, cutpoint_function)
         else:
 
             def advising_function_wrapper(*args, **kwargs):
