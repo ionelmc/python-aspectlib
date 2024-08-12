@@ -1,5 +1,5 @@
-Reference: ``aspectlib``
-========================
+aspectlib
+=========
 
 Overview
 --------

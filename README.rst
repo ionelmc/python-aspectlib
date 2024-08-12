@@ -10,30 +10,24 @@ Overview
     * - docs
       - |docs|
     * - tests
-      - | |github-actions| |requires|
-        | |coveralls| |codecov|
+      - |github-actions| |coveralls| |codecov|
     * - package
-      - | |version| |wheel| |supported-versions| |supported-implementations|
-        | |commits-since|
+      - |version| |wheel| |supported-versions| |supported-implementations| |commits-since|
 .. |docs| image:: https://readthedocs.org/projects/python-aspectlib/badge/?style=flat
-    :target: https://python-aspectlib.readthedocs.io/
+    :target: https://readthedocs.org/projects/python-aspectlib/
     :alt: Documentation Status
 
 .. |github-actions| image:: https://github.com/ionelmc/python-aspectlib/actions/workflows/github-actions.yml/badge.svg
     :alt: GitHub Actions Build Status
     :target: https://github.com/ionelmc/python-aspectlib/actions
 
-.. |requires| image:: https://requires.io/github/ionelmc/python-aspectlib/requirements.svg?branch=main
-    :alt: Requirements Status
-    :target: https://requires.io/github/ionelmc/python-aspectlib/requirements/?branch=main
-
-.. |coveralls| image:: https://coveralls.io/repos/ionelmc/python-aspectlib/badge.svg?branch=main&service=github
+.. |coveralls| image:: https://coveralls.io/repos/github/ionelmc/python-aspectlib/badge.svg?branch=main
     :alt: Coverage Status
-    :target: https://coveralls.io/r/ionelmc/python-aspectlib
+    :target: https://coveralls.io/github/ionelmc/python-aspectlib?branch=main
 
 .. |codecov| image:: https://codecov.io/gh/ionelmc/python-aspectlib/branch/main/graphs/badge.svg?branch=main
     :alt: Coverage Status
-    :target: https://codecov.io/github/ionelmc/python-aspectlib
+    :target: https://app.codecov.io/github/ionelmc/python-aspectlib
 
 .. |version| image:: https://img.shields.io/pypi/v/aspectlib.svg
     :alt: PyPI Package latest release
