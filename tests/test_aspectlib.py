@@ -447,7 +447,7 @@ def test_weave_wrong_module():
                 "Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
                 'There was no previous definition, probably patching the wrong module.',
             ),
-            {},
+            {'stacklevel': 2},
         )
     ]
 
