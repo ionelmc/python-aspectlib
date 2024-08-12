@@ -1,6 +1,6 @@
 def func(arg):
-    print("Got", arg, "in the real code!")
+    print('Got', arg, 'in the real code!')
 
 
 def badfunc():
-    raise ValueError("boom!")
+    raise ValueError('boom!')

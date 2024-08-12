@@ -1,7 +1,7 @@
 from aspectlib import test
 
 
-class Foo(object):
+class Foo:
     def bar(self):
         return 1
 

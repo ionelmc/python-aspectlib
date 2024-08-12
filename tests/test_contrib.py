@@ -32,11 +32,11 @@ def test_defaults():
 
 def test_raises():
     calls = []
-    pytest.raises(OSError, retry(sleep=calls.append)(flaky_func), [None] * 6)
+    pytest.raises(OSError, retry(sleep=calls.append)(flaky_func), [None] * 6)  # noqa: PT011
     assert calls == [0, 0, 0, 0, 0]
 
     calls = []
-    pytest.raises(OSError, retry(sleep=calls.append, retries=1)(flaky_func), [None, None])
+    pytest.raises(OSError, retry(sleep=calls.append, retries=1)(flaky_func), [None, None])  # noqa: PT011
     assert calls == [0]
 
 
@@ -70,7 +70,7 @@ def test_backoff_flat():
 def test_with_class():
     logger = getLogger(__name__)
 
-    class Connection(object):
+    class Connection:
         count = 0
 
         @retry
@@ -81,24 +81,24 @@ def test_with_class():
         def __connect(self, *_, **__):
             self.count += 1
             if self.count % 3:
-                raise OSError("Failed")
+                raise OSError('Failed')
             else:
-                logger.info("connected!")
+                logger.info('connected!')
 
         @retry(cleanup=__connect)
         def action(self, arg1, arg2):
             self.count += 1
             if self.count % 3 == 0:
-                raise OSError("Failed")
+                raise OSError('Failed')
             else:
-                logger.info("action!")
+                logger.info('action!')
 
         def __repr__(self):
-            return "Connection@%s" % self.count
+            return f'Connection@{self.count}'
 
     with LogCapture([logger, contrib.logger]) as logcap:
         try:
-            conn = Connection("to-something")
+            conn = Connection('to-something')
             for i in range(5):
                 conn.action(i, i)
         finally:

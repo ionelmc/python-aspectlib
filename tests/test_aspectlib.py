@@ -1,12 +1,11 @@
-# encoding: utf8
-from pytest import raises
+import pytest
 
 import aspectlib
 from aspectlib.test import mock
 from aspectlib.test import record
 
 
-class Base(object):
+class Base:
     def meth(*_):
         return 'base'
 
@@ -44,7 +43,7 @@ def module_func2():
 module_func3 = module_func2
 
 
-class NormalTestClass(object):
+class NormalTestClass:
     some = 'attribute'
 
     def __init__(self, foo=None):
@@ -156,7 +155,7 @@ class LegacyTestSubSubClass(LegacyTestSubClass):
         return 'subsub' + (bar or foo)
 
 
-class SlotsTestClass(object):
+class SlotsTestClass:
     __slots__ = 'inst', 'klass', 'static', 'other', 'foo', 'bar'
     some = 'attribute'
 
@@ -220,7 +219,7 @@ def test_aspect_bad():
         yield
 
     def aspect_fail():
-        return "crap"
+        return 'crap'
 
     aspect.advising_function = aspect_fail
 
@@ -228,7 +227,7 @@ def test_aspect_bad():
     def func():
         pass
 
-    raises(aspectlib.ExpectedGenerator, func)
+    pytest.raises(aspectlib.ExpectedGenerator, func)
 
 
 def test_aspect_gen_bind():
@@ -271,7 +270,7 @@ def test_aspect_bad_gen():
         yield
 
     def aspect_fail():
-        return "crap"
+        return 'crap'
 
     aspect.advising_function = aspect_fail
 
@@ -279,14 +278,14 @@ def test_aspect_bad_gen():
     def func():
         yield
 
-    raises(aspectlib.ExpectedGenerator, list, func())
+    pytest.raises(aspectlib.ExpectedGenerator, list, func())
 
 
 def test_aspect_bad_decorate():
     def aspect():
-        return "crap"
+        return 'crap'
 
-    raises(aspectlib.ExpectedGeneratorFunction, aspectlib.Aspect, aspect)
+    pytest.raises(aspectlib.ExpectedGeneratorFunction, aspectlib.Aspect, aspect)
 
 
 def test_aspect_return():
@@ -327,7 +326,7 @@ def test_aspect_raise():
 
     @aspect
     def func():
-        1 / 0
+        1 / 0  # noqa: B018
 
     assert func() == 'stuff'
 
@@ -335,14 +334,14 @@ def test_aspect_raise():
 def test_aspect_raise_from_aspect():
     @aspectlib.Aspect
     def aspect():
-        1 / 0
+        1 / 0  # noqa: B018
         yield
 
     @aspect
     def func():
         pass
 
-    raises(ZeroDivisionError, func)
+    pytest.raises(ZeroDivisionError, func)
 
 
 def test_aspect_return_but_call():
@@ -371,28 +370,28 @@ def test_weave_func():
 
 
 def test_broken_aspect():
-    raises(aspectlib.ExpectedAdvice, aspectlib.weave, None, None)
+    pytest.raises(aspectlib.ExpectedAdvice, aspectlib.weave, None, None)
 
 
 def test_weave_empty_target():
-    raises(aspectlib.ExpectedAdvice, aspectlib.weave, (), None)
+    pytest.raises(aspectlib.ExpectedAdvice, aspectlib.weave, (), None)
 
 
 def test_weave_missing_global(cls=Global):
     global Global
     Global = 'crap'
     try:
-        raises(AssertionError, aspectlib.weave, cls, mock('stuff'), lazy=True)
+        pytest.raises(AssertionError, aspectlib.weave, cls, mock('stuff'), lazy=True)
     finally:
         Global = cls
 
 
 def test_weave_str_missing_target():
-    raises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
+    pytest.raises(AttributeError, aspectlib.weave, 'test_pkg1.test_pkg2.target', mock('foobar'))
 
 
 def test_weave_str_bad_target():
-    raises(TypeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
+    pytest.raises(TypeError, aspectlib.weave, 'test_pkg1.test_pkg2.test_mod.a', mock('foobar'))
 
 
 def test_weave_str_target():
@@ -446,7 +445,7 @@ def test_weave_wrong_module():
             None,
             (
                 "Setting test_aspectlib.MissingGlobal to <class 'test_aspectlib.MissingGlobal'>. "
-                "There was no previous definition, probably patching the wrong module.",
+                'There was no previous definition, probably patching the wrong module.',
             ),
             {},
         )
@@ -501,7 +500,7 @@ def test_weave_bad_args4():
 
 
 def test_weave_bad_args5():
-    raises(TypeError, aspectlib.weave, Sub, mock('stuff'), methods=False)
+    pytest.raises(TypeError, aspectlib.weave, Sub, mock('stuff'), methods=False)
 
 
 def test_weave_class_meth():
@@ -570,7 +569,7 @@ def test_weave_subclass_meth_from_baseclass():
     @aspectlib.Aspect
     def aspect(*args):
         result = yield
-        history.append(args + (result,))
+        history.append((*args, result))
         yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(NormalTestSubClass.only_in_base, aspect):
@@ -590,7 +589,7 @@ def test_weave_subclass_meth_from_baseclass_2_level():
     @aspectlib.Aspect
     def aspect(*args):
         result = yield
-        history.append(args + (result,))
+        history.append((*args, result))
         yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(NormalTestSubSubClass.only_in_base, aspect):
@@ -610,7 +609,7 @@ def test_weave_legacy_subclass_meth_from_baseclass():
     @aspectlib.Aspect
     def aspect(*args):
         result = yield
-        history.append(args + (result,))
+        history.append((*args, result))
         yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(LegacyTestSubClass.only_in_base, aspect):
@@ -630,7 +629,7 @@ def test_weave_legacy_subclass_meth_from_baseclass_2_level():
     @aspectlib.Aspect
     def aspect(*args):
         result = yield
-        history.append(args + (result,))
+        history.append((*args, result))
         yield aspectlib.Return('bar-' + result)
 
     with aspectlib.weave(LegacyTestSubSubClass.only_in_base, aspect):
@@ -1147,9 +1146,9 @@ def test_just_proceed_with_error():
 
     @aspect
     def func():
-        1 / 0
+        1 / 0  # noqa: B018
 
-    raises(ZeroDivisionError, func)
+    pytest.raises(ZeroDivisionError, func)
 
 
 def test_weave_unknown():
@@ -1157,7 +1156,7 @@ def test_weave_unknown():
     def aspect():
         yield aspectlib.Proceed
 
-    raises(aspectlib.UnsupportedType, aspectlib.weave, 1, aspect)
+    pytest.raises(aspectlib.UnsupportedType, aspectlib.weave, 1, aspect)
 
 
 def test_weave_unimportable():
@@ -1165,7 +1164,7 @@ def test_weave_unimportable():
     def aspect():
         yield aspectlib.Proceed
 
-    raises(ImportError, aspectlib.weave, "asdf1.qwer2", aspect)
+    pytest.raises(ImportError, aspectlib.weave, 'asdf1.qwer2', aspect)
 
 
 def test_weave_subclass(Bub=Sub):
@@ -1211,22 +1210,22 @@ def _internal():
     pass
 
 
-def ăbc():
+def ăbc():  # noqa: PLC2401
     pass
 
 
-def test_ăbc():
+def test_ăbc():  # noqa: PLC2401
     with aspectlib.weave('test_aspectlib.ăbc', mock('stuff')):
         assert ăbc() == 'stuff'
 
 
 def test_invalid_string_target():
-    raises(SyntaxError, aspectlib.weave, 'inva lid', mock(None))
-    raises(SyntaxError, aspectlib.weave, 'os.inva lid', mock(None))
-    raises(SyntaxError, aspectlib.weave, 'os.2invalid', mock(None))
-    raises(SyntaxError, aspectlib.weave, 'os.some,junk', mock(None))
-    raises(SyntaxError, aspectlib.weave, 'os.some?junk', mock(None))
-    raises(SyntaxError, aspectlib.weave, 'os.some*junk', mock(None))
+    pytest.raises(SyntaxError, aspectlib.weave, 'inva lid', mock(None))
+    pytest.raises(SyntaxError, aspectlib.weave, 'os.inva lid', mock(None))
+    pytest.raises(SyntaxError, aspectlib.weave, 'os.2invalid', mock(None))
+    pytest.raises(SyntaxError, aspectlib.weave, 'os.some,junk', mock(None))
+    pytest.raises(SyntaxError, aspectlib.weave, 'os.some?junk', mock(None))
+    pytest.raises(SyntaxError, aspectlib.weave, 'os.some*junk', mock(None))
 
     with aspectlib.weave('test_aspectlib._internal', mock('stuff')):
         assert _internal() == 'stuff'
@@ -1238,15 +1237,15 @@ def test_list_of_aspects():
         assert module_func.calls == [(None, (1, 2, 3), {})]
 
     with aspectlib.weave(module_func, [mock('foobar', call=True), record]):
-        raises(TypeError, module_func, 1, 2, 3)
+        pytest.raises(TypeError, module_func, 1, 2, 3)
         assert module_func.calls == [(None, (1, 2, 3), {})]
 
 
 def test_list_of_invalid_aspects():
-    raises(AssertionError, aspectlib.weave, module_func, [lambda func: None])
-    raises(TypeError, aspectlib.weave, module_func, [lambda: None])
-    raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, [None])
-    raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, ['foobar'])
+    pytest.raises(AssertionError, aspectlib.weave, module_func, [lambda func: None])
+    pytest.raises(TypeError, aspectlib.weave, module_func, [lambda: None])
+    pytest.raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, [None])
+    pytest.raises(aspectlib.ExpectedAdvice, aspectlib.weave, module_func, ['foobar'])
 
 
 def test_aspect_on_func():
@@ -1272,7 +1271,7 @@ def test_aspect_on_func():
 
     @aspect
     def func():
-        raise RuntimeError()
+        raise RuntimeError
 
     assert func() == 'squelched'
     assert hist == ['before', 'error', 'finally', 'closed']
@@ -1281,13 +1280,13 @@ def test_aspect_on_func():
 def test_aspect_on_func_invalid_advice():
     @aspectlib.Aspect
     def aspect():
-        yield "stuff"
+        yield 'stuff'
 
     @aspect
     def func():
-        raise RuntimeError()
+        raise RuntimeError
 
-    raises(aspectlib.UnacceptableAdvice, func)
+    pytest.raises(aspectlib.UnacceptableAdvice, func)
 
 
 def test_aspect_on_generator_func():
@@ -1314,9 +1313,8 @@ def test_aspect_on_generator_func():
 
     @aspect
     def func():
-        for i in range(3):
-            yield i
-        raise RuntimeError()
+        yield from range(3)
+        raise RuntimeError
 
     assert list(func()) == [0, 1, 2]
     print(hist)
@@ -1330,11 +1328,10 @@ def test_aspect_on_generator_func_bad_advice():
 
     @aspect
     def func():
-        for i in range(3):
-            yield i
-        raise RuntimeError()
+        yield from range(3)
+        raise RuntimeError
 
-    raises(aspectlib.UnacceptableAdvice, list, func())
+    pytest.raises(aspectlib.UnacceptableAdvice, list, func())
 
 
 def test_aspect_on_generator_different_args():
@@ -1416,7 +1413,7 @@ def test_aspect_on_generator_throw_exhaust():
 
     gen = func()
     print(next(gen))
-    raises(StopIteration, gen.throw, RuntimeError)
+    pytest.raises(StopIteration, gen.throw, RuntimeError)
     assert excs == [RuntimeError]
 
 
@@ -1455,7 +1452,7 @@ def test_weave_module(strmod=None):
 
 
 def test_weave_module_as_str():
-    test_weave_module("test_pkg1.test_pkg2.test_mod")
+    test_weave_module('test_pkg1.test_pkg2.test_mod')
 
 
 def test_weave_method():
@@ -1467,7 +1464,7 @@ def test_weave_method():
         intercepted.append(args)
         yield aspectlib.Proceed(*args)
 
-    class Foo(object):
+    class Foo:
         def foo(self, arg):
             calls.append((self, arg))
 
@@ -1488,7 +1485,7 @@ def test_weave_method_noargs():
         intercepted.append(args)
         yield
 
-    class Foo(object):
+    class Foo:
         def foo(self, arg):
             calls.append((self, arg))
 

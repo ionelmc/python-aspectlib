@@ -28,9 +28,9 @@ LOG_TEST_SOCKET = r"""^\{_?socket(object)?\}.connect\(\('127.0.0.1', 1\)\) +<<< 
 
 def test_mock_builtin():
     with aspectlib.weave(open, mock('foobar')):
-        assert open('???') == 'foobar'
+        assert open('???') == 'foobar'  # noqa: PTH123
 
-    assert open(__file__) != 'foobar'
+    assert open(__file__) != 'foobar'  # noqa: PTH123
 
 
 def test_mock_builtin_os():
@@ -43,11 +43,11 @@ def test_mock_builtin_os():
 
 def test_record_warning():
     with aspectlib.weave('warnings.warn', record):
-        warnings.warn('crap')
+        warnings.warn('crap', stacklevel=1)
         assert warnings.warn.calls == [(None, ('crap',), {})]
 
 
-@pytest.mark.skipif(not hasattr(os, 'fork'), reason="os.fork not available")
+@pytest.mark.skipif(not hasattr(os, 'fork'), reason='os.fork not available')
 def test_fork():
     with aspectlib.weave('os.fork', mock('foobar')):
         pid = os.fork()
@@ -67,7 +67,7 @@ def test_socket(target=socket.socket):
         s = socket.socket()
         try:
             s.connect(('127.0.0.1', 1))
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
     print(buf.getvalue())
@@ -76,7 +76,7 @@ def test_socket(target=socket.socket):
     s = socket.socket()
     try:
         s.connect(('127.0.0.1', 1))
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
     assert re.match(LOG_TEST_SOCKET, buf.getvalue())
@@ -108,10 +108,10 @@ def test_socket_all_methods():
     with aspectlib.weave(socket.socket, aspectlib.debug.log(print_to=buf, stacktrace=False), lazy=True, methods=aspectlib.ALL_METHODS):
         socket.socket()
 
-    assert "}.__init__ => None" in buf.getvalue()
+    assert '}.__init__ => None' in buf.getvalue()
 
 
-@pytest.mark.skipif(not hasattr(os, 'fork') or PYPY, reason="os.fork not available or PYPY")
+@pytest.mark.skipif(not hasattr(os, 'fork') or PYPY, reason='os.fork not available or PYPY')
 def test_realsocket_makefile():
     buf = StringIO()
     p = socket.socket()
@@ -131,21 +131,21 @@ def test_realsocket_makefile():
             s.settimeout(1)
             s.connect(p.getsockname())
             fh = s.makefile('rwb', buffering=0)
-            fh.write(b"STUFF\n")
+            fh.write(b'STUFF\n')
             fh.readline()
 
         with dump_on_error(buf.getvalue):
             wait_for_strings(
                 buf.getvalue,
                 0,
-                "}.connect",
-                "}.makefile",
-                "}.write(",
-                "}.send",
-                "}.write =>",
-                "}.readline()",
-                "}.recv",
-                "}.readline => ",
+                '}.connect',
+                '}.makefile',
+                '}.write(',
+                '}.send',
+                '}.write =>',
+                '}.readline()',
+                '}.recv',
+                '}.readline => ',
             )
     else:
         try:
@@ -161,7 +161,7 @@ def test_realsocket_makefile():
 def test_weave_os_module():
     calls = []
 
-    with aspectlib.weave('os', record(calls=calls, extended=True), methods="getenv|walk"):
+    with aspectlib.weave('os', record(calls=calls, extended=True), methods='getenv|walk'):
         os.getenv('BUBU', 'bubu')
         os.walk('.')
 
@@ -174,13 +174,13 @@ def test_decorate_asyncio_coroutine():
     @debug.log(print_to=buf, module=False, stacktrace=2, result_repr=repr)
     async def coro():
         await asyncio.sleep(0.01)
-        return "result"
+        return 'result'
 
     loop = asyncio.new_event_loop()
     loop.run_until_complete(coro())
     output = buf.getvalue()
     print(output)
-    assert 'coro => %r' % 'result' in output
+    assert 'coro => {!r}'.format('result') in output
 
 
 def test_decorate_tornado_coroutine():
@@ -193,7 +193,7 @@ def test_decorate_tornado_coroutine():
             yield gen.Task(loop.add_timeout, timedelta(microseconds=10))
         else:
             yield gen.sleep(0.01)
-        return "result"
+        return 'result'
 
     asyncio_loop = asyncio.new_event_loop()
     try:
@@ -204,4 +204,4 @@ def test_decorate_tornado_coroutine():
     finally:
         asyncio.get_event_loop = get_event_loop
     output = buf.getvalue()
-    assert 'coro => %r' % 'result' in output
+    assert 'coro => {!r}'.format('result') in output

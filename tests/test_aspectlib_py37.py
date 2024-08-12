@@ -1,10 +1,6 @@
-# encoding: utf8
-
-
 import pytest
 
 import aspectlib
-
 from test_aspectlib_py3 import consume
 
 
@@ -50,10 +46,10 @@ def test_aspect_on_coroutine():
     def func():
         val = 99
         for _ in range(3):
-            print("YIELD", val + 1)
+            print('YIELD', val + 1)
             val = yield val + 1
-            print("GOT", val)
-        return "the-return-value"
+            print('GOT', val)
+        return 'the-return-value'
 
     gen = func()
     data = []
@@ -136,9 +132,9 @@ def test_aspect_on_generator_result_from_aspect():
         while 1:
             next(gen)
     except StopIteration as exc:
-        assert exc.args == ('result',)
+        assert exc.args == ('result',)  # noqa: PT017
     else:
-        raise AssertionError("did not raise StopIteration")
+        raise AssertionError('did not raise StopIteration')
 
 
 def test_aspect_chain_on_generator_no_return():

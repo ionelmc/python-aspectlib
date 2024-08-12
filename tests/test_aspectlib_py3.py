@@ -1,6 +1,3 @@
-# encoding: utf8
-
-
 import pytest
 
 import aspectlib

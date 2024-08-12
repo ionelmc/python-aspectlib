@@ -85,7 +85,7 @@ class UnsupportedType(TypeError):
     pass
 
 
-class Proceed(object):
+class Proceed:
     """
     Instruction for calling the decorated function. Can be used multiple times.
 
@@ -99,7 +99,7 @@ class Proceed(object):
         self.kwargs = kwargs
 
 
-class Return(object):
+class Return:
     """
     Instruction for returning a *optional* value.
 
@@ -112,7 +112,7 @@ class Return(object):
         self.value = value
 
 
-class Aspect(object):
+class Aspect:
     """
     Container for the advice yielding generator. Can be used as a decorator on other function to change behavior
     according to the advices yielded from the generator.
@@ -161,13 +161,13 @@ class Aspect(object):
         if advising_function is UNSPECIFIED:
             return partial(cls, bind=bind)
         else:
-            self = super(Aspect, cls).__new__(cls)
+            self = super().__new__(cls)
             self.__init__(advising_function, bind)
             return self
 
     def __init__(self, advising_function, bind=False):
         if not isgeneratorfunction(advising_function):
-            raise ExpectedGeneratorFunction("advising_function %s must be a generator function." % advising_function)
+            raise ExpectedGeneratorFunction(f'advising_function {advising_function} must be a generator function.')
         self.advising_function = advising_function
         self.bind = bind
 
@@ -181,7 +181,7 @@ class Aspect(object):
                 else:
                     advisor = self.advising_function(*args, **kwargs)
                 if not isgenerator(advisor):
-                    raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
+                    raise ExpectedGenerator(f'advising_function {self.advising_function} did not return a generator.')
                 try:
                     advice = next(advisor)
                     while True:
@@ -207,7 +207,7 @@ class Aspect(object):
                         elif isinstance(advice, Return):
                             return advice.value
                         else:
-                            raise UnacceptableAdvice("Unknown advice %s" % advice)
+                            raise UnacceptableAdvice(f'Unknown advice {advice}')
                 finally:
                     advisor.close()
 
@@ -221,7 +221,7 @@ class Aspect(object):
                 else:
                     advisor = self.advising_function(*args, **kwargs)
                 if not isgenerator(advisor):
-                    raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
+                    raise ExpectedGenerator(f'advising_function {self.advising_function} did not return a generator.')
                 try:
                     advice = next(advisor)
                     while True:
@@ -247,7 +247,7 @@ class Aspect(object):
                         elif isinstance(advice, Return):
                             return advice.value
                         else:
-                            raise UnacceptableAdvice("Unknown advice %s" % advice)
+                            raise UnacceptableAdvice(f'Unknown advice {advice}')
                 finally:
                     advisor.close()
 
@@ -260,7 +260,7 @@ class Aspect(object):
                 else:
                     advisor = self.advising_function(*args, **kwargs)
                 if not isgenerator(advisor):
-                    raise ExpectedGenerator("advising_function %s did not return a generator." % self.advising_function)
+                    raise ExpectedGenerator(f'advising_function {self.advising_function} did not return a generator.')
                 try:
                     advice = next(advisor)
                     while True:
@@ -283,23 +283,23 @@ class Aspect(object):
                         elif isinstance(advice, Return):
                             return advice.value
                         else:
-                            raise UnacceptableAdvice("Unknown advice %s" % advice)
+                            raise UnacceptableAdvice(f'Unknown advice {advice}')
                 finally:
                     advisor.close()
 
             return mimic(advising_function_wrapper, cutpoint_function)
 
 
-class Fabric(object):
+class Fabric:
     pass
 
 
-class Rollback(object):
+class Rollback:
     """
     When called, rollbacks all the patches and changes the :func:`weave` has done.
     """
 
-    __slots__ = '_rollbacks'
+    __slots__ = ('_rollbacks',)
 
     def __init__(self, rollback=None):
         if rollback is None:
@@ -323,7 +323,7 @@ class Rollback(object):
     rollback = __call__ = __exit__
 
 
-class ObjectBag(object):
+class ObjectBag:
     def __init__(self):
         self._objects = {}
 
@@ -336,10 +336,10 @@ class ObjectBag(object):
             return False
 
 
-BrokenBag = type('BrokenBag', (), dict(has=lambda self, obj: False))()
+BrokenBag = type('BrokenBag', (), {'has': lambda self, obj: False})()
 
 
-class EmptyRollback(object):
+class EmptyRollback:
     def __enter__(self):
         return self
 
@@ -356,20 +356,20 @@ def _checked_apply(aspects, function, module=None):
     logdebug('  applying aspects %s to function %s.', aspects, function)
     if callable(aspects):
         wrapper = aspects(function)
-        assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspects, wrapper)
+        assert callable(wrapper), f'Aspect {aspects} did not return a callable (it return {wrapper}).'
     else:
         wrapper = function
         for aspect in aspects:
             wrapper = aspect(wrapper)
-            assert callable(wrapper), 'Aspect %s did not return a callable (it return %s).' % (aspect, wrapper)
+            assert callable(wrapper), f'Aspect {aspect} did not return a callable (it return {wrapper}).'
     return mimic(wrapper, function, module=module)
 
 
 def _check_name(name):
     if not VALID_IDENTIFIER.match(name):
         raise SyntaxError(
-            "Could not match %r to %r. It should be a string of "
-            "letters, numbers and underscore that starts with a letter or underscore." % (name, VALID_IDENTIFIER.pattern)
+            f'Could not match {name!r} to {VALID_IDENTIFIER.pattern!r}. It should be a string of '
+            'letters, numbers and underscore that starts with a letter or underscore.'
         )
 
 
@@ -408,12 +408,12 @@ def weave(target, aspects, **options):
     """
     if not callable(aspects):
         if not hasattr(aspects, '__iter__'):
-            raise ExpectedAdvice('%s must be an `Aspect` instance, a callable or an iterable of.' % aspects)
+            raise ExpectedAdvice(f'{aspects} must be an `Aspect` instance, a callable or an iterable of.')
         for obj in aspects:
             if not callable(obj):
-                raise ExpectedAdvice('%s must be an `Aspect` instance or a callable.' % obj)
-    assert target, "Can't weave falsy value %r." % target
-    logdebug("weave (target=%s, aspects=%s, **options=%s)", target, aspects, options)
+                raise ExpectedAdvice(f'{obj} must be an `Aspect` instance or a callable.')
+    assert target, f"Can't weave falsy value {target!r}."
+    logdebug('weave (target=%s, aspects=%s, **options=%s)', target, aspects, options)
 
     bag = options.setdefault('bag', ObjectBag())
 
@@ -436,7 +436,7 @@ def weave(target, aspects, **options):
             else:
                 break
         else:
-            raise ImportError("Could not import %r. Last try was for %s" % (target, owner))
+            raise ImportError(f'Could not import {target!r}. Last try was for {owner}')
 
         if '.' in name:
             path, name = name.rsplit('.', 1)
@@ -444,14 +444,14 @@ def weave(target, aspects, **options):
             while path:
                 owner = getattr(owner, path.popleft())
 
-        logdebug("@ patching %s from %s ...", name, owner)
+        logdebug('@ patching %s from %s ...', name, owner)
         obj = getattr(owner, name)
 
         if isinstance(obj, (type, ClassType)):
-            logdebug("   .. as a class %r.", obj)
+            logdebug('   .. as a class %r.', obj)
             return weave_class(obj, aspects, owner=owner, name=name, **options)
         elif callable(obj):  # or isinstance(obj, FunctionType) ??
-            logdebug("   .. as a callable %r.", obj)
+            logdebug('   .. as a callable %r.', obj)
             if bag.has(obj):
                 return Nothing
             return patch_module_function(owner, obj, aspects, force_name=name, **options)
@@ -468,7 +468,7 @@ def weave(target, aspects, **options):
             return Nothing
         inst = target.__self__
         name = target.__name__
-        logdebug("@ patching %r (%s) as instance method.", target, name)
+        logdebug('@ patching %r (%s) as instance method.', target, name)
         func = target.__func__
         setattr(inst, name, _checked_apply(aspects, func).__get__(inst, type(inst)))
         return Rollback(lambda: delattr(inst, name))
@@ -480,7 +480,7 @@ def weave(target, aspects, **options):
         while path:
             owner = getattr(owner, path.popleft())
         name = target.__name__
-        logdebug("@ patching %r (%s) as a property.", target, name)
+        logdebug('@ patching %r (%s) as a property.', target, name)
         func = owner.__dict__[name]
         return patch_module(owner, name, _checked_apply(aspects, func), func, **options)
     elif isclass(target):
@@ -490,7 +490,7 @@ def weave(target, aspects, **options):
     elif type(target).__module__ not in ('builtins', '__builtin__') or InstanceType and isinstance(target, InstanceType):
         return weave_instance(target, aspects, **options)
     else:
-        raise UnsupportedType("Can't weave object %s of type %s" % (target, type(target)))
+        raise UnsupportedType(f"Can't weave object {target} of type {type(target)}")
 
 
 def _rewrap_method(func, klass, aspect):
@@ -521,12 +521,12 @@ def weave_instance(instance, aspect, methods=NORMAL_METHODS, lazy=False, bag=Bro
 
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
-    logdebug("weave_instance (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)", instance, aspect, methods, lazy, options)
+    logdebug('weave_instance (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)', instance, aspect, methods, lazy, options)
 
     def fixup(func):
         return func.__get__(instance, type(instance))
 
-    fixed_aspect = aspect + [fixup] if isinstance(aspect, (list, tuple)) else [aspect, fixup]
+    fixed_aspect = [*aspect, fixup] if isinstance(aspect, (list, tuple)) else [aspect, fixup]
 
     for attr in dir(instance):
         if method_matches(attr):
@@ -553,7 +553,7 @@ def weave_module(module, aspect, methods=NORMAL_METHODS, lazy=False, bag=BrokenB
 
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
-    logdebug("weave_module (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)", module, aspect, methods, lazy, options)
+    logdebug('weave_module (module=%r, aspect=%s, methods=%s, lazy=%s, **options=%s)', module, aspect, methods, lazy, options)
 
     for attr in dir(module):
         if method_matches(attr):
@@ -578,7 +578,7 @@ def weave_class(
 
     .. warning:: You should not use this directly.
     """
-    assert isclass(klass), "Can't weave %r. Must be a class." % klass
+    assert isclass(klass), f"Can't weave {klass!r}. Must be a class."
 
     if bag.has(klass):
         return Nothing
@@ -586,7 +586,7 @@ def weave_class(
     entanglement = Rollback()
     method_matches = make_method_matcher(methods)
     logdebug(
-        "weave_class (klass=%r, methods=%s, subclasses=%s, lazy=%s, owner=%s, name=%s, aliases=%s, bases=%s)",
+        'weave_class (klass=%r, methods=%s, subclasses=%s, lazy=%s, owner=%s, name=%s, aliases=%s, bases=%s)',
         klass,
         methods,
         subclasses,
@@ -600,7 +600,7 @@ def weave_class(
     if subclasses and hasattr(klass, '__subclasses__'):
         sub_targets = klass.__subclasses__()
         if sub_targets:
-            logdebug("~ weaving subclasses: %s", sub_targets)
+            logdebug('~ weaving subclasses: %s', sub_targets)
         for sub_class in sub_targets:
             if not issubclass(sub_class, Fabric):
                 entanglement.merge(weave_class(sub_class, aspect, methods=methods, subclasses=subclasses, lazy=lazy, bag=bag))
@@ -620,7 +620,7 @@ def weave_class(
                 if ismethoddescriptor(func):
                     wrappers[attr] = _rewrap_method(func, klass, aspect)
 
-        logdebug(" * creating subclass with attributes %r", wrappers)
+        logdebug(' * creating subclass with attributes %r', wrappers)
         name = name or klass.__name__
         SubClass = type(name, (klass, Fabric), wrappers)
         SubClass.__module__ = klass.__module__
@@ -631,7 +631,7 @@ def weave_class(
         for attr, func in klass.__dict__.items():
             if method_matches(attr):
                 if isroutine(func):
-                    logdebug("@ patching attribute %r (original: %r).", attr, func)
+                    logdebug('@ patching attribute %r (original: %r).', attr, func)
                     setattr(klass, attr, _rewrap_method(func, klass, aspect))
                 else:
                     continue
@@ -644,7 +644,7 @@ def weave_class(
                     for attr, func in sklass.__dict__.items():
                         if method_matches(attr) and attr not in original and attr not in super_original:
                             if isroutine(func):
-                                logdebug("@ patching attribute %r (from superclass: %s, original: %r).", attr, sklass.__name__, func)
+                                logdebug('@ patching attribute %r (from superclass: %s, original: %r).', attr, sklass.__name__, func)
                                 setattr(klass, attr, _rewrap_method(func, sklass, aspect))
                             else:
                                 continue
@@ -692,31 +692,31 @@ def patch_module(module, name, replacement, original=UNSPECIFIED, aliases=True, 
     except (TypeError, AttributeError):
         pass
     for alias in dir(module):
-        logdebug("alias:%s (%s)", alias, name)
+        logdebug('alias:%s (%s)', alias, name)
         if hasattr(module, alias):
             obj = getattr(module, alias)
-            logdebug("- %s:%s (%s)", obj, original, obj is original)
+            logdebug('- %s:%s (%s)', obj, original, obj is original)
             if obj is original:
                 if aliases or alias == name:
-                    logdebug("= saving %s on %s.%s ...", replacement, target, alias)
+                    logdebug('= saving %s on %s.%s ...', replacement, target, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))
                 if alias == name:
                     seen = True
             elif alias == name:
                 if ismethod(obj):
-                    logdebug("= saving %s on %s.%s ...", replacement, target, alias)
+                    logdebug('= saving %s on %s.%s ...', replacement, target, alias)
                     setattr(module, alias, replacement)
                     rollback.merge(lambda alias=alias: setattr(module, alias, original))
                     seen = True
                 else:
-                    raise AssertionError("%s.%s = %s is not %s." % (module, alias, obj, original))
+                    raise AssertionError(f'{module}.{alias} = {obj} is not {original}.')
 
     if not seen:
         warnings.warn(
-            'Setting %s.%s to %s. There was no previous definition, probably patching the wrong module.' % (target, name, replacement)
+            f'Setting {target}.{name} to {replacement}. There was no previous definition, probably patching the wrong module.', stacklevel=2
         )
-        logdebug("= saving %s on %s.%s ...", replacement, target, name)
+        logdebug('= saving %s on %s.%s ...', replacement, target, name)
         setattr(module, name, replacement)
         rollback.merge(lambda: setattr(module, name, original))
     return rollback
@@ -731,7 +731,7 @@ def patch_module_function(module, target, aspect, force_name=None, bag=BrokenBag
     :returns: An :obj:`aspectlib.Rollback` object.
     """
     logdebug(
-        "patch_module_function (module=%s, target=%s, aspect=%s, force_name=%s, **options=%s", module, target, aspect, force_name, options
+        'patch_module_function (module=%s, target=%s, aspect=%s, force_name=%s, **options=%s', module, target, aspect, force_name, options
     )
     name = force_name or target.__name__
     return patch_module(module, name, _checked_apply(aspect, target, module=module), original=target, **options)

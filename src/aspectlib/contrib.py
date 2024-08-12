@@ -53,8 +53,15 @@ def retry(func=None, retries=5, backoff=None, exceptions=(IOError, OSError, EOFE
                     timeout = backoff
                 else:
                     timeout = backoff(count)
-                logger.exception("%s(%s, %s) raised exception %s. %s retries left. Sleeping %s secs.",
-                                 cutpoint.__name__, args, kwargs, exc, retries - count, timeout)
+                logger.exception(
+                    '%s(%s, %s) raised exception %s. %s retries left. Sleeping %s secs.',
+                    cutpoint.__name__,
+                    args,
+                    kwargs,
+                    exc,
+                    retries - count,
+                    timeout,
+                )
                 sleep(timeout)
 
     return retry_aspect if func is None else retry_aspect(func)
@@ -64,7 +71,7 @@ def exponential_backoff(count):
     """
     Wait 2**N seconds.
     """
-    return 2 ** count
+    return 2**count
 
 
 retry.exponential_backoff = exponential_backoff

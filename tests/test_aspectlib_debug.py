@@ -14,10 +14,10 @@ except ImportError:
     from io import StringIO
 
 LOG_TEST_SIMPLE = (
-    r'''^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
-some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@'''
-    r'''ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
-$'''
+    r"""^some_meth\(1, 2, 3, a=4\) +<<< .*tests/test_aspectlib_debug.py:\d+:test_simple.*
+some_meth => \.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\. !"#\$%&\'\(\)\*\+,-\./0123456789:;<=>\?@"""
+    r"""ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz\{\|\}~\.+
+$"""
 )
 
 
@@ -25,7 +25,7 @@ def some_meth(*_args, **_kwargs):
     return ''.join(chr(i) for i in range(255))
 
 
-class MyStuff(object):
+class MyStuff:
     def __init__(self, foo):
         self.foo = foo
 
@@ -58,7 +58,7 @@ def test_simple():
 
 
 def test_fail_to_log():
-    @aspectlib.debug.log(print_to="crap")
+    @aspectlib.debug.log(print_to='crap')
     def foo():
         pass
 
@@ -145,7 +145,7 @@ def test_no_stack_old_style():
     )
 
 
-@pytest.mark.skipif(sys.version_info < (2, 7), reason="No weakref.WeakSet on Python<=2.6")
+@pytest.mark.skipif(sys.version_info < (2, 7), reason='No weakref.WeakSet on Python<=2.6')
 def test_weakref():
     with aspectlib.weave(MyStuff, aspectlib.debug.log):
         s = weakref.WeakSet()
@@ -154,7 +154,7 @@ def test_weakref():
     print(list(s))
 
 
-@pytest.mark.skipif(sys.version_info < (2, 7), reason="No weakref.WeakSet on Python<=2.6")
+@pytest.mark.skipif(sys.version_info < (2, 7), reason='No weakref.WeakSet on Python<=2.6')
 def test_weakref_oldstyle():
     with aspectlib.weave(OldStuff, aspectlib.debug.log):
         s = weakref.WeakSet()

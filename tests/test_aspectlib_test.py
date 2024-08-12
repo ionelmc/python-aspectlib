@@ -1,5 +1,4 @@
-from pytest import raises
-from test_pkg1.test_pkg2 import test_mod
+import pytest
 
 from aspectlib.test import OrderedDict
 from aspectlib.test import Story
@@ -12,6 +11,7 @@ from aspectlib.test import mock
 from aspectlib.test import record
 from aspectlib.utils import PY310
 from aspectlib.utils import repr_ex
+from test_pkg1.test_pkg2 import test_mod
 
 pytest_plugins = ('pytester',)
 
@@ -64,7 +64,7 @@ def test_record_result():
 def test_record_exception():
     fun = record(results=True)(rfun)
 
-    raises(RuntimeError, fun)
+    pytest.raises(RuntimeError, fun)
     assert fun.calls == [
         (None, (), {}, None, exc),
     ]
@@ -88,7 +88,7 @@ def test_record_exception_callback():
 
     fun = record(results=True, callback=lambda *args: calls.append(args))(rfun)
 
-    raises(RuntimeError, fun)
+    pytest.raises(RuntimeError, fun)
     assert calls == [
         (None, 'test_aspectlib_test.rfun', (), {}, None, exc),
     ]
@@ -152,23 +152,23 @@ def test_record_as_context():
 
 
 def test_bad_mock():
-    raises(TypeError, mock)
-    raises(TypeError, mock, call=False)
+    pytest.raises(TypeError, mock)
+    pytest.raises(TypeError, mock, call=False)
 
 
 def test_simple_mock():
-    assert "foobar" == mock("foobar")(module_fun)(1)
+    assert 'foobar' == mock('foobar')(module_fun)(1)
 
 
 def test_mock_no_calls():
     with record(module_fun) as history:
-        assert "foobar" == mock("foobar")(module_fun)(2)
+        assert 'foobar' == mock('foobar')(module_fun)(2)
     assert history.calls == []
 
 
 def test_mock_with_calls():
     with record(module_fun) as history:
-        assert "foobar" == mock("foobar", call=True)(module_fun)(3)
+        assert 'foobar' == mock('foobar', call=True)(module_fun)(3)
     assert history.calls == [(None, (3,), {})]
 
 
@@ -193,7 +193,7 @@ def test_double_recording():
 
 
 def test_record_not_iscalled_and_results():
-    raises(AssertionError, record, module_fun, iscalled=False, results=True)
+    pytest.raises(AssertionError, record, module_fun, iscalled=False, results=True)
     record(module_fun, iscalled=False, results=False)
     record(module_fun, iscalled=True, results=True)
     record(module_fun, iscalled=True, results=False)
@@ -201,23 +201,23 @@ def test_record_not_iscalled_and_results():
 
 def test_story_empty_play_noproxy():
     with Story(test_mod).replay(recurse_lock=True, proxy=False, strict=False) as replay:
-        raises(AssertionError, test_mod.target)
+        pytest.raises(AssertionError, test_mod.target)
 
     assert replay._actual == {}
 
 
 def test_story_empty_play_proxy():
     assert test_mod.target() is None
-    raises(TypeError, test_mod.target, 123)
+    pytest.raises(TypeError, test_mod.target, 123)
 
     with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:
         assert test_mod.target() is None
-        raises(TypeError, test_mod.target, 123)
+        pytest.raises(TypeError, test_mod.target, 123)
 
     assert format_calls(replay._actual) == format_calls(
         OrderedDict(
             [
-                ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
+                ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns('None')),
                 (
                     (None, 'test_pkg1.test_pkg2.test_mod.target', '123', ''),
                     _Raises(
@@ -235,14 +235,14 @@ def test_story_empty_play_proxy():
 
 def test_story_empty_play_noproxy_class():
     with Story(test_mod).replay(recurse_lock=True, proxy=False, strict=False) as replay:
-        raises(AssertionError, test_mod.Stuff, 1, 2)
+        pytest.raises(AssertionError, test_mod.Stuff, 1, 2)
 
     assert replay._actual == {}
 
 
 def test_story_empty_play_error_on_init():
     with Story(test_mod).replay(strict=False) as replay:
-        raises(ValueError, test_mod.Stuff, "error")
+        pytest.raises(ValueError, test_mod.Stuff, 'error')  # noqa: PT011
         print(replay._actual)
     assert replay._actual == OrderedDict([((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "'error'", ''), _Raises('ValueError()'))])
 
@@ -253,21 +253,21 @@ def test_story_half_play_noproxy_class():
 
     with story.replay(recurse_lock=True, proxy=False, strict=False):
         obj = test_mod.Stuff(1, 2)
-        raises(AssertionError, obj.mix, 3, 4)
+        pytest.raises(AssertionError, obj.mix, 3, 4)
 
 
 def test_xxx():
     with Story(test_mod) as story:
         obj = test_mod.Stuff(1, 2)
-        test_mod.target(1) == 2
-        test_mod.target(2) == 3
+        test_mod.target(1) == 2  # noqa: B015
+        test_mod.target(2) == 3  # noqa: B015
         test_mod.target(3) ** ValueError
         other = test_mod.Stuff(2, 2)
-        obj.other('a') == other
-        obj.meth('a') == 'x'
+        obj.other('a') == other  # noqa: B015
+        obj.meth('a') == 'x'  # noqa: B015
         obj = test_mod.Stuff(2, 3)
         obj.meth() ** ValueError('crappo')
-        obj.meth('c') == 'x'
+        obj.meth('c') == 'x'  # noqa: B015
 
     with story.replay(recurse_lock=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
@@ -280,10 +280,10 @@ def test_xxx():
         obj.meth()
 
     for k, v in story._calls.items():
-        print(k, "=>", v)
-    print("############## UNEXPECTED ##############")
+        print(k, '=>', v)
+    print('############## UNEXPECTED ##############')
     for k, v in replay._actual.items():
-        print(k, "=>", v)
+        print(k, '=>', v)
 
     # TODO
 
@@ -291,12 +291,12 @@ def test_xxx():
 def test_story_text_helpers():
     with Story(test_mod) as story:
         obj = test_mod.Stuff(1, 2)
-        obj.meth('a') == 'x'
-        obj.meth('b') == 'y'
+        obj.meth('a') == 'x'  # noqa: B015
+        obj.meth('b') == 'y'  # noqa: B015
         obj = test_mod.Stuff(2, 3)
-        obj.meth('c') == 'z'
-        test_mod.target(1) == 2
-        test_mod.target(2) == 3
+        obj.meth('c') == 'z'  # noqa: B015
+        test_mod.target(1) == 2  # noqa: B015
+        test_mod.target(2) == 3  # noqa: B015
 
     with story.replay(recurse_lock=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
@@ -351,13 +351,13 @@ def test_story_empty_play_proxy_class_missing_report(LineMatcher):
         obj = test_mod.Stuff(1, 2)
         obj.mix(3, 4)
         obj.mix('a', 'b')
-        raises(ValueError, obj.raises, 123)
+        pytest.raises(ValueError, obj.raises, 123)  # noqa: PT011
         obj = test_mod.Stuff(0, 1)
         obj.mix('a', 'b')
         obj.mix(3, 4)
         test_mod.target()
-        raises(ValueError, test_mod.raises, 'badarg')
-        raises(ValueError, obj.raises, 123)
+        pytest.raises(ValueError, test_mod.raises, 'badarg')  # noqa: PT011
+        pytest.raises(ValueError, obj.raises, 123)  # noqa: PT011
         test_mod.ThatLONGStuf(1).mix(2)
         test_mod.ThatLONGStuf(3).mix(4)
         obj = test_mod.ThatLONGStuf(2)
@@ -366,27 +366,27 @@ def test_story_empty_play_proxy_class_missing_report(LineMatcher):
         obj.mix(10)
     LineMatcher(replay.diff.splitlines()).fnmatch_lines(
         [
-            "--- expected",
-            "+++ actual",
-            "@@ -0,0 +1,18 @@",
-            "+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)",
-            "+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns",
+            '--- expected',
+            '+++ actual',
+            '@@ -0,0 +1,18 @@',
+            '+stuff_1 = test_pkg1.test_pkg2.test_mod.Stuff(1, 2)',
+            '+stuff_1.mix(3, 4) == (1, 2, 3, 4)  # returns',
             "+stuff_1.mix('a', 'b') == (1, 2, 'a', 'b')  # returns",
-            "+stuff_1.raises(123) ** ValueError((123,)*)  # raises",
-            "+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)",
+            '+stuff_1.raises(123) ** ValueError((123,)*)  # raises',
+            '+stuff_2 = test_pkg1.test_pkg2.test_mod.Stuff(0, 1)',
             "+stuff_2.mix('a', 'b') == (0, 1, 'a', 'b')  # returns",
-            "+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns",
-            "+test_pkg1.test_pkg2.test_mod.target() == None  # returns",
+            '+stuff_2.mix(3, 4) == (0, 1, 3, 4)  # returns',
+            '+test_pkg1.test_pkg2.test_mod.target() == None  # returns',
             "+test_pkg1.test_pkg2.test_mod.raises('badarg') ** ValueError(('badarg',)*)  # raises",
-            "+stuff_2.raises(123) ** ValueError((123,)*)  # raises",
-            "+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)",
-            "+that_long_stuf_1.mix(2) == (1, 2)  # returns",
-            "+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)",
-            "+that_long_stuf_2.mix(4) == (3, 4)  # returns",
-            "+that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)",
-            "+that_long_stuf_3.mix() == (2,)  # returns",
-            "+that_long_stuf_3.meth() == None  # returns",
-            "+that_long_stuf_3.mix(10) == (2, 10)  # returns",
+            '+stuff_2.raises(123) ** ValueError((123,)*)  # raises',
+            '+that_long_stuf_1 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(1)',
+            '+that_long_stuf_1.mix(2) == (1, 2)  # returns',
+            '+that_long_stuf_2 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(3)',
+            '+that_long_stuf_2.mix(4) == (3, 4)  # returns',
+            '+that_long_stuf_3 = test_pkg1.test_pkg2.test_mod.ThatLONGStuf(2)',
+            '+that_long_stuf_3.mix() == (2,)  # returns',
+            '+that_long_stuf_3.meth() == None  # returns',
+            '+that_long_stuf_3.mix(10) == (2, 10)  # returns',
         ]
     )
 
@@ -399,22 +399,22 @@ def test_story_empty_play_proxy_class():
         assert obj.mix(3, 4) == (1, 2, 3, 4)
         assert obj.mix('a', 'b') == (1, 2, 'a', 'b')
 
-        raises(TypeError, obj.meth, 123)
+        pytest.raises(TypeError, obj.meth, 123)
 
         obj = test_mod.Stuff(0, 1)
         assert obj.mix('a', 'b') == (0, 1, 'a', 'b')
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
-        raises(TypeError, obj.meth, 123)
+        pytest.raises(TypeError, obj.meth, 123)
 
     assert format_calls(replay._actual) == format_calls(
         OrderedDict(
             [
-                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "1, 2", ''), _Binds('stuff_1')),
-                (('stuff_1', 'mix', "3, 4", ''), _Returns("(1, 2, 3, 4)")),
+                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '1, 2', ''), _Binds('stuff_1')),
+                (('stuff_1', 'mix', '3, 4', ''), _Returns('(1, 2, 3, 4)')),
                 (('stuff_1', 'mix', "'a', 'b'", ''), _Returns("(1, 2, 'a', 'b')")),
                 (
-                    ('stuff_1', 'meth', "123", ''),
+                    ('stuff_1', 'meth', '123', ''),
                     _Raises(
                         repr_ex(
                             TypeError(
@@ -425,11 +425,11 @@ def test_story_empty_play_proxy_class():
                         )
                     ),
                 ),
-                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', "0, 1", ''), _Binds('stuff_2')),
+                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '0, 1', ''), _Binds('stuff_2')),
                 (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
-                (('stuff_2', 'mix', "3, 4", ''), _Returns("(0, 1, 3, 4)")),
+                (('stuff_2', 'mix', '3, 4', ''), _Returns('(0, 1, 3, 4)')),
                 (
-                    ('stuff_2', 'meth', "123", ''),
+                    ('stuff_2', 'meth', '123', ''),
                     _Raises(
                         repr_ex(
                             TypeError(
@@ -450,20 +450,20 @@ def test_story_half_play_proxy_class():
 
     with Story(test_mod) as story:
         obj = test_mod.Stuff(1, 2)
-        obj.mix(3, 4) == (1, 2, 3, 4)
+        obj.mix(3, 4) == (1, 2, 3, 4)  # noqa: B015
 
     with story.replay(recurse_lock=True, proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         assert obj.mix(3, 4) == (1, 2, 3, 4)
         assert obj.meth() is None
 
-        raises(TypeError, obj.meth, 123)
+        pytest.raises(TypeError, obj.meth, 123)
 
         obj = test_mod.Stuff(0, 1)
         assert obj.mix('a', 'b') == (0, 1, 'a', 'b')
         assert obj.mix(3, 4) == (0, 1, 3, 4)
 
-        raises(TypeError, obj.meth, 123)
+        pytest.raises(TypeError, obj.meth, 123)
     assert replay.unexpected == format_calls(
         OrderedDict(
             [
@@ -480,7 +480,7 @@ def test_story_half_play_proxy_class():
                         )
                     ),
                 ),
-                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '0, 1', ''), _Binds("stuff_2")),
+                ((None, 'test_pkg1.test_pkg2.test_mod.Stuff', '0, 1', ''), _Binds('stuff_2')),
                 (('stuff_2', 'mix', "'a', 'b'", ''), _Returns("(0, 1, 'a', 'b')")),
                 (('stuff_2', 'mix', '3, 4', ''), _Returns('(0, 1, 3, 4)')),
                 (
@@ -502,45 +502,45 @@ def test_story_half_play_proxy_class():
 
 def test_story_full_play_noproxy():
     with Story(test_mod) as story:
-        test_mod.target(123) == 'foobar'
+        test_mod.target(123) == 'foobar'  # noqa: B015
         test_mod.target(1234) ** ValueError
 
     with story.replay(recurse_lock=True, proxy=False, strict=False, dump=False) as replay:
-        raises(AssertionError, test_mod.target)
+        pytest.raises(AssertionError, test_mod.target)
         assert test_mod.target(123) == 'foobar'
-        raises(ValueError, test_mod.target, 1234)
+        pytest.raises(ValueError, test_mod.target, 1234)  # noqa: PT011
 
-    assert replay.unexpected == ""
+    assert replay.unexpected == ''
 
 
 def test_story_full_play_noproxy_dump():
     with Story(test_mod) as story:
-        test_mod.target(123) == 'foobar'
+        test_mod.target(123) == 'foobar'  # noqa: B015
         test_mod.target(1234) ** ValueError
 
     with story.replay(recurse_lock=True, proxy=False, strict=False, dump=True) as replay:
-        raises(AssertionError, test_mod.target)
+        pytest.raises(AssertionError, test_mod.target)
         assert test_mod.target(123) == 'foobar'
-        raises(ValueError, test_mod.target, 1234)
+        pytest.raises(ValueError, test_mod.target, 1234)  # noqa: PT011
 
-    assert replay.unexpected == ""
+    assert replay.unexpected == ''
 
 
 def test_story_full_play_proxy():
     with Story(test_mod) as story:
-        test_mod.target(123) == 'foobar'
+        test_mod.target(123) == 'foobar'  # noqa: B015
         test_mod.target(1234) ** ValueError
 
     with story.replay(recurse_lock=True, proxy=True, strict=False) as replay:
         assert test_mod.target() is None
         assert test_mod.target(123) == 'foobar'
-        raises(ValueError, test_mod.target, 1234)
-        raises(TypeError, test_mod.target, 'asdf')
+        pytest.raises(ValueError, test_mod.target, 1234)  # noqa: PT011
+        pytest.raises(TypeError, test_mod.target, 'asdf')
 
     assert replay.unexpected == format_calls(
         OrderedDict(
             [
-                ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns("None")),
+                ((None, 'test_pkg1.test_pkg2.test_mod.target', '', ''), _Returns('None')),
                 (
                     (None, 'test_pkg1.test_pkg2.test_mod.target', "'asdf'", ''),
                     _Raises(
@@ -558,39 +558,39 @@ def test_story_full_play_proxy():
 
 def test_story_result_wrapper():
     x = StoryResultWrapper(lambda *a: None)
-    raises(AttributeError, setattr, x, 'stuff', 1)
-    raises(AttributeError, getattr, x, 'stuff')
-    raises(TypeError, lambda: x >> 2)
-    raises(TypeError, lambda: x << 1)
-    raises(TypeError, lambda: x > 1)
-    x == 1
+    pytest.raises(AttributeError, setattr, x, 'stuff', 1)
+    pytest.raises(AttributeError, getattr, x, 'stuff')
+    pytest.raises(TypeError, lambda: x >> 2)
+    pytest.raises(TypeError, lambda: x << 1)
+    pytest.raises(TypeError, lambda: x > 1)
+    x == 1  # noqa: B015
     x ** Exception()
 
 
 def test_story_result_wrapper_bad_exception():
     x = StoryResultWrapper(lambda *a: None)
-    raises(RuntimeError, lambda: x**1)
+    pytest.raises(RuntimeError, lambda: x**1)
     x**Exception
     x ** Exception('boom!')
 
 
 def test_story_create():
     with Story(test_mod) as story:
-        test_mod.target('a', 'b', 'c') == 'abc'
+        test_mod.target('a', 'b', 'c') == 'abc'  # noqa: B015
         test_mod.target() ** Exception
-        test_mod.target(1, 2, 3) == 'foobar'
+        test_mod.target(1, 2, 3) == 'foobar'  # noqa: B015
         obj = test_mod.Stuff('stuff')
         assert isinstance(obj, test_mod.Stuff)
-        obj.meth('other', 1, 2) == 123
-        obj.mix('other') == 'mixymix'
+        obj.meth('other', 1, 2) == 123  # noqa: B015
+        obj.mix('other') == 'mixymix'  # noqa: B015
     # from pprint import pprint as print
     # print (dict(story._calls))
     assert dict(story._calls) == {
         (None, 'test_pkg1.test_pkg2.test_mod.Stuff', "'stuff'", ''): _Binds('stuff_1'),
-        ('stuff_1', 'meth', "'other', 1, 2", ''): _Returns("123"),
+        ('stuff_1', 'meth', "'other', 1, 2", ''): _Returns('123'),
         ('stuff_1', 'mix', "'other'", ''): _Returns("'mixymix'"),
-        (None, 'test_pkg1.test_pkg2.test_mod.target', '', ''): _Raises("Exception"),
-        (None, 'test_pkg1.test_pkg2.test_mod.target', "1, 2, 3", ''): _Returns("'foobar'"),
+        (None, 'test_pkg1.test_pkg2.test_mod.target', '', ''): _Raises('Exception'),
+        (None, 'test_pkg1.test_pkg2.test_mod.target', '1, 2, 3', ''): _Returns("'foobar'"),
         (None, 'test_pkg1.test_pkg2.test_mod.target', "'a', 'b', 'c'", ''): _Returns("'abc'"),
     }
 
@@ -599,7 +599,7 @@ def xtest_story_empty_play_proxy_class_dependencies():
     with Story(test_mod).replay(recurse_lock=True, proxy=True, strict=False) as replay:
         obj = test_mod.Stuff(1, 2)
         other = obj.other('x')
-        raises(ValueError, other.raises, 'badarg')
+        pytest.raises(ValueError, other.raises, 'badarg')  # noqa: PT011
         other.mix(3, 4)
         obj = test_mod.Stuff(0, 1)
         obj.mix(3, 4)
@@ -608,4 +608,4 @@ def xtest_story_empty_play_proxy_class_dependencies():
 
     print(repr(replay.diff))
 
-    assert replay.diff == ""
+    assert replay.diff == ''

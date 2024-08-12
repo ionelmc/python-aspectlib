@@ -13,7 +13,7 @@ def raises(*a):
 a = 1
 
 
-class Stuff(object):
+class Stuff:
     def __init__(self, *args):
         if args == ('error',):
             raise ValueError

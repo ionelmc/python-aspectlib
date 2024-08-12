@@ -37,7 +37,7 @@ except ImportError:
 from collections import ChainMap
 from collections import OrderedDict
 
-__all__ = 'mock', 'record', "Story"
+__all__ = 'mock', 'record', 'Story'
 
 logger = getLogger(__name__)
 logexception = logf(logger.exception)
@@ -46,7 +46,7 @@ Call = namedtuple('Call', ('self', 'args', 'kwargs'))
 CallEx = namedtuple('CallEx', ('self', 'name', 'args', 'kwargs'))
 Result = namedtuple('Result', ('self', 'args', 'kwargs', 'result', 'exception'))
 ResultEx = namedtuple('ResultEx', ('self', 'name', 'args', 'kwargs', 'result', 'exception'))
-_INIT = Sentinel("INIT")
+_INIT = Sentinel('INIT')
 
 
 def mock(return_value, call=False):
@@ -73,7 +73,7 @@ def mock(return_value, call=False):
     return mock_decorator
 
 
-class LogCapture(object):
+class LogCapture:
     """
     Records all log messages made on the given logger. Assumes the logger has a ``_log`` method.
 
@@ -152,7 +152,7 @@ class LogCapture(object):
 
     def has(self, message, *args, **kwargs):
         level = kwargs.pop('level', None)
-        assert not kwargs, "Unexpected arguments: %s" % kwargs
+        assert not kwargs, f'Unexpected arguments: {kwargs}'
         for call_final_message, call_message, call_args, call_level in self._calls:
             if level is None or level == call_level:
                 if message == call_message and args == call_args if args else message == call_final_message or message == call_message:
@@ -162,12 +162,11 @@ class LogCapture(object):
     def assertLogged(self, message, *args, **kwargs):
         if not self.has(message, *args, **kwargs):
             raise AssertionError(
-                "There's no such message %r (with args %r) logged on %s. Logged messages where: %s"
-                % (message, args, self._logger, self.calls)
+                f"There's no such message {message!r} (with args {args!r}) logged on {self._logger}. Logged messages where: {self.calls}"
             )
 
 
-class _RecordingFunctionWrapper(object):
+class _RecordingFunctionWrapper:
     """
     Function wrapper that records calls and can be used as an weaver context manager.
 
@@ -175,7 +174,7 @@ class _RecordingFunctionWrapper(object):
     """
 
     def __init__(self, wrapped, iscalled=True, calls=None, callback=None, extended=False, results=False, recurse_lock=None, binding=None):
-        assert not results or iscalled, "`iscalled` must be True if `results` is True"
+        assert not results or iscalled, '`iscalled` must be True if `results` is True'
         mimic(self, wrapped)
         self.__wrapped = wrapped
         self.__entanglement = None
@@ -295,8 +294,8 @@ def record(func=None, recurse_lock_factory=allocate_lock, **options):
         return partial(record, **options)
 
 
-class StoryResultWrapper(object):
-    __slots__ = '__recorder__'
+class StoryResultWrapper:
+    __slots__ = ('__recorder__',)  #
 
     def __init__(self, recorder):
         self.__recorder__ = recorder
@@ -306,11 +305,11 @@ class StoryResultWrapper(object):
 
     def __pow__(self, exception):
         if not (isinstance(exception, BaseException) or isclass(exception) and issubclass(exception, BaseException)):
-            raise RuntimeError("Value %r must be an exception type or instance." % exception)
+            raise RuntimeError(f'Value {exception!r} must be an exception type or instance.')
         self.__recorder__(_Raises(exception))
 
     def __unsupported__(self, *args):
-        raise TypeError("Unsupported operation. Only `==` (for results) and `**` (for exceptions) can be used.")
+        raise TypeError('Unsupported operation. Only `==` (for results) and `**` (for exceptions) can be used.')
 
     for mm in (
         '__add__',
@@ -382,10 +381,10 @@ class StoryResultWrapper(object):
         '__rcmp__',
         '__nonzero__',
     ):
-        exec("%s = __unsupported__" % mm)
+        exec(f'{mm} = __unsupported__')  # noqa: S102
 
 
-class _StoryFunctionWrapper(object):
+class _StoryFunctionWrapper:
     def __init__(self, wrapped, handle, binding=None, owner=None):
         self._wrapped = wrapped
         self._name = wrapped.__name__
@@ -429,7 +428,7 @@ class _ReplayFunctionWrapper(_StoryFunctionWrapper):
                 return self._handle(self._binding, self._name, args, kwargs, self._wrapped)
 
 
-class _RecordingBase(object):
+class _RecordingBase:
     _target = None
     _options = None
 
@@ -443,13 +442,13 @@ class _RecordingBase(object):
     def _make_key(self, binding, name, args, kwargs):
         if binding is not None:
             binding, _ = self._ids[id(binding)]
-        return (binding, name, ', '.join(repr_ex(i) for i in args), ', '.join("%s=%s" % (k, repr_ex(v)) for k, v in kwargs.items()))
+        return (binding, name, ', '.join(repr_ex(i) for i in args), ', '.join(f'{k}={repr_ex(v)}' for k, v in kwargs.items()))
 
     def _tag_result(self, name, result):
         if isinstance(result, _Binds):
             instance_name = camelcase_to_underscores(name.rsplit('.', 1)[-1])
             self._instances[instance_name] += 1
-            instance_name = "%s_%s" % (instance_name, self._instances[instance_name])
+            instance_name = f'{instance_name}_{self._instances[instance_name]}'
             self._ids[id(result.value)] = instance_name, result.value
             result.value = instance_name
         else:
@@ -459,14 +458,9 @@ class _RecordingBase(object):
     def _handle(self, binding, name, args, kwargs, result):
         pk = self._make_key(binding, name, args, kwargs)
         result = self._tag_result(name, result)
-        assert (
-            pk not in self._calls or self._calls[pk] == result
-        ), "Story creation inconsistency. There is already a result cached for " "binding:%r name:%r args:%r kwargs:%r and it's: %r." % (
-            binding,
-            name,
-            args,
-            kwargs,
-            self._calls[pk],
+        assert pk not in self._calls or self._calls[pk] == result, (
+            'Story creation inconsistency. There is already a result cached for '
+            f"binding:{binding!r} name:{name!r} args:{args!r} kwargs:{kwargs!r} and it's: {self._calls[pk]!r}."
         )
         self._calls[pk] = result
 
@@ -480,9 +474,9 @@ class _RecordingBase(object):
         del self._ids
 
 
-_Raises = container("Raises")
-_Returns = container("Returns")
-_Binds = container("Binds")
+_Raises = container('Raises')
+_Returns = container('Returns')
+_Binds = container('Binds')
 
 
 class Story(_RecordingBase):
@@ -531,7 +525,7 @@ class Story(_RecordingBase):
     _FunctionWrapper = _StoryFunctionWrapper
 
     def __init__(self, *args, **kwargs):
-        super(Story, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         frame = _getframe(1)
         self._context = frame.f_globals, frame.f_locals
 
@@ -577,14 +571,14 @@ class Story(_RecordingBase):
         return Replay(self, **options)
 
 
-ReplayPair = namedtuple("ReplayPair", ('expected', 'actual'))
+ReplayPair = namedtuple('ReplayPair', ('expected', 'actual'))
 
 
 def logged_eval(value, context):
     try:
-        return eval(value, *context)
-    except:  # noqa
-        logexception("Failed to evaluate %r.\nContext:\n%s", value, ''.join(format_stack(f=_getframe(1), limit=15)))
+        return eval(value, *context)  # noqa: S307
+    except:
+        logexception('Failed to evaluate %r.\nContext:\n%s', value, ''.join(format_stack(f=_getframe(1), limit=15)))
         raise
 
 
@@ -599,7 +593,7 @@ class Replay(_RecordingBase):
     _FunctionWrapper = _ReplayFunctionWrapper
 
     def __init__(self, play, proxy=True, strict=True, dump=True, recurse_lock=False, **options):
-        super(Replay, self).__init__(play._target, **options)
+        super().__init__(play._target, **options)
         self._calls, self._expected, self._actual = ChainMap(self._calls, play._calls), play._calls, self._calls
 
         self._proxy = proxy
@@ -619,7 +613,7 @@ class Replay(_RecordingBase):
             elif isinstance(result, _Raises):
                 raise logged_eval(result.value, self._context)
             else:
-                raise RuntimeError('Internal failure - unknown result: %r' % result)  # pragma: no cover
+                raise RuntimeError(f'Internal failure - unknown result: {result!r}')  # pragma: no cover
         else:
             if self._proxy:
                 shouldrecord = not self._recurse_lock or self._recurse_lock.acquire(False)
@@ -640,7 +634,7 @@ class Replay(_RecordingBase):
                     if shouldrecord and self._recurse_lock:
                         self._recurse_lock.release()
             else:
-                raise AssertionError("Unexpected call to %s/%s with args:%s kwargs:%s" % pk)
+                raise AssertionError('Unexpected call to {}/{} with args:{} kwargs:{}'.format(*pk))
 
     def _unexpected(self, _missing=False):
         if _missing:
@@ -718,7 +712,7 @@ class Replay(_RecordingBase):
         return ''.join(_format_calls(self._expected))
 
     def __exit__(self, *exception):
-        super(Replay, self).__exit__()
+        super().__exit__()
         if self._strict or self._dump:
             diff = self.diff
             if diff:
@@ -733,17 +727,17 @@ class Replay(_RecordingBase):
 
 def _format_calls(calls):
     for (binding, name, args, kwargs), result in calls.items():
-        sig = '%s(%s%s%s)' % (name, args, ', ' if kwargs and args else '', kwargs)
+        sig = '{}({}{}{})'.format(name, args, ', ' if kwargs and args else '', kwargs)
 
         if isinstance(result, _Binds):
-            yield '%s = %s\n' % (result.value, sig)
+            yield f'{result.value} = {sig}\n'
         elif isinstance(result, _Returns):
             if binding is None:
-                yield '%s == %s  # returns\n' % (sig, result.value)
+                yield f'{sig} == {result.value}  # returns\n'
             else:
-                yield '%s.%s == %s  # returns\n' % (binding, sig, result.value)
+                yield f'{binding}.{sig} == {result.value}  # returns\n'
         elif isinstance(result, _Raises):
             if binding is None:
-                yield '%s ** %s  # raises\n' % (sig, result.value)
+                yield f'{sig} ** {result.value}  # raises\n'
             else:
-                yield '%s.%s ** %s  # raises\n' % (binding, sig, result.value)
+                yield f'{binding}.{sig} ** {result.value}  # raises\n'

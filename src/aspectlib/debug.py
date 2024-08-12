@@ -28,11 +28,10 @@ def format_stack(skip=0, length=6, _sep=os.path.sep):
     """
     Returns a one-line string with the current callstack.
     """
-    return ' < '.join("%s:%s:%s" % (
-        '/'.join(f.f_code.co_filename.split(_sep)[-2:]),
-        f.f_lineno,
-        f.f_code.co_name
-    ) for f in islice(frame_iterator(sys._getframe(1 + skip)), length))
+    return ' < '.join(
+        '{}:{}:{}'.format('/'.join(f.f_code.co_filename.split(_sep)[-2:]), f.f_lineno, f.f_code.co_name)
+        for f in islice(frame_iterator(sys._getframe(1 + skip)), length)
+    )
 
 
 PRINTABLE = string.digits + string.ascii_letters + string.punctuation + ' '
@@ -46,20 +45,22 @@ def strip_non_ascii(val):
     return str(val).translate(ASCII_ONLY)
 
 
-def log(func=None,
-        stacktrace=10,
-        stacktrace_align=60,
-        attributes=(),
-        module=True,
-        call=True,
-        call_args=True,
-        call_args_repr=repr,
-        result=True,
-        exception=True,
-        exception_repr=repr,
-        result_repr=strip_non_ascii,
-        use_logging='CRITICAL',
-        print_to=None):
+def log(
+    func=None,
+    stacktrace=10,
+    stacktrace_align=60,
+    attributes=(),
+    module=True,
+    call=True,
+    call_args=True,
+    call_args_repr=repr,
+    result=True,
+    exception=True,
+    exception_repr=repr,
+    result_repr=strip_non_ascii,
+    use_logging='CRITICAL',
+    print_to=None,
+):
     """
     Decorates `func` to have logging.
 
@@ -145,9 +146,9 @@ def log(func=None,
         Added `call` option.
     """
 
-    loglevel = use_logging and (
-        logging._levelNames if hasattr(logging, '_levelNames') else logging._nameToLevel
-    ).get(use_logging, logging.CRITICAL)
+    loglevel = use_logging and (logging._levelNames if hasattr(logging, '_levelNames') else logging._nameToLevel).get(
+        use_logging, logging.CRITICAL
+    )
     _missing = object()
 
     def dump(buf):
@@ -168,7 +169,7 @@ def log(func=None,
         def __init__(self, cutpoint_function, binding=None):
             mimic(self, cutpoint_function)
             self.cutpoint_function = cutpoint_function
-            self.final_function = super(__logged__, self).__call__(cutpoint_function)
+            self.final_function = super().__call__(cutpoint_function)
             self.binding = binding
 
         def __get__(self, instance, owner):
@@ -194,26 +195,21 @@ def log(func=None,
                         callarg = False
                     val = getattr(instance, key, _missing)
                     if val is not _missing and key != name:
-                        info.append(' %s=%s' % (
-                            key, call_args_repr(val() if callarg else val)
-                        ))
-                sig = buf = '{%s%s%s}.%s' % (
-                    instance_type.__module__ + '.' if module else '',
-                    instance_type.__name__,
-                    ''.join(info),
-                    name
+                        info.append(f' {key}={call_args_repr(val() if callarg else val)}')
+                sig = buf = '{{{}{}{}}}.{}'.format(
+                    instance_type.__module__ + '.' if module else '', instance_type.__name__, ''.join(info), name
                 )
             else:
                 sig = buf = name
             if call_args:
-                buf += '(%s%s)' % (
+                buf += '({}{})'.format(
                     ', '.join(repr(i) for i in (args if call_args is True else args[:call_args])),
-                    ((', ' if args else '') + ', '.join('%s=%r' % i for i in kwargs.items()))
+                    ((', ' if args else '') + ', '.join('{}={!r}'.format(*i) for i in kwargs.items()))
                     if kwargs and call_args is True
                     else '',
                 )
             if stacktrace:
-                buf = ("%%-%ds  <<< %%s" % stacktrace_align) % (buf, format_stack(skip=1, length=stacktrace))
+                buf = ('%%-%ds  <<< %%s' % stacktrace_align) % (buf, format_stack(skip=1, length=stacktrace))
             if call:
                 dump(buf)
             try:
@@ -222,11 +218,11 @@ def log(func=None,
                 if exception:
                     if not call:
                         dump(buf)
-                    dump('%s ~ raised %s' % (sig, exception_repr(exc)))
+                    dump(f'{sig} ~ raised {exception_repr(exc)}')
                 raise
 
             if result:
-                dump('%s => %s' % (sig, result_repr(res)))
+                dump(f'{sig} => {result_repr(res)}')
 
     if func:
         return __logged__(func)
